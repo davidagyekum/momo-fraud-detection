@@ -27,7 +27,11 @@ SECTIONS = {
         Path("services/api/pyproject.toml"),
         (sys.executable, "scripts/verify_backend.py"),
     ),
-    "admin": Section("admin", Path("apps/admin/package.json"), None),
+    "admin": Section(
+        "admin",
+        Path("apps/admin/package.json"),
+        (sys.executable, "scripts/verify_admin.py"),
+    ),
     "mobile": Section(
         "mobile",
         Path("apps/mobile/package.json"),

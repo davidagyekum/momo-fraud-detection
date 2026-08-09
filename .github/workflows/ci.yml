@@ -91,6 +91,27 @@ jobs:
       - name: Run P04 mobile verification
         run: python scripts/verify.py --mobile
 
+  admin-quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/admin/package-lock.json
+      - name: Install pinned admin dependencies
+        working-directory: apps/admin
+        run: npm ci
+      - name: Install Playwright Chromium
+        working-directory: apps/admin
+        run: npx playwright install --with-deps chromium
+      - name: Run P05 administrator portal verification
+        run: python scripts/verify.py --admin
+
   database-migrations:
     runs-on: ubuntu-24.04
     services:

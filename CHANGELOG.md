@@ -37,6 +37,12 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - TanStack Query server state, network awareness, global error recovery and honest inactive states for features owned by later phases.
 - Mobile formatting, linting, strict typing, Jest coverage, token-storage policy, static export and GitHub Actions verification gates.
 - Safe Chapter Four mobile screenshots and an evidence manifest linked to the P04 implementation SHA.
+- P05 React 19/TypeScript/Vite administrator and investigator portal with secure staff sign-in, session restoration, logout confirmation and role-aware routing.
+- P05 evergreen/gold responsive shell, desktop sidebar, tablet drawer and reusable form, feedback, overlay, table/list, filter, pagination, chart-frame and secure-download components.
+- Honest dashboard shell that presents fraud risk, transaction verification, case status and processing state as four independent concepts without inventing later-phase aggregates.
+- No-access, not-found, global-error, session-expired, loading, empty, filtered-empty, degraded and retry-ready portal states.
+- Portal security/quality verification covering browser token persistence, unsafe HTML injection, formatting, linting, strict typing, 34 Vitest tests, coverage thresholds, 3 Playwright smoke flows and the production bundle.
+- P05 GitHub Actions admin-quality job and safe desktop/tablet/narrow Chapter Four screenshot evidence linked to functional implementation SHA `63c62a1`.
 
 ### Changed
 
@@ -46,6 +52,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Repository backend verification now checks the generated engineering ER reference.
 - Controlled development seed accounts now use the same Argon2id password policy as runtime accounts.
 - JavaScript work now uses Node.js 24.14.0 because Expo SDK 57 / React Native 0.86 does not support the workstation's older Node.js 22.11.0 runtime.
+- The browser-readable CSRF cookie uses the application root path while the HTTP-only refresh cookie remains restricted to `/api/v1/auth`, enabling the staff SPA to echo the cryptographically bound CSRF value after reload.
+- Repository verification now executes the complete P05 administrator portal suite for `--admin`.
 
 ### Fixed
 
@@ -60,6 +68,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Added fail-closed production auth secrets, secure cookie/SameSite validation, access-token role/version checks, reset/session revocation and cross-user object-hiding tests.
 - Added a mobile token-storage policy that rejects unencrypted persistence and isolates SecureStore access to refresh tokens only.
 - Extended secret-scanner syntax handling and added regression tests for TypeScript declarations versus hard-coded tokens.
+- Added an administrator browser-security policy that rejects local/session/IndexedDB token persistence and `dangerouslySetInnerHTML`; access tokens remain memory-only and refresh credentials remain HTTP-only.
+- Verified the P05 production dependency graph with `npm audit --omit=dev`: zero known vulnerabilities at the recorded run.
 
 ### Known limitations
 

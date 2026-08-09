@@ -63,3 +63,9 @@ def test_rejects_invalid_cookie_same_site(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setenv("AUTH_COOKIE_SAMESITE", "sometimes")
     with pytest.raises(ConfigurationError, match="AUTH_COOKIE_SAMESITE"):
         load_config("development")
+
+
+def test_csrf_cookie_is_browser_readable_from_portal_routes() -> None:
+    config = load_config("testing")
+    assert config["AUTH_COOKIE_PATH"] == "/api/v1/auth"
+    assert config["AUTH_CSRF_COOKIE_PATH"] == "/"
