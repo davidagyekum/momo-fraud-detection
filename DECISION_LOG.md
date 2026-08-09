@@ -131,3 +131,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** The local work is reproducible and preserved. P00 remains blocked—not complete—until `origin` is configured and the phase branch is pushed successfully.
 - **Related requirements/phases:** P00, NFR-MNT-001, NFR-DATA-001.
 - **Supersedes:** None.
+
+## ADR-013 — Schema-generated P01 contract and split readiness
+
+- **Status:** Accepted
+- **Date:** 2026-08-09
+- **Decision owners:** Codex within the approved P01 architecture
+- **Context:** P01 must generate OpenAPI from live response schemas and distinguish an API that can serve non-analysis routes from later OCR/model capabilities that are not yet activated.
+- **Options considered:** Hand-maintained OpenAPI versus Flask-Smorest/Marshmallow generation; one all-or-nothing readiness flag versus a core readiness flag plus explicit analysis capabilities.
+- **Decision:** Use Flask-Smorest with Marshmallow response schemas as the OpenAPI source. `/ready` requires PostgreSQL and private storage for core readiness, reports Tesseract and both model slots independently, and never labels inactive analysis components as ready.
+- **Consequences:** Both clients receive a deterministic contract snapshot. The API can remain operational for non-analysis routes while exposing `analysis_available` and `full_analysis_available` honestly. Later phases must extend schemas and regenerate the snapshot rather than editing JSON by hand.
+- **Related requirements/phases:** P01, FR-AUD-003, FR-AUD-005, NFR-INT-001, ADR-007, ADR-008.
+- **Supersedes:** None.

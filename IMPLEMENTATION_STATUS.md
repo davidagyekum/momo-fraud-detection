@@ -6,21 +6,21 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p00-preflight-foundation`
-- Base SHA: `None — repository was initialised from an empty directory`
-- Head SHA: `P00 completion commit cae406ca2e35b453d976bb040c2b8d18ecbe7710 plus this PR-record metadata commit; the final exact SHA is reported in the session response and PR #1`
+- Current work branch: `codex/p01-api-infrastructure`
+- Base SHA: `41741877cce2a2efd69240c77707c55a7961bd0f`
+- Head SHA: `Pending P01 session commit; exact pushed SHA will be reported in the handoff and draft PR`
 - Last updated: `2026-08-09`
 - CI status: `Not configured`
 - Deployment status: `Not deployed`
-- Current phase: `P00 — Complete`
-- Next exact task: `Review/merge PR #1, then create codex/p01-api-infrastructure from the accepted P00 head and begin the P01 monorepo/API infrastructure slice.`
+- Current phase: `P01 — Blocked on host Docker availability`
+- Next exact task: `Install/enable Docker, then run docker compose build, docker compose up, a clean PostgreSQL migration upgrade and live /health and /ready probes before marking P01 complete.`
 
 ## Phase status
 
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
 |---|---|---|---|---|---|---|
-| P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — `codex/p00-preflight-foundation` | `cae406ca2e35b453d976bb040c2b8d18ecbe7710` completion commit plus PR-record metadata commit | `py -3.12 scripts/doctor.py`; `py -3.12 scripts/check_secrets.py`; `py -3.12 scripts/verify.py --quick`; remote branches verified | `main` and the phase branch were pushed successfully to `origin`; draft PR #1 contains the completion metadata. |
-| P01 | Monorepo, API skeleton and local infrastructure | Not Started |  |  |  |  |
+| P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
+| P01 | Monorepo, API skeleton and local infrastructure | Blocked | `codex/p01-api-infrastructure` | Pending session commit | Ruff format/lint pass; strict mypy pass; 18 pytest tests pass at 91.81% coverage; OpenAPI drift pass; Alembic head/offline SQL pass | Docker/Compose is not installed, so image build, live PostgreSQL migration and container endpoint gates remain unverified. |
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Not Started |  |  |  |  |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
 | P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
@@ -45,7 +45,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Requirements summary
 
-- MUST requirements complete: `0 / 87`
+- MUST requirements complete: `1 / 87`
 - SHOULD requirements complete: `0 / 11`
 - Blocked requirements: `None recorded`
 - Traceability file last verified: `2026-08-09 — 98 requirements parsed; P00 foundation evidence linked to NFR-MNT-001 and NFR-DATA-001`
@@ -54,7 +54,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 | ID | Phase | Blocker | Impact | Owner/input needed | Safe fallback | Next action |
 |---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |
+| B-P01-001 | P01 | Docker/Compose is not installed on the host. | Cannot execute the required clean image build, start PostgreSQL, upgrade the migration against a clean database or prove live container readiness. | Project owner: install/enable Docker Desktop or provide an equivalent Docker host. | Backend code, mocked dependency behaviour, OpenAPI and offline Alembic SQL are verified locally; Compose/Docker files are preserved for execution. | Run the documented Docker lifecycle and attach exact build, migration and endpoint evidence. |
 
 ## Active known limitations
 
@@ -66,12 +66,12 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-09-P00-session.md`
-- Summary: `P00 foundation, inventory, policy files and scripts completed and verified; main and codex/p00-preflight-foundation published to davidagyekum/momo-fraud-detection.`
+- Handoff file: `docs/handoffs/2026-08-09-P01-session.md`
+- Summary: `P01 implementation and non-Docker quality gates completed; phase remains blocked only on Docker-backed build, migration and live readiness evidence.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
 3. Read the last handoff.
-4. Continue only the next exact task or clearly update this file before changing direction.
+4. Confirm Docker is available before attempting the remaining P01 gates; do not begin P02 while P01 is blocked.
