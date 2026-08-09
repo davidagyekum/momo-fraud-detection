@@ -1,0 +1,183 @@
+{
+  "package": "MoMo_FDVS_Codex_Implementation_Package",
+  "generated_at_utc": "2026-08-09T10:09:12.625152+00:00",
+  "manifest_excludes_self": true,
+  "file_count_excluding_manifest": 35,
+  "files": [
+    {
+      "path": ".env.example",
+      "size_bytes": 3917,
+      "sha256": "aea7bf4e0adacd4e2cbf970f1d9a3a896a70bb5103c53510b2406e960f4e9107"
+    },
+    {
+      "path": "00_SOURCE_OF_TRUTH_AND_SCOPE.md",
+      "size_bytes": 8585,
+      "sha256": "6e3725c4e1d9859acebeb8f8e5300d4ff64b7ad4313b55a80fbbe5a6794f7d1a"
+    },
+    {
+      "path": "01_CODEX_MASTER_IMPLEMENTATION_PLAN.md",
+      "size_bytes": 49141,
+      "sha256": "4b525a294ac10b5cab8909992cd8feceb5021526020714f85b87885494a91ad1"
+    },
+    {
+      "path": "02_SYSTEM_REQUIREMENTS_SPECIFICATION.md",
+      "size_bytes": 31877,
+      "sha256": "fbac56adbe7da12da921e82b83aa260fcfb8903bf86f028292a961d4ddaf4280"
+    },
+    {
+      "path": "03_ARCHITECTURE_AND_REPOSITORY_SPEC.md",
+      "size_bytes": 15944,
+      "sha256": "f017fbb991dfb01ec0e3b9a9eb10c4d5ad7bf9d6e06c21d8ba4d5b3a0330e93c"
+    },
+    {
+      "path": "04_DATABASE_AND_STORAGE_SPEC.md",
+      "size_bytes": 26241,
+      "sha256": "75a277d0919d1994c7349e7baa56e79f93f86e1c288c83177abfbe6610d57d65"
+    },
+    {
+      "path": "05_API_CONTRACT.md",
+      "size_bytes": 19509,
+      "sha256": "ccaac05e2968f598df965dc7479b526028619b7f25ad24a1316a82bd83cd4917"
+    },
+    {
+      "path": "06_UI_UX_IMPLEMENTATION_SPEC.md",
+      "size_bytes": 21101,
+      "sha256": "eaaed7d7c956ea4b45f7451d61abe34d22cc32548632fffb018611cd2c4442cd"
+    },
+    {
+      "path": "07_OCR_IMAGE_ML_VERIFICATION_SPEC.md",
+      "size_bytes": 23358,
+      "sha256": "d1604104935f6bf0bb2bd9a22c4ccb5fb60a2d1b46658be257cb8bff998ec37a"
+    },
+    {
+      "path": "08_SECURITY_PRIVACY_AUDIT_SPEC.md",
+      "size_bytes": 16263,
+      "sha256": "0c7f113209f8c7ea05b8da62964a59c394367d1283534aa87bedf82074c5416c"
+    },
+    {
+      "path": "09_TESTING_QA_RELEASE_PLAN.md",
+      "size_bytes": 13230,
+      "sha256": "41fb2d829722b721914a42ead2c7fbab6a60855aaaaef8d2ead288ef95fd08aa"
+    },
+    {
+      "path": "10_GITHUB_WORKFLOW_AND_SESSION_PROTOCOL.md",
+      "size_bytes": 8509,
+      "sha256": "98936bede353ad65e284987df94b408c845e6f53a2401b08938a3431591eccd3"
+    },
+    {
+      "path": "11_DEPLOYMENT_RUNBOOK.md",
+      "size_bytes": 10960,
+      "sha256": "9d2b85ce4fa330c53b2c54bf49000b1d8d3b99dd210fc09ab3bb1fcc0ad9941c"
+    },
+    {
+      "path": "12_FINAL_INSPECTION_PROTOCOL.md",
+      "size_bytes": 7751,
+      "sha256": "715f41eaacf36e3f773ea579c8a6cc04c8d38c46c05d3b155a5005124409267d"
+    },
+    {
+      "path": "13_DOCUMENTATION_AND_CHAPTER4_EVIDENCE.md",
+      "size_bytes": 9339,
+      "sha256": "e7dd7070edc6392c575ad8d3552697f8031983c4e63c5f3adb31647c336d721b"
+    },
+    {
+      "path": "AGENTS.md",
+      "size_bytes": 8535,
+      "sha256": "affe002ef24868304c3f58b96a45e717ba21741d630fe6ee3ccc1ebc19e5c08f"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size_bytes": 691,
+      "sha256": "ad3d714005dd50d8ce3d510dcb656e34a6607ba5b8359a1865e9ed1ae57a2939"
+    },
+    {
+      "path": "COMPLETE_CODEX_HANDOFF.md",
+      "size_bytes": 290360,
+      "sha256": "2c4d2ac39629c061ac51ded86d0eea235979d34f6c5619aaf5f9ee391986d3da"
+    },
+    {
+      "path": "DECISION_LOG.md",
+      "size_bytes": 5191,
+      "sha256": "432363577fa75bfe9793677e8e6ece2f0e58551c2eb6704d82c322f42587aad5"
+    },
+    {
+      "path": "IMPLEMENTATION_STATUS.md",
+      "size_bytes": 3591,
+      "sha256": "cb2bac5a7686577f6e01372693af0d690588542ad740599cf60ac00b39da2e4c"
+    },
+    {
+      "path": "README_FIRST.md",
+      "size_bytes": 6748,
+      "sha256": "520d82cb7f481da59cfd7086f62d5372eebcca2e9d91b94b178708a1ad3db5bd"
+    },
+    {
+      "path": "backlog.csv",
+      "size_bytes": 174804,
+      "sha256": "7443550638e3e73888894f3d40905c936569590c6c3d615023db78edd59462ef"
+    },
+    {
+      "path": "prompts/CONTINUE_CODEX_PROMPT.txt",
+      "size_bytes": 1165,
+      "sha256": "54051002094d001e5ec9332b548cb8a8a4934cfdaa2b475b51ab090e3fa03e62"
+    },
+    {
+      "path": "prompts/REPAIR_AFTER_AUDIT_PROMPT.txt",
+      "size_bytes": 1138,
+      "sha256": "7b56b9b1ded5b814ef0795e983edc45bf966e4532f5f8d376cb16ca6a725f1c1"
+    },
+    {
+      "path": "prompts/START_CODEX_PROMPT.txt",
+      "size_bytes": 1393,
+      "sha256": "429c9449a91e6f206ddfc12de890cc6754f639e11d28abf993d81d9e790fc332"
+    },
+    {
+      "path": "requirements_traceability.csv",
+      "size_bytes": 17303,
+      "sha256": "0f4e8bf804728d5e914751a103064531a1ae9d36e3eac78e6cd63197415f0aa6"
+    },
+    {
+      "path": "samples/API_EXAMPLES.http",
+      "size_bytes": 1237,
+      "sha256": "3458f4e164eb279ed04e606d83ecf9dacace40b5f081df02e826bf93d448b6f8"
+    },
+    {
+      "path": "samples/README.md",
+      "size_bytes": 705,
+      "sha256": "f2c68d7fed4ffbdc80a882e7b0c3f8d434f75d7d7bdf5e6561f89525165a8cd2"
+    },
+    {
+      "path": "samples/fraud_rules_seed.csv",
+      "size_bytes": 1624,
+      "sha256": "3a2a8ad1dfe95c58b37dd183cba3a51c7938224c03137fbac14e77c3f85fa45d"
+    },
+    {
+      "path": "samples/receipt_dataset_manifest.csv",
+      "size_bytes": 1543,
+      "sha256": "b02ebf126609df66ed1fff238efd3e26a4fc618fe8a75966c8d247023e544888"
+    },
+    {
+      "path": "samples/reference_transactions_import.csv",
+      "size_bytes": 579,
+      "sha256": "debcb7d73a4c6828eef8ab9984103be8c41be2d3e75b8edbf01818d456ed2ec8"
+    },
+    {
+      "path": "samples/test_accounts.template.md",
+      "size_bytes": 867,
+      "sha256": "6cf19a89c1a71d6234b42b9a1762038d79f590f217b83805a6a8055e5712eecd"
+    },
+    {
+      "path": "templates/FINAL_HANDOFF.md",
+      "size_bytes": 3204,
+      "sha256": "882fba538ae91f5bb6e69f2a829bad120c90f168b0f34e61e4b439df2231f795"
+    },
+    {
+      "path": "templates/PR_DESCRIPTION.md",
+      "size_bytes": 978,
+      "sha256": "56e8e4dd6c218a9ed627e9e13d080ee0b3627baec24e9087877a86bbae03f623"
+    },
+    {
+      "path": "templates/SESSION_HANDOFF.md",
+      "size_bytes": 1764,
+      "sha256": "a078091c5ee2bdd9fc36ec5ef3d6b9570e4204b242e22cb61e93ad44bf276441"
+    }
+  ]
+}

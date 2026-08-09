@@ -1,0 +1,51 @@
+@api = http://localhost:8000/api/v1
+@accessToken = REPLACE_WITH_ACCESS_TOKEN
+@transactionId = REPLACE_WITH_TRANSACTION_UUID
+@analysisId = REPLACE_WITH_ANALYSIS_UUID
+
+### Liveness
+GET {{api}}/health
+
+### Login with a safe local account
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.test",
+  "password": "REPLACE_WITH_LOCAL_PASSWORD"
+}
+
+### Current profile
+GET {{api}}/me
+Authorization: Bearer {{accessToken}}
+
+### Upload receipt
+# Most REST client extensions require a real local safe fixture path.
+POST {{api}}/transactions
+Authorization: Bearer {{accessToken}}
+Idempotency-Key: demo-upload-0001
+Content-Type: multipart/form-data; boundary=Boundary
+
+--Boundary
+Content-Disposition: form-data; name="source"
+
+GALLERY
+--Boundary
+Content-Disposition: form-data; name="receipt"; filename="demo-receipt.png"
+Content-Type: image/png
+
+< ./safe-fixtures/demo-receipt.png
+--Boundary--
+
+### Run OCR
+POST {{api}}/transactions/{{transactionId}}/ocr
+Authorization: Bearer {{accessToken}}
+Idempotency-Key: demo-ocr-0001
+
+### Poll analysis
+GET {{api}}/analyses/{{analysisId}}
+Authorization: Bearer {{accessToken}}
+
+### User history
+GET {{api}}/transactions?page=1&page_size=20
+Authorization: Bearer {{accessToken}}

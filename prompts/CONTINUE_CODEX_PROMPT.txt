@@ -1,0 +1,20 @@
+Continue implementation of MoMo-FDVS from the repository, not from memory.
+
+First:
+1. Read AGENTS.md.
+2. Fetch/prune and report remote, branch, HEAD and worktree.
+3. Read IMPLEMENTATION_STATUS.md and the latest docs/handoffs session file.
+4. Confirm the exact next incomplete phase/sub-phase and its prerequisites.
+5. Read only the specification files relevant to that phase, plus any source files/tests it affects.
+6. State requirement IDs and a bounded plan.
+
+Complete one coherent phase or vertical slice. Add migrations/tests/docs with the behaviour. Run the required phase checks and python scripts/verify.py --quick or --all as required. Update IMPLEMENTATION_STATUS.md, requirements_traceability.csv, DECISION_LOG.md when applicable, CHANGELOG.md and a new session handoff. Commit and push the branch; create/update the draft PR when possible.
+
+Do not:
+- change the fixed stack or product boundaries silently;
+- claim live MNO verification;
+- combine fraud risk and verification;
+- fabricate model metrics or test/deployment/push evidence;
+- expose secrets/private data;
+- overwrite unrelated work;
+- continue past a critical blocker without documenting it.

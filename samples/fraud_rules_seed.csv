@@ -1,0 +1,9 @@
+rule_code,severity,score_contribution,feature_dependencies,condition_summary,user_reason,enabled
+REFERENCE_AMOUNT_MISMATCH,HIGH,0.35,verification.amount_match,Trigger when a reference candidate exists and amount mismatch is critical,The receipt amount does not match the available reference record,true
+REFERENCE_RECEIVER_PHONE_MISMATCH,HIGH,0.35,verification.receiver_phone_match,Trigger when receiver phone differs from available reference,The receiver phone does not match the available reference record,true
+RECEIPT_EXACT_DUPLICATE,MEDIUM,0.15,image.sha_duplicate_count,Trigger when exact receipt hash has prior submissions,This same receipt image appears to have been submitted before,true
+TRANSACTION_REFERENCE_REUSED,HIGH,0.30,verification.reference_reuse_count,Trigger when the same reference is linked to conflicting submissions,The transaction reference appears to have been reused,true
+TEXT_ALIGNMENT_INCONSISTENCY,MEDIUM,0.15,image.text_alignment_score,Trigger when text alignment exceeds calibrated threshold,Some transaction text is not aligned as expected,true
+HIGH_CNN_TAMPER_PROBABILITY,HIGH,0.30,model.image_tamper_probability,Trigger only above validated model threshold,The image model detected patterns associated with controlled edits,true
+CRITICAL_OCR_FIELDS_MISSING,MEDIUM,0.15,ocr.required_field_coverage,Trigger when required field coverage is below threshold,Important transaction details could not be read reliably,true
+IMAGE_QUALITY_INSUFFICIENT,LOW,0.05,image.quality_score,Trigger when image quality is too low for reliable checks,The image quality limits the reliability of the analysis,true

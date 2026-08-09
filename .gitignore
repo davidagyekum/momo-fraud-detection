@@ -1,0 +1,64 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Private application and research data
+.local/
+uploads/
+private_uploads/
+private-storage/
+datasets/
+data/private/
+data/raw/
+artifacts/
+model-artifacts/
+*.keras
+*.h5
+*.hdf5
+*.joblib
+*.pkl
+*.pickle
+*.onnx
+*.tflite
+*.pt
+*.pth
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.venv/
+venv/
+
+# Node, Expo, Vite and test output
+node_modules/
+.expo/
+.vite/
+dist/
+build/
+web-build/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Tooling and operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.log
+*.tmp
+*.swp

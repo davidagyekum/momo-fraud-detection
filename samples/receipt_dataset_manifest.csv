@@ -1,0 +1,7 @@
+sample_id,relative_path,sha256,source_group_id,parent_sample_id,source_type,provider_code,label,tamper_operations,split,consent_or_licence_reference,contains_personal_data,anonymisation_status,generated_seed,notes
+demo-original-0001,images/demo-original-0001.png,REPLACE_WITH_SHA256,group-0001,,synthetic,GENERIC_MOMO,genuine,,train,SYNTHETIC_GENERATOR_V1,false,not_applicable,42,Generic demonstration receipt
+demo-tamper-0001,images/demo-tamper-0001.png,REPLACE_WITH_SHA256,group-0001,demo-original-0001,controlled_tamper,GENERIC_MOMO,fraudulent,"amount_replace;text_misalignment",train,SYNTHETIC_GENERATOR_V1,false,not_applicable,42,Must remain in same split as parent
+demo-original-0002,images/demo-original-0002.png,REPLACE_WITH_SHA256,group-0002,,synthetic,GENERIC_MOMO,genuine,,validation,SYNTHETIC_GENERATOR_V1,false,not_applicable,43,Generic validation sample
+demo-tamper-0002,images/demo-tamper-0002.png,REPLACE_WITH_SHA256,group-0002,demo-original-0002,controlled_tamper,GENERIC_MOMO,fraudulent,"reference_replace;recompress",validation,SYNTHETIC_GENERATOR_V1,false,not_applicable,43,Must remain in same split as parent
+demo-original-0003,images/demo-original-0003.png,REPLACE_WITH_SHA256,group-0003,,synthetic,GENERIC_MOMO,genuine,,test,SYNTHETIC_GENERATOR_V1,false,not_applicable,44,Held-out group
+demo-ambiguous-0004,images/demo-ambiguous-0004.png,REPLACE_WITH_SHA256,group-0004,,synthetic,GENERIC_MOMO,suspicious,"blur;crop_noncritical",test,SYNTHETIC_GENERATOR_V1,false,not_applicable,45,Ambiguous/low-quality controlled sample

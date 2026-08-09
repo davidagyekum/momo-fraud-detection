@@ -1,0 +1,4 @@
+provider_code,transaction_reference,amount,currency,sender_name,sender_phone,receiver_name,receiver_phone,occurred_at,transaction_status,source_system_id
+GENERIC_MOMO,DEMO-REF-0001,125.00,GHS,Demo Sender A,+233240000002,Demo Merchant A,+233240000001,2026-08-08T14:30:00Z,SUCCESSFUL,DEMO-SRC-0001
+GENERIC_MOMO,DEMO-REF-0002,75.50,GHS,Demo Sender B,+233240000004,Demo Merchant A,+233240000001,2026-08-08T15:45:00Z,SUCCESSFUL,DEMO-SRC-0002
+GENERIC_MOMO,DEMO-REF-0003,350.00,GHS,Demo Sender C,+233240000006,Demo Merchant B,+233240000005,2026-08-09T08:15:00Z,SUCCESSFUL,DEMO-SRC-0003

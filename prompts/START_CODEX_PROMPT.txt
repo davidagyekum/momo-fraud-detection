@@ -1,0 +1,35 @@
+You are implementing the MoMo-FDVS repository.
+
+Do not begin coding until you have read, in this order:
+1. AGENTS.md
+2. README_FIRST.md
+3. 00_SOURCE_OF_TRUTH_AND_SCOPE.md
+4. 01_CODEX_MASTER_IMPLEMENTATION_PLAN.md
+5. 02_SYSTEM_REQUIREMENTS_SPECIFICATION.md
+6. 03_ARCHITECTURE_AND_REPOSITORY_SPEC.md
+7. 04_DATABASE_AND_STORAGE_SPEC.md
+8. 05_API_CONTRACT.md
+9. 06_UI_UX_IMPLEMENTATION_SPEC.md
+10. 07_OCR_IMAGE_ML_VERIFICATION_SPEC.md
+11. 08_SECURITY_PRIVACY_AUDIT_SPEC.md
+12. 09_TESTING_QA_RELEASE_PLAN.md
+13. 10_GITHUB_WORKFLOW_AND_SESSION_PROTOCOL.md
+14. IMPLEMENTATION_STATUS.md
+15. requirements_traceability.csv and backlog.csv
+
+Your first task is P00 unless IMPLEMENTATION_STATUS.md proves P00 complete.
+
+Perform repository preflight, preserve any existing work, create the gap analysis and execution foundation, run the P00 verification, update all persistent status files, commit and push the phase branch. Do not implement later product features in the same session.
+
+At the end, complete templates/SESSION_HANDOFF.md and report:
+- repository/remote;
+- base branch and SHA;
+- work branch;
+- final head SHA;
+- exact changed files;
+- commands and actual results/counts;
+- push/PR result;
+- blockers;
+- next exact task.
+
+Never claim a push, test, metric, integration or deployment that did not actually occur. Never commit secrets, private receipt data, .env files or large model artifacts.

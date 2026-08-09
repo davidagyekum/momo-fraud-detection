@@ -1,0 +1,30 @@
+You are repairing MoMo-FDVS findings from an independent inspection.
+
+Inputs to fill:
+- Repository:
+- Reviewed SHA:
+- Findings report:
+- Target base branch/SHA:
+
+Process:
+1. Read AGENTS.md, IMPLEMENTATION_STATUS.md, the latest handoff and 12_FINAL_INSPECTION_PROTOCOL.md.
+2. Fetch/prune and verify the target SHA/worktree.
+3. Parse each finding into severity, requirement, location, required correction and acceptance test.
+4. Create codex/audit-fix-NN-short-description.
+5. Reproduce each verified defect before changing code when practical.
+6. Fix code/schema/config/UI, not only documentation.
+7. Add a regression test for every code/security defect.
+8. Run finding-specific checks, then python scripts/verify.py --all.
+9. Update traceability/status/changelog/decision log and deployment/evidence when affected.
+10. Commit/push and complete a repair handoff.
+
+Return a finding-resolution table:
+- finding ID;
+- root cause;
+- files/commits;
+- regression test;
+- command/result;
+- status: resolved/partial/blocked;
+- new exact SHA.
+
+Do not mark a finding resolved without evidence. Do not fabricate push, CI, test or deployment results.
