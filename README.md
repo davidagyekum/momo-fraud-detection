@@ -11,7 +11,7 @@ The prototype does not claim a live connection to MTN, Telecel, AT Money, or ano
 
 ## Repository status
 
-The repository is in P00, the preflight and execution-foundation phase. Product applications and services intentionally begin in P01. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) and [the P00 gap analysis](docs/implementation/P00_GAP_ANALYSIS.md) for the exact state.
+P00 is merged. P01 now provides the runnable API and local PostgreSQL/Docker foundation; product domain features remain phase-gated. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for the exact verified state.
 
 ## Planned architecture
 
@@ -25,7 +25,7 @@ The repository is in P00, the preflight and execution-foundation phase. Product 
 
 The detailed source of truth starts with [00_SOURCE_OF_TRUTH_AND_SCOPE.md](00_SOURCE_OF_TRUTH_AND_SCOPE.md). Repository-wide implementation rules are in [AGENTS.md](AGENTS.md).
 
-## P00 commands
+## Verification commands
 
 Use the Python 3.12 launcher on Windows when `python` resolves to an older runtime:
 
@@ -33,6 +33,7 @@ Use the Python 3.12 launcher on Windows when `python` resolves to an older runti
 py -3.12 scripts/doctor.py
 py -3.12 scripts/check_secrets.py
 py -3.12 scripts/verify.py --quick
+py -3.12 scripts/verify.py --backend
 ```
 
 On macOS/Linux with Python 3.12 selected:
@@ -41,9 +42,10 @@ On macOS/Linux with Python 3.12 selected:
 python scripts/doctor.py
 python scripts/check_secrets.py
 python scripts/verify.py --quick
+python scripts/verify.py --backend
 ```
 
-`python scripts/verify.py --all` will intentionally fail until later application phases exist. It reports missing sections instead of representing them as successful or silently skipped.
+`python scripts/verify.py --all` will intentionally fail until later application phases exist. It reports missing sections instead of representing them as successful or silently skipped. See [local development](docs/deployment/LOCAL_DEVELOPMENT.md) for API, PostgreSQL and Docker setup.
 
 ## Local bootstrap
 
@@ -56,4 +58,3 @@ This creates ignored local directories for private storage, temporary files, and
 ## Data and security
 
 Never commit real receipts, reference data containing personal information, datasets, credentials, `.env`, access tokens, model secrets, or large model artifacts. See [SECURITY.md](SECURITY.md) for reporting and handling rules.
-

@@ -1,0 +1,59 @@
+name: momo-fdvs
+
+services:
+  db:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-momo_fdvs}
+      POSTGRES_USER: ${POSTGRES_USER:-momo_fdvs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-momo_fdvs_local_only}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    environment:
+      APP_ENV: development
+      APP_VERSION: ${APP_VERSION:-0.1.0-dev}
+      APP_BUILD_SHA: ${APP_BUILD_SHA:-local}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-momo_fdvs}:${POSTGRES_PASSWORD:-momo_fdvs_local_only}@db:5432/${POSTGRES_DB:-momo_fdvs}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8081}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+      LOCAL_PRIVATE_STORAGE_ROOT: /app/.local/private-storage
+      MIGRATIONS_DIR: /app/migrations
+      TESSERACT_CMD: tesseract
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - private_storage:/app/.local/private-storage
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  private_storage:

@@ -1,0 +1,13 @@
+-r requirements-runtime.lock
+colorama==0.4.6
+coverage==7.15.4
+iniconfig==2.3.0
+mypy==1.17.1
+mypy_extensions==1.1.0
+pathspec==1.1.1
+pluggy==1.6.0
+Pygments==2.20.0
+pytest==8.4.1
+pytest-cov==6.2.1
+ruff==0.15.22
+types-Flask-Cors==6.0.0.20250809

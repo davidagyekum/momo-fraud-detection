@@ -1,0 +1,346 @@
+{
+  "components": {
+    "responses": {
+      "DEFAULT_ERROR": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Default error response"
+      }
+    },
+    "schemas": {
+      "Component": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "Error": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "Error code",
+            "type": "integer"
+          },
+          "errors": {
+            "additionalProperties": {},
+            "description": "Errors",
+            "type": "object"
+          },
+          "message": {
+            "description": "Error message",
+            "type": "string"
+          },
+          "status": {
+            "description": "Error name",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "HealthData": {
+        "additionalProperties": false,
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "service",
+          "status",
+          "version"
+        ],
+        "type": "object"
+      },
+      "HealthEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/HealthData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "Meta": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id"
+        ],
+        "type": "object"
+      },
+      "PaginationMetadata": {
+        "additionalProperties": false,
+        "properties": {
+          "first_page": {
+            "description": "First available page number.",
+            "type": "integer"
+          },
+          "last_page": {
+            "description": "Last available page number.",
+            "type": "integer"
+          },
+          "next_page": {
+            "description": "Next page number.",
+            "type": "integer"
+          },
+          "page": {
+            "description": "Current page number.",
+            "type": "integer"
+          },
+          "previous_page": {
+            "description": "Previous page number.",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total number of items.",
+            "type": "integer"
+          },
+          "total_pages": {
+            "description": "Total number of pages.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ReadinessComponents": {
+        "additionalProperties": false,
+        "properties": {
+          "database": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "image_model": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "storage": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "structured_model": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "tesseract": {
+            "$ref": "#/components/schemas/Component"
+          }
+        },
+        "required": [
+          "database",
+          "image_model",
+          "storage",
+          "structured_model",
+          "tesseract"
+        ],
+        "type": "object"
+      },
+      "ReadinessData": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_available": {
+            "type": "boolean"
+          },
+          "components": {
+            "$ref": "#/components/schemas/ReadinessComponents"
+          },
+          "full_analysis_available": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "analysis_available",
+          "components",
+          "full_analysis_available",
+          "ready"
+        ],
+        "type": "object"
+      },
+      "ReadinessEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReadinessData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "VersionData": {
+        "additionalProperties": false,
+        "properties": {
+          "api_contract_version": {
+            "type": "string"
+          },
+          "application": {
+            "type": "string"
+          },
+          "build_commit": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "api_contract_version",
+          "application",
+          "build_commit",
+          "version"
+        ],
+        "type": "object"
+      },
+      "VersionEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/VersionData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "MoMo-FDVS API",
+    "version": "v1"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return process liveness without probing dependencies.",
+        "tags": [
+          "api-v1"
+        ]
+      }
+    },
+    "/api/v1/ready": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessEnvelope"
+                }
+              }
+            },
+            "description": "A core dependency is unavailable."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return a safe core and analysis dependency matrix.",
+        "tags": [
+          "api-v1"
+        ]
+      }
+    },
+    "/api/v1/version": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return non-sensitive application and API contract versions.",
+        "tags": [
+          "api-v1"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Versioned MoMo-FDVS API",
+      "name": "api-v1"
+    }
+  ]
+}

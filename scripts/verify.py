@@ -22,7 +22,11 @@ class Section:
 
 
 SECTIONS = {
-    "backend": Section("backend", Path("services/api/pyproject.toml"), None),
+    "backend": Section(
+        "backend",
+        Path("services/api/pyproject.toml"),
+        (sys.executable, "scripts/verify_backend.py"),
+    ),
     "admin": Section("admin", Path("apps/admin/package.json"), None),
     "mobile": Section("mobile", Path("apps/mobile/package.json"), None),
     "ml": Section("ml", Path("ml/pyproject.toml"), None),
@@ -68,8 +72,14 @@ def main() -> int:
             print(f"\nBLOCKED: {section.name} is not implemented; missing {section.marker.as_posix()}")
             unavailable.append(section.name)
             continue
-        print(f"\nBLOCKED: {section.name} marker exists but its phase verification command is not registered yet")
-        unavailable.append(section.name)
+        if section.command is None:
+            print(
+                f"\nBLOCKED: {section.name} marker exists but its phase verification command "
+                "is not registered yet"
+            )
+            unavailable.append(section.name)
+            continue
+        success &= run_step(f"{section.name} verification", section.command)
 
     if unavailable:
         print(f"\nVerification summary: FAIL/BLOCKED ({len(unavailable)} section(s): {', '.join(unavailable)})")
