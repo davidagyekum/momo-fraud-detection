@@ -101,6 +101,15 @@ jobs:
         run: |
           python -m flask --app momo_fdvs:create_app db upgrade
           python -m flask --app momo_fdvs:create_app db current
+      - name: Verify P02 schema integrity and migration reversibility
+        env:
+          P02_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: |
+          python -m pytest services/api/tests/integration/test_schema.py --no-cov
+          python -m flask --app momo_fdvs:create_app db downgrade 20260809_0001
+          python -m flask --app momo_fdvs:create_app db upgrade
+          python -m flask --app momo_fdvs:create_app db check
+          python scripts/export_er.py --check
       - name: Probe readiness against PostgreSQL
         env:
           LOCAL_PRIVATE_STORAGE_ROOT: ${{ runner.temp }}/momo-private-storage
