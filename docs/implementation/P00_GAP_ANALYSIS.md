@@ -15,7 +15,7 @@ P00 establishes policy, documentation, toolchain diagnostics, secret checks, and
 
 | Area | Retained at preflight | Missing / deferred | Conflict or obsolete work |
 |---|---|---|---|
-| Git/GitHub | Git 2.46.0 is installed | No original repository, remote, default remote branch, commit, CI, issue labels, milestones, or PR | None; remote setup is an external P00 blocker |
+| Git/GitHub | Git 2.46.0 is installed; `origin` is `https://github.com/davidagyekum/momo-fraud-detection.git`; `main` and the P00 phase branch are published | CI, issue labels and milestones are not configured; the local milestone index is the P00 substitute | None |
 | Product specifications | Full supplied package: numbered specifications, status files, traceability, backlog, samples, templates, and prompts | None for planning | `backlog.csv` contains several truncated display titles, while the corresponding descriptions remain complete; task IDs/descriptions are used as the reliable local view |
 | Mobile | None | Entire Expo/React Native application (P04 onward) | None |
 | Admin portal | None | Entire React/Vite portal (P05 onward) | None |
@@ -60,10 +60,9 @@ The retained requirements establish these fixed boundaries:
 | Python/Node version selection | Python 3.12 and Node 22 recorded |
 | Cross-platform bootstrap, doctor, secret scan, and verification scripts | Complete locally; results recorded in the session handoff |
 | GitHub issue labels/milestones or local equivalent | Local phase/backlog index created because no remote exists |
-| Phase branch and local commit | Created locally |
-| Remote push/PR | Blocked until the owner supplies or configures a GitHub remote |
+| Phase branch and local commit | Created and published |
+| Remote push/PR | `main` and `codex/p00-preflight-foundation` pushed successfully; draft P00 PR records completion metadata |
 
 ## Next implementation boundary
 
-After the P00 remote blocker is resolved, the next phase is P01: create the monorepo, Flask application factory, PostgreSQL/Docker Compose infrastructure, health/readiness/version endpoints, OpenAPI baseline, structured errors/logging, and backend quality tooling. No P01 feature should be backfilled into this P00 branch.
-
+After the P00 pull request is accepted, the next phase is P01: create the monorepo, Flask application factory, PostgreSQL/Docker Compose infrastructure, health/readiness/version endpoints, OpenAPI baseline, structured errors/logging, and backend quality tooling. No P01 feature is backfilled into this P00 branch.

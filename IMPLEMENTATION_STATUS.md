@@ -4,22 +4,22 @@
 
 ## Current repository state
 
-- Repository: `Local only — no remote configured`
-- Default branch: `main (local repository; no remote default branch)`
+- Repository: `davidagyekum/momo-fraud-detection`
+- Default branch: `main`
 - Current work branch: `codex/p00-preflight-foundation`
 - Base SHA: `None — repository was initialised from an empty directory`
-- Head SHA: `Resolve with git rev-parse HEAD after the local P00 commit; exact SHA is reported in the session handoff response`
+- Head SHA: `P00 implementation commit f81cb2bf7e5ec3cebf2788b7e8b8956b999b883c; this metadata commit's exact SHA is reported in the session response and PR`
 - Last updated: `2026-08-09`
 - CI status: `Not configured`
 - Deployment status: `Not deployed`
-- Current phase: `P00 — Blocked only on remote push evidence`
-- Next exact task: `Configure the GitHub origin, push codex/p00-preflight-foundation, record the remote SHA/PR result, and mark P00 complete.`
+- Current phase: `P00 — Complete`
+- Next exact task: `Review/merge the P00 pull request, then create codex/p01-api-infrastructure from the accepted P00 head and begin the P01 monorepo/API infrastructure slice.`
 
 ## Phase status
 
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
 |---|---|---|---|---|---|---|
-| P00 | Repository preflight, scope lock and execution foundation | Blocked | `codex/p00-preflight-foundation` | Local commit; resolve with `git rev-parse HEAD` | `py -3.12 scripts/doctor.py`; `py -3.12 scripts/check_secrets.py`; `py -3.12 scripts/verify.py --quick` | Local deliverables and verification pass; no Git remote exists, so required push evidence is unavailable. |
+| P00 | Repository preflight, scope lock and execution foundation | Complete | `codex/p00-preflight-foundation` | `f81cb2bf7e5ec3cebf2788b7e8b8956b999b883c` implementation commit plus completion metadata commit | `py -3.12 scripts/doctor.py`; `py -3.12 scripts/check_secrets.py`; `py -3.12 scripts/verify.py --quick`; remote branches verified | `main` and the phase branch were pushed successfully to `origin`; completion metadata is published through the P00 PR. |
 | P01 | Monorepo, API skeleton and local infrastructure | Not Started |  |  |  |  |
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Not Started |  |  |  |  |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
@@ -54,7 +54,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 | ID | Phase | Blocker | Impact | Owner/input needed | Safe fallback | Next action |
 |---|---|---|---|---|---|---|
-| B-P00-001 | P00 | No GitHub remote is configured for this new repository. | The required phase branch cannot be pushed and no PR/remote SHA can be recorded. | Project owner: provide an empty GitHub repository URL or configure `origin`. | Preserve the verified local commit and provide the exact push command. | Run `git remote add origin <URL>` and `git push -u origin codex/p00-preflight-foundation`, then update this file with the remote result. |
+|  |  |  |  |  |  |  |
 
 ## Active known limitations
 
@@ -67,7 +67,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 ## Last completed session
 
 - Handoff file: `docs/handoffs/2026-08-09-P00-session.md`
-- Summary: `P00 local foundation, inventory, policy files and scripts completed and verified; local commit created; remote push remains blocked because no origin exists.`
+- Summary: `P00 foundation, inventory, policy files and scripts completed and verified; main and codex/p00-preflight-foundation published to davidagyekum/momo-fraud-detection.`
 
 ## Next session startup
 

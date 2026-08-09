@@ -10,6 +10,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - P00 repository policy files, root project/security documentation and version pins.
 - P00 gap analysis and a local milestone index derived from the 222-task backlog.
 - Cross-platform bootstrap, toolchain doctor, prohibited-artifact/secret scan and honest verification orchestration scripts.
+- Published the initial P00 foundation to `davidagyekum/momo-fraud-detection` on `main` and `codex/p00-preflight-foundation`.
 
 ### Changed
 
