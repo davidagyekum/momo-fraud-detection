@@ -151,7 +151,7 @@ Returns application version, build commit and API contract version.
 }
 ```
 
-For the web portal, refresh is set as a secure HTTP-only cookie and is not readable by JavaScript.
+For the web portal, refresh is set as a secure HTTP-only cookie and is not readable by JavaScript. A separate non-secret CSRF cookie is readable from portal routes and must be echoed in the `X-CSRF-Token` header for refresh and logout; the server cryptographically binds it to the refresh credential.
 
 ### `POST /auth/refresh`
 

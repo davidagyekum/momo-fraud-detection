@@ -40,6 +40,7 @@ PLACEHOLDER_MARKERS = {
     "change-me",
     "change_me",
     "changeme",
+    "controlled",
     "demo",
     "example",
     "fixture",
@@ -49,6 +50,7 @@ PLACEHOLDER_MARKERS = {
     "replace-me",
     "replace_with",
     "tbd",
+    "test-only",
 }
 
 
@@ -160,7 +162,7 @@ def inspect_file(path: Path) -> list[Finding]:
         code_value = value.rstrip(",;")
         if path.suffix in {".js", ".jsx", ".ts", ".tsx"} and (
             code_value in {"boolean", "number", "password", "string"}
-            or code_value.startswith("z.")
+            or code_value.startswith(("z.", "forwardRef<"))
         ):
             # Type declarations, schema expressions and same-module identifiers are
             # not assigned credential values. Quoted fixture values still reach the

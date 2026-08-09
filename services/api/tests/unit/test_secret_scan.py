@@ -20,7 +20,19 @@ def test_typescript_types_and_schema_identifiers_are_not_secrets(tmp_path, monke
     source.write_text(
         "type Value = { must_change_password: boolean; };\n"
         "const password = z.string();\n"
+        "const PasswordField = forwardRef<HTMLInputElement, Props>();\n"
         "const item = { new_password: password };\n",
+        encoding="utf-8",
+    )
+
+    assert check_secrets.inspect_file(source) == []
+
+
+def test_controlled_test_tokens_are_explicit_placeholders(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(check_secrets, "REPO_ROOT", tmp_path)
+    source = tmp_path / "fixture.ts"
+    source.write_text(
+        'const ACCESS_TOKEN = "controlled-test-only-access-token";\n',
         encoding="utf-8",
     )
 

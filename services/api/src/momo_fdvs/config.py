@@ -142,6 +142,7 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "AUTH_COOKIE_SAMESITE": cookie_samesite,
         "AUTH_COOKIE_DOMAIN": os.getenv("AUTH_COOKIE_DOMAIN") or None,
         "AUTH_COOKIE_PATH": os.getenv("AUTH_COOKIE_PATH", "/api/v1/auth"),
+        "AUTH_CSRF_COOKIE_PATH": os.getenv("AUTH_CSRF_COOKIE_PATH", "/"),
         "SELF_REGISTRATION_ENABLED": _boolean("SELF_REGISTRATION_ENABLED", True),
         "RATELIMIT_STORAGE_URI": os.getenv("RATELIMIT_STORAGE_URI", "memory://"),
         "RATE_LIMIT_LOGIN": _rate_limit("RATE_LIMIT_LOGIN", "5 per minute"),

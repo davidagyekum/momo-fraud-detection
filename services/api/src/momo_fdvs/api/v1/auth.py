@@ -75,7 +75,8 @@ def _set_cookies(tokens: SessionTokens) -> None:
             max_age=current_app.config["REFRESH_TOKEN_TTL_DAYS"] * 86400,
             **common,
         )
-        response.set_cookie("momo_fdvs_csrf", tokens.csrf_token, httponly=False, **common)
+        csrf_cookie = {**common, "path": current_app.config["AUTH_CSRF_COOKIE_PATH"]}
+        response.set_cookie("momo_fdvs_csrf", tokens.csrf_token, httponly=False, **csrf_cookie)
         return response
 
 
@@ -174,7 +175,10 @@ class LogoutResource(MethodView):
                 current_app.config["AUTH_COOKIE_NAME"],
                 path=current_app.config["AUTH_COOKIE_PATH"],
             )
-            response.delete_cookie("momo_fdvs_csrf", path=current_app.config["AUTH_COOKIE_PATH"])
+            response.delete_cookie(
+                "momo_fdvs_csrf",
+                path=current_app.config["AUTH_CSRF_COOKIE_PATH"],
+            )
             return response
 
         return {"data": {"accepted": True}, "meta": _meta()}

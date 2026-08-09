@@ -171,10 +171,14 @@ def test_web_refresh_requires_bound_double_submit_csrf(app: Flask) -> None:
     assert "momo_fdvs_refresh=" in cookies
     assert "HttpOnly" in cookies
     assert "SameSite=Lax" in cookies
+    assert any(
+        header.startswith("momo_fdvs_csrf=") and "Path=/;" in header
+        for header in response.headers.getlist("Set-Cookie")
+    )
     assert response.json["data"]["refresh_token"] is None
 
     assert client.post("/api/v1/auth/refresh", json={}).status_code == 401
-    csrf_cookie = client.get_cookie("momo_fdvs_csrf", path="/api/v1/auth")
+    csrf_cookie = client.get_cookie("momo_fdvs_csrf", path="/")
     assert csrf_cookie is not None
     refreshed = client.post(
         "/api/v1/auth/refresh", json={}, headers={"X-CSRF-Token": csrf_cookie.value}
