@@ -155,3 +155,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** Local tests may validate preprocessing, leakage guards and small non-training fixtures, but must not claim model performance. Colab runs must record the dataset manifest hash, split seed, code commit, dependency versions, per-class metrics, macro F1, confusion matrix and exported artifact hash. Private data and credentials must not be committed or embedded in notebooks.
 - **Related requirements/phases:** P10, P11, P12, FR-ML-001, FR-ML-003, FR-ML-004, FR-ML-005, FR-ML-006, FR-ML-007, NFR-DATA-001.
 - **Supersedes:** None.
+
+## ADR-015 — P04 mobile runtime baseline update
+
+- **Status:** Accepted
+- **Date:** 2026-08-09
+- **Decision owners:** Codex within the approved Expo technology direction
+- **Context:** P04 uses the current Expo SDK 57 baseline, whose React Native 0.86 dependency requires Node.js 22.13.0 or newer. The workstation's unqualified Node.js 22.11.0 does not meet that engine requirement, while the workspace provides Node.js 24.14.0.
+- **Options considered:** Use the unsupported installed Node.js 22.11.0; downgrade Expo below the current supported SDK; pin the available supported Node.js 24.14.0 runtime.
+- **Decision:** Pin Node.js 24.14.0 and npm 10.9.0 for repository JavaScript work. Mobile verification and CI must use that exact baseline.
+- **Consequences:** Contributors must activate Node.js 24.14.0 before mobile commands. This supersedes only the Node.js portion of ADR-011; Python 3.12 remains unchanged. No product scope or selected technology changes.
+- **Related requirements/phases:** P04, P05, NFR-MNT-001, NFR-COMP-001.
+- **Supersedes:** ADR-011 Node.js 22 direction.

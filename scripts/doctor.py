@@ -16,6 +16,9 @@ from typing import Sequence
 
 from _common import REPO_ROOT, git_command
 
+EXPECTED_NODE_VERSION = "24.14.0"
+EXPECTED_NPM_VERSION = "10.9.0"
+
 
 @dataclass(frozen=True)
 class Check:
@@ -84,6 +87,18 @@ def command_version(name: str, command: Sequence[str]) -> tuple[bool, str]:
     return result.returncode == 0, detail
 
 
+def javascript_runtime_status(name: str, ok: bool, detail: str) -> tuple[str, str]:
+    """Validate the pinned JavaScript runtime once the mobile app exists."""
+    mobile_exists = (REPO_ROOT / "apps" / "mobile" / "package.json").is_file()
+    expected = EXPECTED_NODE_VERSION if name == "Node.js" else EXPECTED_NPM_VERSION
+    observed = detail.removeprefix("v")
+    if not ok:
+        return ("FAIL" if mobile_exists else "MISSING"), detail
+    if mobile_exists and observed != expected:
+        return "FAIL", f"{detail} (expected {expected}; activate the pinned runtime)"
+    return "PASS", detail
+
+
 def collect_checks() -> list[Check]:
     python_ok = sys.version_info[:2] == (3, 12)
     checks = [
@@ -100,22 +115,26 @@ def collect_checks() -> list[Check]:
         )
     ]
 
+    node_executable = os.environ.get("MOMO_NODE_EXECUTABLE", "node")
+    npm_cli = os.environ.get("MOMO_NPM_CLI")
+    npm_command = (
+        [node_executable, npm_cli, "--version"]
+        if npm_cli
+        else ["npm.cmd" if platform.system() == "Windows" else "npm", "--version"]
+    )
     definitions = [
         ("Git", git_command("--version"), "P00+", True),
-        ("Node.js", ["node", "--version"], "P04/P05", False),
-        (
-            "npm",
-            ["npm.cmd" if platform.system() == "Windows" else "npm", "--version"],
-            "P04/P05",
-            False,
-        ),
+        ("Node.js", [node_executable, "--version"], "P04/P05", False),
+        ("npm", npm_command, "P04/P05", False),
         ("Docker", ["docker", "--version"], "P01", False),
         ("Tesseract", ["tesseract", "--version"], "P07", False),
         ("PostgreSQL CLI", ["psql", "--version"], "optional local diagnostics", False),
     ]
     for name, command, required_for, p00_required in definitions:
         ok, detail = command_version(name, command)
-        if ok:
+        if name in {"Node.js", "npm"}:
+            status, detail = javascript_runtime_status(name, ok, detail)
+        elif ok:
             status = "PASS"
         elif p00_required:
             status = "FAIL"
@@ -154,7 +173,9 @@ def main() -> int:
 
     failures = [check for check in checks if check.status == "FAIL"]
     if failures:
-        print(f"Doctor result: FAIL ({len(failures)} P00 requirement(s) missing)")
+        print(
+            f"Doctor result: FAIL ({len(failures)} required toolchain check(s) failed)"
+        )
         return 1
 
     missing = [check for check in checks if check.status == "MISSING"]

@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "packageManager": "npm@10.9.0",
+  "engines": {
+    "node": "24.14.0",
+    "npm": "10.9.0"
+  },
   "scripts": {
     "infra:up": "docker compose up --build -d db api",
     "infra:down": "docker compose down",
@@ -10,6 +14,7 @@
     "contract:export": "python scripts/export_openapi.py",
     "contract:check": "python scripts/export_openapi.py --check",
     "verify:backend": "python scripts/verify.py --backend",
+    "verify:mobile": "python scripts/verify.py --mobile",
     "verify": "python scripts/verify.py --all"
   }
 }

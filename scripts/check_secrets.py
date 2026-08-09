@@ -68,7 +68,7 @@ CONTENT_PATTERNS = [
     ("Slack token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b")),
 ]
 ASSIGNMENT_PATTERN = re.compile(
-    r"(?im)^\s*(?:export\s+)?"
+    r"(?im)^\s*(?:export\s+)?(?:(?:const|let|var)\s+)?"
     r"([A-Z0-9_]*(?:SECRET|PASSWORD|PRIVATE_KEY|ACCESS_TOKEN|REFRESH_TOKEN|API_KEY)[A-Z0-9_]*)"
     r"[ \t]*[:=][ \t]*['\"]?([^'\"\s#]{8,})"
 )
@@ -156,6 +156,15 @@ def inspect_file(path: Path) -> list[Finding]:
         if path.name == ".env.example" and is_placeholder(value):
             continue
         if is_placeholder(value):
+            continue
+        code_value = value.rstrip(",;")
+        if path.suffix in {".js", ".jsx", ".ts", ".tsx"} and (
+            code_value in {"boolean", "number", "password", "string"}
+            or code_value.startswith("z.")
+        ):
+            # Type declarations, schema expressions and same-module identifiers are
+            # not assigned credential values. Quoted fixture values still reach the
+            # placeholder check above, and unknown literals remain findings.
             continue
         findings.append(
             Finding(relative, f"possible non-placeholder secret assigned to {key}")

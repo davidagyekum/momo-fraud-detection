@@ -31,3 +31,21 @@ def test_resolve_unknown_command_without_fallback(monkeypatch) -> None:
     monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
 
     assert doctor.resolve_executable("unknown-command") is None
+
+
+def test_mobile_runtime_requires_pinned_node(monkeypatch) -> None:
+    monkeypatch.setattr(doctor, "REPO_ROOT", REPO_ROOT)
+
+    status, detail = doctor.javascript_runtime_status("Node.js", True, "v22.11.0")
+
+    assert status == "FAIL"
+    assert doctor.EXPECTED_NODE_VERSION in detail
+
+
+def test_mobile_runtime_accepts_pinned_npm(monkeypatch) -> None:
+    monkeypatch.setattr(doctor, "REPO_ROOT", REPO_ROOT)
+
+    assert doctor.javascript_runtime_status("npm", True, "10.9.0") == (
+        "PASS",
+        "10.9.0",
+    )

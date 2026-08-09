@@ -1,0 +1,55 @@
+{
+  "name": "@momo-fdvs/mobile",
+  "main": "expo-router/entry",
+  "version": "0.1.0",
+  "engines": {
+    "node": "24.14.0",
+    "npm": "10.9.0"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.7.1",
+    "@react-native-community/netinfo": "^12.0.1",
+    "@tanstack/react-query": "^5.101.4",
+    "expo": "~57.0.11",
+    "expo-image": "~57.0.2",
+    "expo-router": "~57.0.11",
+    "expo-secure-store": "^57.0.1",
+    "expo-splash-screen": "~57.0.5",
+    "expo-status-bar": "~57.0.1",
+    "expo-symbols": "~57.0.2",
+    "expo-system-ui": "~57.0.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.85.0",
+    "react-native": "0.86.2",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-web": "~0.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^57.0.1",
+    "jest": "^29.7.0",
+    "jest-expo": "^57.0.3",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "expo lint --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --runInBand",
+    "test:ci": "jest --ci --runInBand --coverage",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build:web": "expo export --platform web --output-dir dist"
+  },
+  "private": true
+}

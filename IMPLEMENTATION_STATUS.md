@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p03-auth-rbac`
-- Base SHA: `0fa8d463eb74ef0f93597fb7cb13647a94ce83fa`
-- Head SHA: `P03 implementation complete locally; exact pushed head is recorded in the P03 handoff/PR`
+- Current work branch: `codex/p04-mobile-shell`
+- Base SHA: `3a4f4ea50df3aacdedf6094e3108c453fca092cc`
+- Head SHA: `P04 work in progress; exact pushed head will be recorded at handoff`
 - Last updated: `2026-08-09`
 - CI status: `Configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P03 gates pass locally`
 - Deployment status: `Not deployed`
-- Current phase: `P03 — Complete; P04 is next`
-- Next exact task: `Create codex/p04-mobile-auth from the merged P03 head, scaffold the Expo Router TypeScript app, and implement the SecureStore-backed authentication shell from the P03 contract.`
+- Current phase: `P04 — In Progress`
+- Next exact task: `Scaffold the Expo Router TypeScript app with pinned dependencies, then implement the accessible design system and SecureStore-backed authentication/session shell.`
 
 ## Phase status
 
@@ -22,8 +22,8 @@
 | P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
 | P01 | Monorepo, API skeleton and local infrastructure | Complete | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — merged | `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1` merge commit | Ruff format/lint pass; strict mypy pass; 20 pytest tests pass at 91.81% coverage; OpenAPI drift pass; clean Docker image build; fresh PostgreSQL migration `20260809_0001`; API/database containers healthy; live health/readiness/version/error/CORS probes pass | Merged to `main` on 2026-08-09 using the passing local evidence; GitHub Actions billing limitation remains B-CI-001. |
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Complete | [PR #3](https://github.com/davidagyekum/momo-fraud-detection/pull/3) — merged | `0fa8d463eb74ef0f93597fb7cb13647a94ce83fa` merge commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Merged to `main` on 2026-08-09 using passing local evidence; B-CI-001 remains external. |
-| P03 | Authentication, session security, ownership and RBAC | Complete | `codex/p03-auth-rbac` | See P03 handoff/PR head | 41 tests pass at 92.44% coverage; Ruff format/lint and strict mypy pass; OpenAPI and ER checks pass; secret scan passes; clean API image build and live Docker admin login/`/me` smoke pass | No schema migration was needed; B-CI-001 remains an external hosted-runner blocker. |
-| P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
+| P03 | Authentication, session security, ownership and RBAC | Complete | [PR #4](https://github.com/davidagyekum/momo-fraud-detection/pull/4) — merged | `3a4f4ea50df3aacdedf6094e3108c453fca092cc` merge commit | 41 tests pass at 92.44% coverage; Ruff format/lint and strict mypy pass; OpenAPI and ER checks pass; secret scan passes; clean API image build and live Docker admin login/`/me` smoke pass | Merged on 2026-08-09; B-CI-001 remains an external hosted-runner blocker. |
+| P04 | Mobile application shell, design system and authentication experience | In Progress | `codex/p04-mobile-shell` | Base `3a4f4ea50df3aacdedf6094e3108c453fca092cc` | P04 preflight, specification review and scope lock complete | Scope locked in `docs/implementation/P04_SESSION_PLAN.md`. |
 | P05 | Administrator and investigator web portal shell | Not Started |  |  |  |  |
 | P06 | Receipt capture, hostile-file validation and private upload | Not Started |  |  |  |  |
 | P07 | OCR preprocessing, extraction, confidence and correction workflow | Not Started |  |  |  |  |
