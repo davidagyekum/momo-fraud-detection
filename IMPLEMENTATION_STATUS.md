@@ -8,18 +8,18 @@
 - Default branch: `main`
 - Current work branch: `codex/p00-preflight-foundation`
 - Base SHA: `None — repository was initialised from an empty directory`
-- Head SHA: `P00 implementation commit f81cb2bf7e5ec3cebf2788b7e8b8956b999b883c; this metadata commit's exact SHA is reported in the session response and PR`
+- Head SHA: `P00 completion commit cae406ca2e35b453d976bb040c2b8d18ecbe7710 plus this PR-record metadata commit; the final exact SHA is reported in the session response and PR #1`
 - Last updated: `2026-08-09`
 - CI status: `Not configured`
 - Deployment status: `Not deployed`
 - Current phase: `P00 — Complete`
-- Next exact task: `Review/merge the P00 pull request, then create codex/p01-api-infrastructure from the accepted P00 head and begin the P01 monorepo/API infrastructure slice.`
+- Next exact task: `Review/merge PR #1, then create codex/p01-api-infrastructure from the accepted P00 head and begin the P01 monorepo/API infrastructure slice.`
 
 ## Phase status
 
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
 |---|---|---|---|---|---|---|
-| P00 | Repository preflight, scope lock and execution foundation | Complete | `codex/p00-preflight-foundation` | `f81cb2bf7e5ec3cebf2788b7e8b8956b999b883c` implementation commit plus completion metadata commit | `py -3.12 scripts/doctor.py`; `py -3.12 scripts/check_secrets.py`; `py -3.12 scripts/verify.py --quick`; remote branches verified | `main` and the phase branch were pushed successfully to `origin`; completion metadata is published through the P00 PR. |
+| P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — `codex/p00-preflight-foundation` | `cae406ca2e35b453d976bb040c2b8d18ecbe7710` completion commit plus PR-record metadata commit | `py -3.12 scripts/doctor.py`; `py -3.12 scripts/check_secrets.py`; `py -3.12 scripts/verify.py --quick`; remote branches verified | `main` and the phase branch were pushed successfully to `origin`; draft PR #1 contains the completion metadata. |
 | P01 | Monorepo, API skeleton and local infrastructure | Not Started |  |  |  |  |
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Not Started |  |  |  |  |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |

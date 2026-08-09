@@ -61,7 +61,7 @@ The retained requirements establish these fixed boundaries:
 | Cross-platform bootstrap, doctor, secret scan, and verification scripts | Complete locally; results recorded in the session handoff |
 | GitHub issue labels/milestones or local equivalent | Local phase/backlog index created because no remote exists |
 | Phase branch and local commit | Created and published |
-| Remote push/PR | `main` and `codex/p00-preflight-foundation` pushed successfully; draft P00 PR records completion metadata |
+| Remote push/PR | `main` and `codex/p00-preflight-foundation` pushed successfully; draft [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) records completion metadata |
 
 ## Next implementation boundary
 
