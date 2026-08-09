@@ -20,7 +20,7 @@
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
 |---|---|---|---|---|---|---|
 | P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
-| P01 | Monorepo, API skeleton and local infrastructure | Blocked | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — `codex/p01-api-infrastructure` | `0bdd604fdf8158f674a354dcacff719b44b15f0b` implementation commit plus PR-record metadata commit | Ruff format/lint pass; strict mypy pass; 18 pytest tests pass at 91.81% coverage; OpenAPI drift pass; Alembic head/offline SQL pass | Docker/Compose is not installed, so image build, live PostgreSQL migration and container endpoint gates remain unverified. |
+| P01 | Monorepo, API skeleton and local infrastructure | Blocked | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — `codex/p01-api-infrastructure` | `0bdd604fdf8158f674a354dcacff719b44b15f0b` implementation commit plus later PR/CI metadata commits | Ruff format/lint pass; strict mypy pass; 18 pytest tests pass at 91.81% coverage; OpenAPI drift pass; Alembic head/offline SQL pass; GitHub Actions Docker gate pending | Docker/Compose is not installed locally; the new CI workflow must pass its Docker, live PostgreSQL migration and container endpoint jobs before P01 is complete. |
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Not Started |  |  |  |  |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
 | P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
@@ -55,6 +55,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | ID | Phase | Blocker | Impact | Owner/input needed | Safe fallback | Next action |
 |---|---|---|---|---|---|---|
 | B-P01-001 | P01 | Docker/Compose is not installed on the host. | Cannot execute the required clean image build, start PostgreSQL, upgrade the migration against a clean database or prove live container readiness. | Project owner: install/enable Docker Desktop or provide an equivalent Docker host. | Backend code, mocked dependency behaviour, OpenAPI and offline Alembic SQL are verified locally; Compose/Docker files are preserved for execution. | Run the documented Docker lifecycle and attach exact build, migration and endpoint evidence. |
+| B-P01-002 | P01 | Approved Docker Desktop installation could not complete because package-manager transfers stalled and the official Docker CDN became unreachable. | Local Docker engine remains unavailable. | External package delivery/network route. | P01 GitHub Actions now provides a clean Docker runner for the same build/migration/endpoint gates. | Inspect the exact CI result; retry local installation only when the official package route is stable. |
 
 ## Active known limitations
 

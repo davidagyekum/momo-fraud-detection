@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12.10"
+  DATABASE_URL: postgresql+psycopg://momo_fdvs:momo_fdvs_local_only@localhost:5432/momo_fdvs
+  CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:8081
+
+jobs:
+  repo-policy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Verify repository policy and prohibited artifacts
+        run: |
+          python scripts/doctor.py
+          python scripts/check_secrets.py
+
+  backend-lint-type:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/requirements-dev.lock
+      - name: Install pinned backend environment
+        run: |
+          python -m pip install --requirement services/api/requirements-dev.lock
+          python -m pip install --no-deps --editable services/api
+      - name: Check formatting and lint
+        working-directory: services/api
+        run: |
+          python -m ruff format --check .
+          python -m ruff check .
+      - name: Check strict typing
+        working-directory: services/api
+        run: python -m mypy src
+
+  backend-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/requirements-dev.lock
+      - name: Install pinned backend environment
+        run: |
+          python -m pip install --requirement services/api/requirements-dev.lock
+          python -m pip install --no-deps --editable services/api
+      - name: Run backend tests
+        working-directory: services/api
+        run: python -m pytest
+
+  database-migrations:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.5-alpine
+        env:
+          POSTGRES_DB: momo_fdvs
+          POSTGRES_USER: momo_fdvs
+          POSTGRES_PASSWORD: momo_fdvs_local_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U momo_fdvs -d momo_fdvs"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/requirements-dev.lock
+      - name: Install pinned backend environment
+        run: |
+          python -m pip install --requirement services/api/requirements-dev.lock
+          python -m pip install --no-deps --editable services/api
+      - name: Upgrade a clean PostgreSQL database
+        working-directory: services/api
+        run: |
+          python -m flask --app momo_fdvs:create_app db upgrade
+          python -m flask --app momo_fdvs:create_app db current
+      - name: Probe readiness against PostgreSQL
+        env:
+          LOCAL_PRIVATE_STORAGE_ROOT: ${{ runner.temp }}/momo-private-storage
+        run: >-
+          python -c "from momo_fdvs import create_app;
+          app=create_app('testing'); response=app.test_client().get('/api/v1/ready');
+          assert response.status_code == 200, response.get_data(as_text=True);
+          assert response.json['data']['components']['database']['status'] == 'ready'"
+
+  openapi-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/requirements-runtime.lock
+      - name: Install pinned API environment
+        run: |
+          python -m pip install --requirement services/api/requirements-runtime.lock
+          python -m pip install --no-deps --editable services/api
+      - name: Check generated OpenAPI contract
+        run: python scripts/export_openapi.py --check
+
+  docker-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+      - name: Build and start the clean stack
+        run: docker compose up --build --detach db api
+      - name: Upgrade the container database
+        run: docker compose exec --no-TTY api python -m flask --app momo_fdvs:create_app db upgrade
+      - name: Verify container liveness and readiness
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://localhost:8000/api/v1/health >/tmp/health.json \
+              && curl --fail --silent --show-error http://localhost:8000/api/v1/ready >/tmp/ready.json; then
+              cat /tmp/health.json
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - name: Show container state and logs
+        if: always()
+        run: |
+          docker compose ps
+          docker compose logs --no-color api db
+      - name: Remove the clean test stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans

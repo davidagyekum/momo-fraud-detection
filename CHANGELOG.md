@@ -19,6 +19,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - PostgreSQL/API Docker Compose services, named volumes, health checks and a non-root Tesseract API image definition.
 - Pinned runtime/development dependency locks and backend Ruff, mypy, pytest and coverage gates.
 - Windows, macOS/Linux and Docker local-development documentation.
+- P01 GitHub Actions checks for repository policy, backend quality/tests, clean PostgreSQL migrations, OpenAPI drift and a full Docker Compose smoke test.
 
 ### Changed
 

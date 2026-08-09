@@ -74,7 +74,12 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
     storage_root = Path(
         os.getenv("LOCAL_PRIVATE_STORAGE_ROOT", str(repository_root / ".local" / "private-storage"))
     ).resolve()
-    migrations_dir = Path(__file__).resolve().parents[2] / "migrations"
+    migrations_dir = Path(
+        os.getenv(
+            "MIGRATIONS_DIR",
+            str(Path(__file__).resolve().parents[2] / "migrations"),
+        )
+    ).resolve()
 
     return {
         "ENVIRONMENT": environment,
