@@ -6,22 +6,22 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p01-api-infrastructure`
-- Base SHA: `41741877cce2a2efd69240c77707c55a7961bd0f`
-- Head SHA: `c2ba2629519a35a14262864dc492bbf4ad4e0633 plus the pending P01 Docker-evidence commit; exact pushed HEAD is reported in the session response and PR #2`
+- Current work branch: `codex/p02-relational-schema-storage`
+- Base SHA: `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1`
+- Head SHA: `P02 work in progress; exact pushed head will be recorded at phase handoff`
 - Last updated: `2026-08-09`
 - CI status: `Configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P01 gates pass locally`
 - Deployment status: `Not deployed`
-- Current phase: `P01 — In Review`
-- Next exact task: `Push the final Docker evidence, review PR #2, and resolve or waive the external GitHub Actions billing blocker before merging P01; do not begin P02 until P01 is merged/complete.`
+- Current phase: `P02 — In Review`
+- Next exact task: `Commit and push the verified P02 implementation, open its draft PR, then review/merge it before beginning P03.`
 
 ## Phase status
 
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
 |---|---|---|---|---|---|---|
 | P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
-| P01 | Monorepo, API skeleton and local infrastructure | In Review | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — `codex/p01-api-infrastructure` | `c2ba2629519a35a14262864dc492bbf4ad4e0633` plus pending Docker-evidence commit | Ruff format/lint pass; strict mypy pass; 20 pytest tests pass at 91.81% coverage; OpenAPI drift pass; clean Docker image build; fresh PostgreSQL migration `20260809_0001`; API/database containers healthy; live health/readiness/version/error/CORS probes pass | Local P01 exit gates pass. GitHub-hosted workflow jobs cannot start because the repository owner's Actions account is locked by a billing issue. |
-| P02 | Relational schema, migrations, seeds and private storage abstraction | Not Started |  |  |  |  |
+| P01 | Monorepo, API skeleton and local infrastructure | Complete | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — merged | `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1` merge commit | Ruff format/lint pass; strict mypy pass; 20 pytest tests pass at 91.81% coverage; OpenAPI drift pass; clean Docker image build; fresh PostgreSQL migration `20260809_0001`; API/database containers healthy; live health/readiness/version/error/CORS probes pass | Merged to `main` on 2026-08-09 using the passing local evidence; GitHub Actions billing limitation remains B-CI-001. |
+| P02 | Relational schema, migrations, seeds and private storage abstraction | In Review | `codex/p02-relational-schema-storage` | Base `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1`; final head pending commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Local P02 exit gates pass; no P03+ behaviour or model training included. |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
 | P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
 | P05 | Administrator and investigator web portal shell | Not Started |  |  |  |  |
@@ -54,7 +54,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 | ID | Phase | Blocker | Impact | Owner/input needed | Safe fallback | Next action |
 |---|---|---|---|---|---|---|
-| B-CI-001 | P01 | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | The hosted CI workflow cannot independently reproduce the passing local P01 gates or become a green merge check. | Repository owner resolves the GitHub Actions billing/account lock. | Keep the pinned workflow and exact local Docker/backend evidence; do not misreport the hosted checks as passing. | Resolve the account lock, rerun workflow `31315998940` (or its successor), then review PR #2 for merge. |
+| B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 
 ## Active known limitations
 

@@ -9,10 +9,13 @@ from momo_fdvs.config import load_config
 from momo_fdvs.errors import register_error_handlers
 from momo_fdvs.extensions import api, cors, db, migrate
 from momo_fdvs.logging import configure_logging, register_request_hooks
+from momo_fdvs.seeds import register_seed_commands
 
 
 def create_app(config_name: str | None = None) -> Flask:
     """Create and configure an isolated MoMo-FDVS API instance."""
+    from momo_fdvs import models as _models  # noqa: F401
+
     app = Flask(__name__)
     app.config.from_mapping(load_config(config_name))
 
@@ -32,6 +35,7 @@ def create_app(config_name: str | None = None) -> Flask:
     )
     register_request_hooks(app)
     register_error_handlers(app)
+    register_seed_commands(app)
     return app
 
 

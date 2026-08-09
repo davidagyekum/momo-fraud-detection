@@ -74,6 +74,12 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
     storage_root = Path(
         os.getenv("LOCAL_PRIVATE_STORAGE_ROOT", str(repository_root / ".local" / "private-storage"))
     ).resolve()
+    storage_adapter = os.getenv("STORAGE_ADAPTER", "local").strip().lower()
+    if storage_adapter not in {"local", "s3"}:
+        raise ConfigurationError("STORAGE_ADAPTER must be local or s3")
+    s3_bucket = os.getenv("S3_BUCKET", "").strip()
+    if storage_adapter == "s3" and not s3_bucket:
+        raise ConfigurationError("S3_BUCKET is required when STORAGE_ADAPTER=s3")
     migrations_dir = Path(
         os.getenv(
             "MIGRATIONS_DIR",
@@ -101,6 +107,15 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         },
         "MIGRATIONS_DIR": str(migrations_dir),
         "LOCAL_PRIVATE_STORAGE_ROOT": storage_root,
+        "STORAGE_ADAPTER": storage_adapter,
+        "S3_ENDPOINT_URL": os.getenv("S3_ENDPOINT_URL") or None,
+        "S3_REGION": os.getenv("S3_REGION") or None,
+        "S3_BUCKET": s3_bucket,
+        "S3_PREFIX": os.getenv("S3_PREFIX", "momo-fdvs").strip("/"),
+        "S3_ACCESS_KEY_ID": os.getenv("S3_ACCESS_KEY_ID") or None,
+        "S3_SECRET_ACCESS_KEY": os.getenv("S3_SECRET_ACCESS_KEY") or None,
+        "S3_SERVER_SIDE_ENCRYPTION": os.getenv("S3_SERVER_SIDE_ENCRYPTION", "AES256"),
+        "SIGNED_URL_TTL_SECONDS": _integer("SIGNED_URL_TTL_SECONDS", 300),
         "TESSERACT_CMD": os.getenv("TESSERACT_CMD", "tesseract"),
         "CORS_ALLOWED_ORIGINS": origins,
         "CORS_ALLOW_CREDENTIALS": credentials,

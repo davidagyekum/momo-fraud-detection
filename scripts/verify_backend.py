@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the complete P01 backend quality gate."""
+"""Run the complete implemented backend quality gate."""
 
 from __future__ import annotations
 
@@ -18,6 +18,10 @@ COMMANDS = [
     (
         "contract",
         [sys.executable, str(REPO_ROOT / "scripts" / "export_openapi.py"), "--check"],
+    ),
+    (
+        "engineering ER",
+        [sys.executable, str(REPO_ROOT / "scripts" / "export_er.py"), "--check"],
     ),
 ]
 

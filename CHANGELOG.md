@@ -21,12 +21,18 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Windows, macOS/Linux and Docker local-development documentation.
 - P01 GitHub Actions checks for repository policy, backend quality/tests, clean PostgreSQL migrations, OpenAPI drift and a full Docker Compose smoke test.
 - Verified the P01 non-root API image, PostgreSQL service, named private-storage/database volumes, clean Alembic upgrade and live system endpoints in Docker Desktop.
+- P02 complete 30-table SQLAlchemy evidence model with deterministic constraints, indexes, relationships and engineering ER generation.
+- Alembic revision `20260809_0002` with CITEXT support, circular analysis linkage and database-enforced immutable evidence tables.
+- Configured local-private and S3-compatible storage adapters with generated keys, SHA-256 metadata, encryption settings and retention-guarded deletion.
+- Idempotent controlled-development seeds, cross-domain database factories and PostgreSQL schema-integrity tests.
+- P02 backup/retention/consistency runbook and CI migration rollback/schema gates.
 
 ### Changed
 
 - Repository verification now executes the implemented P01 backend suite for `--backend`.
 - P00 PR #1 was merged to `main` at `41741877cce2a2efd69240c77707c55a7961bd0f`.
 - Model-training execution is reserved for Google Colab; local phases prepare reproducible code, manifests and notebooks, then pause before the first training run for project-owner handoff.
+- Repository backend verification now checks the generated engineering ER reference.
 
 ### Fixed
 
@@ -37,6 +43,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Initial secure-development requirements established.
 - Added repository ignore policy and a scanner that rejects environment files, common credential patterns, private-data directories and model artifacts.
 - Added correlation headers, generic public 500 responses, credential redaction, CORS allowlisting and dependency responses that omit infrastructure details.
+- Added database append-only triggers for audit and evidential rows, private storage path-containment checks and safe bootstrap password rotation flags.
 
 ### Known limitations
 
