@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -59,6 +60,24 @@ def _database_url(environment: str) -> str:
     return value
 
 
+def _secret(name: str, environment: str) -> str:
+    value = os.getenv(name, "")
+    if not value and environment != "production":
+        value = f"momo_fdvs_local_only_{name.lower()}_minimum_32_chars"
+    if len(value) < 32 or (environment == "production" and "CHANGE_ME" in value.upper()):
+        raise ConfigurationError(
+            f"{name} must be a non-placeholder value of at least 32 characters"
+        )
+    return value
+
+
+def _rate_limit(name: str, default: str) -> str:
+    value = os.getenv(name, default).strip()
+    if not re.fullmatch(r"\d+\s+per\s+(second|minute|hour|day)", value):
+        raise ConfigurationError(f"{name} must use '<number> per <unit>' syntax")
+    return value
+
+
 def load_config(config_name: str | None = None) -> dict[str, Any]:
     """Load a fresh config mapping so tests and workers never share stale environment state."""
     environment = (config_name or os.getenv("APP_ENV") or "development").strip().lower()
@@ -80,6 +99,12 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
     s3_bucket = os.getenv("S3_BUCKET", "").strip()
     if storage_adapter == "s3" and not s3_bucket:
         raise ConfigurationError("S3_BUCKET is required when STORAGE_ADAPTER=s3")
+    cookie_secure = _boolean("AUTH_COOKIE_SECURE", environment == "production")
+    cookie_samesite = os.getenv("AUTH_COOKIE_SAMESITE", "Lax").strip().title()
+    if cookie_samesite not in {"Strict", "Lax", "None"}:
+        raise ConfigurationError("AUTH_COOKIE_SAMESITE must be Strict, Lax or None")
+    if cookie_samesite == "None" and not cookie_secure:
+        raise ConfigurationError("AUTH_COOKIE_SECURE must be true when AUTH_COOKIE_SAMESITE=None")
     migrations_dir = Path(
         os.getenv(
             "MIGRATIONS_DIR",
@@ -106,6 +131,23 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
             "pool_timeout": _integer("DATABASE_POOL_TIMEOUT_SECONDS", 30),
         },
         "MIGRATIONS_DIR": str(migrations_dir),
+        "JWT_ACCESS_SECRET": _secret("JWT_ACCESS_SECRET", environment),
+        "JWT_REFRESH_SECRET": _secret("JWT_REFRESH_SECRET", environment),
+        "CSRF_SECRET": _secret("CSRF_SECRET", environment),
+        "ACCESS_TOKEN_TTL_MINUTES": _integer("ACCESS_TOKEN_TTL_MINUTES", 15),
+        "REFRESH_TOKEN_TTL_DAYS": _integer("REFRESH_TOKEN_TTL_DAYS", 7),
+        "PASSWORD_RESET_TTL_MINUTES": _integer("PASSWORD_RESET_TTL_MINUTES", 30),
+        "AUTH_COOKIE_NAME": os.getenv("AUTH_COOKIE_NAME", "momo_fdvs_refresh"),
+        "AUTH_COOKIE_SECURE": cookie_secure,
+        "AUTH_COOKIE_SAMESITE": cookie_samesite,
+        "AUTH_COOKIE_DOMAIN": os.getenv("AUTH_COOKIE_DOMAIN") or None,
+        "AUTH_COOKIE_PATH": os.getenv("AUTH_COOKIE_PATH", "/api/v1/auth"),
+        "SELF_REGISTRATION_ENABLED": _boolean("SELF_REGISTRATION_ENABLED", True),
+        "RATELIMIT_STORAGE_URI": os.getenv("RATELIMIT_STORAGE_URI", "memory://"),
+        "RATE_LIMIT_LOGIN": _rate_limit("RATE_LIMIT_LOGIN", "5 per minute"),
+        "RATE_LIMIT_REFRESH": _rate_limit("RATE_LIMIT_REFRESH", "10 per minute"),
+        "RATE_LIMIT_PASSWORD_RESET": _rate_limit("RATE_LIMIT_PASSWORD_RESET", "5 per hour"),
+        "RATE_LIMIT_REGISTRATION": _rate_limit("RATE_LIMIT_REGISTRATION", "5 per hour"),
         "LOCAL_PRIVATE_STORAGE_ROOT": storage_root,
         "STORAGE_ADAPTER": storage_adapter,
         "S3_ENDPOINT_URL": os.getenv("S3_ENDPOINT_URL") or None,

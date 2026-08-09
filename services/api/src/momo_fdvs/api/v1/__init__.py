@@ -29,7 +29,7 @@ def _meta() -> dict[str, str]:
 
 @api_v1.route("/health")
 class HealthResource(MethodView):
-    @api_v1.response(200, HealthEnvelopeSchema)  # type: ignore[misc]
+    @api_v1.response(200, HealthEnvelopeSchema)
     def get(self) -> dict[str, Any]:
         """Return process liveness without probing dependencies."""
         return {
@@ -44,12 +44,12 @@ class HealthResource(MethodView):
 
 @api_v1.route("/ready")
 class ReadinessResource(MethodView):
-    @api_v1.alt_response(  # type: ignore[misc]
+    @api_v1.alt_response(
         503,
         schema=ReadinessEnvelopeSchema,
         description="A core dependency is unavailable.",
     )
-    @api_v1.response(200, ReadinessEnvelopeSchema)  # type: ignore[misc]
+    @api_v1.response(200, ReadinessEnvelopeSchema)
     def get(self) -> tuple[dict[str, Any], int]:
         """Return a safe core and analysis dependency matrix."""
         result = probe_readiness()
@@ -58,7 +58,7 @@ class ReadinessResource(MethodView):
 
 @api_v1.route("/version")
 class VersionResource(MethodView):
-    @api_v1.response(200, VersionEnvelopeSchema)  # type: ignore[misc]
+    @api_v1.response(200, VersionEnvelopeSchema)
     def get(self) -> dict[str, Any]:
         """Return non-sensitive application and API contract versions."""
         return {

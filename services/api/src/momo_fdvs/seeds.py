@@ -9,7 +9,6 @@ from decimal import Decimal
 import click
 from flask import Flask, current_app
 from sqlalchemy import select
-from werkzeug.security import generate_password_hash
 
 from momo_fdvs.extensions import db
 from momo_fdvs.models import (
@@ -22,6 +21,7 @@ from momo_fdvs.models import (
     User,
     UserRole,
 )
+from momo_fdvs.security.passwords import hash_password
 
 ROLE_DESCRIPTIONS = {
     "USER": "Receipt-submitting merchant or end user",
@@ -52,7 +52,7 @@ def _user(email_name: str, full_name_name: str, password_name: str) -> User:
     user = User(
         email=email,
         full_name=full_name,
-        password_hash=generate_password_hash(password),
+        password_hash=hash_password(password),
         status="ACTIVE",
         password_changed_at=now,
         must_change_password=True,

@@ -38,3 +38,28 @@ def test_rejects_invalid_pool_size(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_rejects_invalid_environment() -> None:
     with pytest.raises(ConfigurationError, match="APP_ENV"):
         load_config("demo")
+
+
+def test_production_requires_non_placeholder_auth_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+psycopg://momo_fdvs:local-only@database/momo_fdvs"
+    )
+    for name in ("JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "CSRF_SECRET"):
+        monkeypatch.delenv(name, raising=False)
+    with pytest.raises(ConfigurationError, match="JWT_ACCESS_SECRET"):
+        load_config("production")
+
+
+def test_cross_site_cookie_requires_secure_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTH_COOKIE_SAMESITE", "None")
+    monkeypatch.setenv("AUTH_COOKIE_SECURE", "false")
+    with pytest.raises(ConfigurationError, match="AUTH_COOKIE_SECURE"):
+        load_config("development")
+
+
+def test_rejects_invalid_cookie_same_site(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTH_COOKIE_SAMESITE", "sometimes")
+    with pytest.raises(ConfigurationError, match="AUTH_COOKIE_SAMESITE"):
+        load_config("development")
