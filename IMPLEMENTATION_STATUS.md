@@ -8,7 +8,7 @@
 - Default branch: `main`
 - Current work branch: `codex/p02-relational-schema-storage`
 - Base SHA: `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1`
-- Head SHA: `P02 work in progress; exact pushed head will be recorded at phase handoff`
+- Head SHA: `51a25b7 plus the pending PR-link metadata commit; exact pushed head is reported in the session response and PR #3`
 - Last updated: `2026-08-09`
 - CI status: `Configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P01 gates pass locally`
 - Deployment status: `Not deployed`
@@ -21,7 +21,7 @@
 |---|---|---|---|---|---|---|
 | P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
 | P01 | Monorepo, API skeleton and local infrastructure | Complete | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — merged | `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1` merge commit | Ruff format/lint pass; strict mypy pass; 20 pytest tests pass at 91.81% coverage; OpenAPI drift pass; clean Docker image build; fresh PostgreSQL migration `20260809_0001`; API/database containers healthy; live health/readiness/version/error/CORS probes pass | Merged to `main` on 2026-08-09 using the passing local evidence; GitHub Actions billing limitation remains B-CI-001. |
-| P02 | Relational schema, migrations, seeds and private storage abstraction | In Review | `codex/p02-relational-schema-storage` | Base `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1`; final head pending commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Local P02 exit gates pass; no P03+ behaviour or model training included. |
+| P02 | Relational schema, migrations, seeds and private storage abstraction | In Review | [PR #3](https://github.com/davidagyekum/momo-fraud-detection/pull/3) — `codex/p02-relational-schema-storage` | `51a25b7` implementation plus PR-link metadata commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Local P02 exit gates pass; no P03+ behaviour or model training included. |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
 | P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
 | P05 | Administrator and investigator web portal shell | Not Started |  |  |  |  |
