@@ -31,6 +31,12 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Central USER/ADMIN/INVESTIGATOR policies, transaction ownership hiding and ADMIN-only user/role/session management with optimistic concurrency, self-lockout and last-admin safeguards.
 - Cryptographically bound double-submit CSRF protection for HTTP-only browser refresh cookies and a documented Expo SecureStore mobile token contract.
 - Append-only authentication/privileged audit events, configurable endpoint rate limits and generated P03 OpenAPI contract coverage.
+- P04 Expo SDK 57 mobile application with session restoration, login, registration, password reset, profile update and confirmed logout flows.
+- P04 semantic design tokens, reusable accessible UI states, native five-tab navigation and a responsive web fallback.
+- Memory-only mobile access tokens, rotating refresh-token SecureStore isolation, coordinated refresh and explicit partial-session handling.
+- TanStack Query server state, network awareness, global error recovery and honest inactive states for features owned by later phases.
+- Mobile formatting, linting, strict typing, Jest coverage, token-storage policy, static export and GitHub Actions verification gates.
+- Safe Chapter Four mobile screenshots and an evidence manifest linked to the P04 implementation SHA.
 
 ### Changed
 
@@ -39,6 +45,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Model-training execution is reserved for Google Colab; local phases prepare reproducible code, manifests and notebooks, then pause before the first training run for project-owner handoff.
 - Repository backend verification now checks the generated engineering ER reference.
 - Controlled development seed accounts now use the same Argon2id password policy as runtime accounts.
+- JavaScript work now uses Node.js 24.14.0 because Expo SDK 57 / React Native 0.86 does not support the workstation's older Node.js 22.11.0 runtime.
 
 ### Fixed
 
@@ -51,11 +58,14 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Added correlation headers, generic public 500 responses, credential redaction, CORS allowlisting and dependency responses that omit infrastructure details.
 - Added database append-only triggers for audit and evidential rows, private storage path-containment checks and safe bootstrap password rotation flags.
 - Added fail-closed production auth secrets, secure cookie/SameSite validation, access-token role/version checks, reset/session revocation and cross-user object-hiding tests.
+- Added a mobile token-storage policy that rejects unencrypted persistence and isolates SecureStore access to refresh tokens only.
+- Extended secret-scanner syntax handling and added regression tests for TypeScript declarations versus hard-coded tokens.
 
 ### Known limitations
 
 - GitHub-hosted P01 workflow jobs cannot start while the repository owner's GitHub Actions account is locked by a billing issue; equivalent P01 gates pass locally.
 - Real model training remains pending and no metric or model artifact is claimed; execution will occur in Google Colab after the P10 data-governance phase.
+- `npm audit --omit=dev` reports 8 moderate and 15 high findings in the current Expo SDK 57/React Native/Metro dependency graph. Its proposed automatic fixes downgrade Expo to 53 or React Native to 0.72, so no incompatible force-fix was applied; monitor supported SDK 57 patches under B-SEC-002.
 
 ## Release entry template
 
