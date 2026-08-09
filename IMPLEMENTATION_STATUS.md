@@ -8,7 +8,7 @@
 - Default branch: `main`
 - Current work branch: `codex/p01-api-infrastructure`
 - Base SHA: `41741877cce2a2efd69240c77707c55a7961bd0f`
-- Head SHA: `Pending P01 session commit; exact pushed SHA will be reported in the handoff and draft PR`
+- Head SHA: `P01 implementation commit 0bdd604fdf8158f674a354dcacff719b44b15f0b plus this PR-record metadata commit; exact pushed HEAD is reported in the session response and PR #2`
 - Last updated: `2026-08-09`
 - CI status: `Not configured`
 - Deployment status: `Not deployed`
@@ -20,7 +20,7 @@
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
 |---|---|---|---|---|---|---|
 | P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
-| P01 | Monorepo, API skeleton and local infrastructure | Blocked | `codex/p01-api-infrastructure` | Pending session commit | Ruff format/lint pass; strict mypy pass; 18 pytest tests pass at 91.81% coverage; OpenAPI drift pass; Alembic head/offline SQL pass | Docker/Compose is not installed, so image build, live PostgreSQL migration and container endpoint gates remain unverified. |
+| P01 | Monorepo, API skeleton and local infrastructure | Blocked | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — `codex/p01-api-infrastructure` | `0bdd604fdf8158f674a354dcacff719b44b15f0b` implementation commit plus PR-record metadata commit | Ruff format/lint pass; strict mypy pass; 18 pytest tests pass at 91.81% coverage; OpenAPI drift pass; Alembic head/offline SQL pass | Docker/Compose is not installed, so image build, live PostgreSQL migration and container endpoint gates remain unverified. |
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Not Started |  |  |  |  |
 | P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
 | P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
