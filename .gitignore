@@ -52,6 +52,8 @@ web-build/
 coverage/
 playwright-report/
 test-results/
+.playwright-cli/
+output/
 *.tsbuildinfo
 
 # Tooling and operating-system files

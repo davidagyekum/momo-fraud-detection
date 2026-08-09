@@ -28,7 +28,11 @@ SECTIONS = {
         (sys.executable, "scripts/verify_backend.py"),
     ),
     "admin": Section("admin", Path("apps/admin/package.json"), None),
-    "mobile": Section("mobile", Path("apps/mobile/package.json"), None),
+    "mobile": Section(
+        "mobile",
+        Path("apps/mobile/package.json"),
+        (sys.executable, "scripts/verify_mobile.py"),
+    ),
     "ml": Section("ml", Path("ml/pyproject.toml"), None),
     "e2e": Section("e2e", Path("tests/e2e"), None),
     "security": Section("security", Path("services/api/tests/security"), None),
@@ -49,27 +53,47 @@ def run_step(label: str, command: Sequence[str]) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--quick", action="store_true", help="run repository policy checks available in P00")
-    mode.add_argument("--all", action="store_true", help="run every project section and fail for missing sections")
+    mode.add_argument(
+        "--quick",
+        action="store_true",
+        help="run repository policy checks available in P00",
+    )
+    mode.add_argument(
+        "--all",
+        action="store_true",
+        help="run every project section and fail for missing sections",
+    )
     for name in SECTIONS:
-        mode.add_argument(f"--{name}", action="store_true", help=f"run the {name} section")
+        mode.add_argument(
+            f"--{name}", action="store_true", help=f"run the {name} section"
+        )
     args = parser.parse_args()
 
     python = sys.executable
     success = True
     success &= run_step("toolchain doctor", [python, "scripts/doctor.py"])
-    success &= run_step("secret and prohibited-artifact scan", [python, "scripts/check_secrets.py"])
+    success &= run_step(
+        "secret and prohibited-artifact scan", [python, "scripts/check_secrets.py"]
+    )
 
     if args.quick:
-        print("\nVerification summary: P00 quick checks complete; product suites are not part of --quick.")
+        print(
+            "\nVerification summary: P00 quick checks complete; product suites are not part of --quick."
+        )
         return 0 if success else 1
 
-    selected = list(SECTIONS) if args.all else [name for name in SECTIONS if getattr(args, name)]
+    selected = (
+        list(SECTIONS)
+        if args.all
+        else [name for name in SECTIONS if getattr(args, name)]
+    )
     unavailable: list[str] = []
     for name in selected:
         section = SECTIONS[name]
         if not (REPO_ROOT / section.marker).exists():
-            print(f"\nBLOCKED: {section.name} is not implemented; missing {section.marker.as_posix()}")
+            print(
+                f"\nBLOCKED: {section.name} is not implemented; missing {section.marker.as_posix()}"
+            )
             unavailable.append(section.name)
             continue
         if section.command is None:
@@ -82,7 +106,9 @@ def main() -> int:
         success &= run_step(f"{section.name} verification", section.command)
 
     if unavailable:
-        print(f"\nVerification summary: FAIL/BLOCKED ({len(unavailable)} section(s): {', '.join(unavailable)})")
+        print(
+            f"\nVerification summary: FAIL/BLOCKED ({len(unavailable)} section(s): {', '.join(unavailable)})"
+        )
         return 2
     return 0 if success else 1
 
