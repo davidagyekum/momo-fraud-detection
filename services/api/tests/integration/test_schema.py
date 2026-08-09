@@ -12,7 +12,8 @@ from momo_fdvs.extensions import db
 from momo_fdvs.models import AuditLog, User
 
 pytestmark = pytest.mark.skipif(
-    not os.getenv("P02_TEST_DATABASE_URL"), reason="requires isolated PostgreSQL P02 database"
+    not (os.getenv("TEST_DATABASE_URL") or os.getenv("P02_TEST_DATABASE_URL")),
+    reason="requires an isolated PostgreSQL test database",
 )
 
 

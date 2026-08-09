@@ -26,6 +26,11 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Configured local-private and S3-compatible storage adapters with generated keys, SHA-256 metadata, encryption settings and retention-guarded deletion.
 - Idempotent controlled-development seeds, cross-domain database factories and PostgreSQL schema-integrity tests.
 - P02 backup/retention/consistency runbook and CI migration rollback/schema gates.
+- P03 Argon2id password handling, signed short-lived access tokens and atomic rotated refresh-token families with hashed persistence and reuse detection.
+- Registration, login, refresh, logout, generic password-reset, current-profile and change-password API endpoints.
+- Central USER/ADMIN/INVESTIGATOR policies, transaction ownership hiding and ADMIN-only user/role/session management with optimistic concurrency, self-lockout and last-admin safeguards.
+- Cryptographically bound double-submit CSRF protection for HTTP-only browser refresh cookies and a documented Expo SecureStore mobile token contract.
+- Append-only authentication/privileged audit events, configurable endpoint rate limits and generated P03 OpenAPI contract coverage.
 
 ### Changed
 
@@ -33,6 +38,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - P00 PR #1 was merged to `main` at `41741877cce2a2efd69240c77707c55a7961bd0f`.
 - Model-training execution is reserved for Google Colab; local phases prepare reproducible code, manifests and notebooks, then pause before the first training run for project-owner handoff.
 - Repository backend verification now checks the generated engineering ER reference.
+- Controlled development seed accounts now use the same Argon2id password policy as runtime accounts.
 
 ### Fixed
 
@@ -44,6 +50,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Added repository ignore policy and a scanner that rejects environment files, common credential patterns, private-data directories and model artifacts.
 - Added correlation headers, generic public 500 responses, credential redaction, CORS allowlisting and dependency responses that omit infrastructure details.
 - Added database append-only triggers for audit and evidential rows, private storage path-containment checks and safe bootstrap password rotation flags.
+- Added fail-closed production auth secrets, secure cookie/SameSite validation, access-token role/version checks, reset/session revocation and cross-user object-hiding tests.
 
 ### Known limitations
 

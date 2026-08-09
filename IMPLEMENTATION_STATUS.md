@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p02-relational-schema-storage`
-- Base SHA: `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1`
-- Head SHA: `51a25b7 plus the pending PR-link metadata commit; exact pushed head is reported in the session response and PR #3`
+- Current work branch: `codex/p03-auth-rbac`
+- Base SHA: `0fa8d463eb74ef0f93597fb7cb13647a94ce83fa`
+- Head SHA: `P03 implementation complete locally; exact pushed head is recorded in the P03 handoff/PR`
 - Last updated: `2026-08-09`
-- CI status: `Configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P01 gates pass locally`
+- CI status: `Configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P03 gates pass locally`
 - Deployment status: `Not deployed`
-- Current phase: `P02 — In Review`
-- Next exact task: `Commit and push the verified P02 implementation, open its draft PR, then review/merge it before beginning P03.`
+- Current phase: `P03 — Complete; P04 is next`
+- Next exact task: `Create codex/p04-mobile-auth from the merged P03 head, scaffold the Expo Router TypeScript app, and implement the SecureStore-backed authentication shell from the P03 contract.`
 
 ## Phase status
 
@@ -21,8 +21,8 @@
 |---|---|---|---|---|---|---|
 | P00 | Repository preflight, scope lock and execution foundation | Complete | [PR #1](https://github.com/davidagyekum/momo-fraud-detection/pull/1) — merged | `41741877cce2a2efd69240c77707c55a7961bd0f` merge commit | P00 checks passed; GitHub merge verified in Chrome | Merged to `main` on 2026-08-09. |
 | P01 | Monorepo, API skeleton and local infrastructure | Complete | [PR #2](https://github.com/davidagyekum/momo-fraud-detection/pull/2) — merged | `7a9efcc71780e1e0c9e72b5e0e2efd194771d0d1` merge commit | Ruff format/lint pass; strict mypy pass; 20 pytest tests pass at 91.81% coverage; OpenAPI drift pass; clean Docker image build; fresh PostgreSQL migration `20260809_0001`; API/database containers healthy; live health/readiness/version/error/CORS probes pass | Merged to `main` on 2026-08-09 using the passing local evidence; GitHub Actions billing limitation remains B-CI-001. |
-| P02 | Relational schema, migrations, seeds and private storage abstraction | In Review | [PR #3](https://github.com/davidagyekum/momo-fraud-detection/pull/3) — `codex/p02-relational-schema-storage` | `51a25b7` implementation plus PR-link metadata commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Local P02 exit gates pass; no P03+ behaviour or model training included. |
-| P03 | Authentication, session security, ownership and RBAC | Not Started |  |  |  |  |
+| P02 | Relational schema, migrations, seeds and private storage abstraction | Complete | [PR #3](https://github.com/davidagyekum/momo-fraud-detection/pull/3) — merged | `0fa8d463eb74ef0f93597fb7cb13647a94ce83fa` merge commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Merged to `main` on 2026-08-09 using passing local evidence; B-CI-001 remains external. |
+| P03 | Authentication, session security, ownership and RBAC | Complete | `codex/p03-auth-rbac` | See P03 handoff/PR head | 41 tests pass at 92.44% coverage; Ruff format/lint and strict mypy pass; OpenAPI and ER checks pass; secret scan passes; clean API image build and live Docker admin login/`/me` smoke pass | No schema migration was needed; B-CI-001 remains an external hosted-runner blocker. |
 | P04 | Mobile application shell, design system and authentication experience | Not Started |  |  |  |  |
 | P05 | Administrator and investigator web portal shell | Not Started |  |  |  |  |
 | P06 | Receipt capture, hostile-file validation and private upload | Not Started |  |  |  |  |
@@ -45,10 +45,10 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Requirements summary
 
-- MUST requirements complete: `1 / 87`
+- MUST requirements complete: `10 / 87`
 - SHOULD requirements complete: `0 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-09 — 98 requirements parsed; P00 foundation evidence linked to NFR-MNT-001 and NFR-DATA-001`
+- Traceability file last verified: `2026-08-09 — P03 completes FR-USER-001..003 and FR-AUTH-001..006; security/deployment requirements remain honestly partial`
 
 ## Current blockers
 
@@ -67,13 +67,13 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-09-P01-session.md`
-- Summary: `All local P01 implementation and Docker-backed exit gates pass; PR #2 is in review with a separate GitHub Actions billing/account blocker recorded honestly.`
+- Handoff file: `docs/handoffs/2026-08-09-P03-session.md`
+- Summary: `P03 authentication, atomic refresh rotation, reset, RBAC, ownership, admin safeguards, audit events and token-storage contract pass all local and Docker-backed gates.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read the last handoff.
-4. Confirm the worktree and PR #2 SHA, then resolve/waive B-CI-001 and merge P01 before beginning P02.
+3. Read `docs/handoffs/2026-08-09-P03-session.md`.
+4. Confirm the P03 PR is merged and create `codex/p04-mobile-auth` from the merged `main` head.
 5. Preserve ADR-014: proceed through P10, then stop before the first P11 model-training run for the Google Colab handoff.
