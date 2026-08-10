@@ -55,7 +55,8 @@ def test_cli_validates_recorded_image_report(capsys) -> None:  # type: ignore[no
         == 0
     )
     report = json.loads(capsys.readouterr().out)
-    assert report["training_executed"] is False
+    assert report["report_scope"] == "dataset_preflight_only"
+    assert report["training_executed_by_report"] is False
     assert report["record_count"] == 12
 
 

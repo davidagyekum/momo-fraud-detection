@@ -77,6 +77,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - TensorFlow 2.21 MobileNetV3Small two-stage training/evaluation/package pipeline with train-only augmentation, class weights, validation-only threshold selection, held-out/calibration/CPU evidence generation and private `.keras` export commands.
 - Private image-model adapter and ADMIN lifecycle commands with hash-before-load, schema/shape checks and explicit unavailable/runtime/input/output error states; no P12 model has been trained or activated yet.
 - Signed-in Google Colab P12 checkout/preflight evidence pinned to training commit `02d8967136853c5c46eaa0babe44a7327c843a32`; Python 3.12.13 and `verify_ml.py` passed while the governed training cell remained unexecuted.
+- Signed-in Google Colab P12 controlled experiment evidence: held-out macro F1 `0.333333` over two samples, failed acceptance, private Keras artifact SHA-256 `3d074298...`, confusion matrix, model card and CPU latency diagnostics; the artifact remains inactive and outside Git.
 
 ### Changed
 
@@ -96,6 +97,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Repository ML verification now also validates the canonical P11 structured dataset and report drift; reportable model fitting remains Colab-only.
 - Private research dataset paths under `ml/data/private`, `raw` or authorised/authorized directories are ignored and rejected by the prohibited-artifact scanner.
 - The transitional partial-analysis response now includes deterministic image evidence when available and removes `IMAGE_ANALYSIS` from the unavailable-stage list without simulating model/risk completion.
+- The deterministic image dataset report now identifies itself as a preflight-only report so it cannot be mistaken for the separately recorded external Colab execution status.
 
 ### Fixed
 
@@ -121,7 +123,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 ### Known limitations
 
 - GitHub-hosted P01 workflow jobs cannot start while the repository owner's GitHub Actions account is locked by a billing issue; equivalent P01 gates pass locally.
-- P11 controlled structured training is complete. P12 CNN training remains pending in Google Colab; no image-model metric or `.keras` artifact is claimed before that run.
+- P11 controlled structured training is complete. The P12 controlled CNN run completed but failed acceptance; its metrics are experimental evidence only and image inference remains unavailable pending a new representative-data version.
 - `npm audit --omit=dev` reports 8 moderate and 15 high findings in the current Expo SDK 57/React Native/Metro dependency graph. Its proposed automatic fixes downgrade Expo to 53 or React Native to 0.72, so no incompatible force-fix was applied; monitor supported SDK 57 patches under B-SEC-002.
 
 ## Release entry template

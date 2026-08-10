@@ -74,7 +74,7 @@ def main() -> int:
         if result.returncode != 0:
             print(f"ML verification failed at {label} (exit {result.returncode})")
             return result.returncode
-    print("\nML data/code verification passed; no model training was executed")
+    print("\nML data/code verification passed; this command does not execute model training")
     return 0
 
 

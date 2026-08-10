@@ -163,7 +163,7 @@ def governed_image_samples(manifest: DatasetManifest, *, root: Path) -> tuple[Im
 
 
 def image_dataset_report(manifest_path: Path, *, root: Path) -> dict[str, object]:
-    """Create the canonical no-training P12 dataset/preprocessing report."""
+    """Create the canonical P12 dataset/preprocessing preflight report."""
 
     manifest = load_manifest(manifest_path)
     samples = governed_image_samples(manifest, root=root)
@@ -202,12 +202,14 @@ def image_dataset_report(manifest_path: Path, *, root: Path) -> dict[str, object
         },
         "group_intersections": intersections,
         "augmentation_training_only": True,
-        "training_executed": False,
-        "model_metrics": None,
+        "report_scope": "dataset_preflight_only",
+        "training_executed_by_report": False,
+        "model_metrics_embedded": False,
         "limitations": [
             "Only six controlled source groups and twelve generic images are available.",
             "Labels represent declared controlled edits, not naturally occurring provider fraud.",
-            "No model metric may be recorded until the pinned Google Colab training run executes.",
+            "External training-run metrics are recorded separately under docs/evidence "
+            "and are not embedded in this deterministic dataset report.",
         ],
     }
 

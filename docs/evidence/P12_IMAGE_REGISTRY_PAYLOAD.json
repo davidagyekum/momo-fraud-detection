@@ -1,0 +1,34 @@
+{
+  "artifact_sha256": "3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046",
+  "artifact_uri": "private://image/image-mobilenetv3-controlled-v1.keras",
+  "dataset_manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "framework_versions": {
+    "implementation": "CPython",
+    "numpy": "2.5.2",
+    "pillow": "12.3.0",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0",
+    "tensorflow": "2.21.0"
+  },
+  "input_schema_hash": "8510a396d3115887f8ebff88414f75f9ea5b353f375d93cfdf65f488d55df616",
+  "metrics": {
+    "acceptance_passed": false,
+    "cpu_inference": {
+      "device": "CPU",
+      "iterations": 30,
+      "median_ms": 110.137,
+      "p95_ms": 171.081
+    },
+    "macro_f1": 0.333333,
+    "scope": "controlled_synthetic_only",
+    "threshold": 0.05
+  },
+  "model_card_key": "docs/models/IMAGE_MODEL_CARD_CONTROLLED_V1.md",
+  "model_type": "IMAGE",
+  "name": "momo-fdvs-controlled-tamper",
+  "preprocessing_version": "image-rgb224-minus1-to1-v1",
+  "registration_status": "NOT_REGISTERED_ACCEPTANCE_FAILED",
+  "split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "training_commit_sha": "02d8967136853c5c46eaa0babe44a7327c843a32",
+  "version": "image-mobilenetv3-controlled-v1"
+}

@@ -179,3 +179,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** The measured macro F1 and balanced accuracy of 1.0 demonstrate pipeline correctness only. The model card must retain the one-group/three-sample limitation, human review remains required, and future authorised data requires a new version and evaluation. The private joblib artifact remains outside Git and is SHA-256 verified before every trusted load.
 - **Related requirements/phases:** P11, FR-ML-001, FR-ML-002, FR-ML-004, FR-ML-005, FR-ML-006, FR-ML-007, NFR-ACC-002, ADR-010, ADR-014.
 - **Supersedes:** None.
+
+## ADR-018 — Failed P12 controlled image artifact remains inactive
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Codex within ADR-010/ADR-014 and the measured P12 acceptance contract
+- **Context:** The owner-authorised signed-in Colab run completed on the six-group/twelve-image controlled corpus. Validation and held-out macro F1 were both `0.333333`; both held-out images were classified as `CONTROLLED_TAMPERED` at the validation-selected threshold `0.05`. The configured acceptance minimum was `0.85`.
+- **Options considered:** Activate the artifact because packaging/hash checks passed; rerun or tune against the two held-out samples; preserve the failed experiment and keep the adapter unavailable.
+- **Decision:** Preserve safe metrics, hashes, confusion matrix, latency and model-card evidence, but do not register or activate the private Keras artifact. Do not tune or rerun against the exhausted held-out partition. Treat the result as controlled experimental pipeline evidence and require a new model version, representative authorised grouped data and newly frozen partitions before another reportable run.
+- **Consequences:** P12 remains In Progress. Image-model inference continues to return an explicit unavailable state with null probability. The private artifact stays outside Git. Documentation must distinguish the deterministic dataset-preflight report from the external Colab-run evidence.
+- **Related requirements/phases:** P12, FR-ML-003, FR-ML-005, FR-ML-006, ADR-010, ADR-014.
+- **Supersedes:** None.

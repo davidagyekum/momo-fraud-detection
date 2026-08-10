@@ -13,13 +13,14 @@
   "limitations": [
     "Only six controlled source groups and twelve generic images are available.",
     "Labels represent declared controlled edits, not naturally occurring provider fraud.",
-    "No model metric may be recorded until the pinned Google Colab training run executes."
+    "External training-run metrics are recorded separately under docs/evidence and are not embedded in this deterministic dataset report."
   ],
   "manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
-  "model_metrics": null,
+  "model_metrics_embedded": false,
   "preprocessing_schema_hash": "8510a396d3115887f8ebff88414f75f9ea5b353f375d93cfdf65f488d55df616",
   "preprocessing_version": "image-rgb224-minus1-to1-v1",
   "random_seed": 20260812,
+  "report_scope": "dataset_preflight_only",
   "record_count": 12,
   "schema_version": "controlled-image-binary-v1",
   "source_group_count": 6,
@@ -47,5 +48,5 @@
       "ORIGINAL": 1
     }
   },
-  "training_executed": false
+  "training_executed_by_report": false
 }

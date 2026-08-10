@@ -55,8 +55,9 @@ def test_dataset_report_is_honest_and_reproducible() -> None:
     second = image_dataset_report(MANIFEST, root=CONTROLLED_ROOT)
     assert first == second
     assert first["split_counts"] == {"test": 2, "train": 8, "validation": 2}
-    assert first["training_executed"] is False
-    assert first["model_metrics"] is None
+    assert first["report_scope"] == "dataset_preflight_only"
+    assert first["training_executed_by_report"] is False
+    assert first["model_metrics_embedded"] is False
     assert all(not values for values in first["group_intersections"].values())  # type: ignore[union-attr]
 
 
