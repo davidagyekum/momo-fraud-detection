@@ -8,7 +8,7 @@
 - Base branch: `codex/p11-data-governance-registry`
 - Base SHA: `438d2d007496a2d0163cfed75c76da48bbb215ca`
 - Work branch: `codex/p12-colab-foundation`
-- Immutable notebook code SHA: `cc3c59df047f10905392217d892f452bbd456771`
+- Immutable notebook code SHA: `b2e6b24a337c3cc1777c162cf64861d7e55d29f8`
 - Final head SHA: produced by the final notebook-pin commit
 - Pull request: not created in this session
 - Push status: pending final commits/push at handoff authoring time
