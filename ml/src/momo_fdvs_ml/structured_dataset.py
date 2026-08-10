@@ -51,7 +51,7 @@ class StructuredDataset:
 
     def partition(
         self, split: str
-    ) -> tuple[pd.DataFrame, pd.Series, tuple[str, ...], tuple[str, ...]]:
+    ) -> tuple[pd.DataFrame, pd.Series[str], tuple[str, ...], tuple[str, ...]]:
         selected = [row for row in self.rows if row["split"] == split]
         if not selected:
             raise StructuredDatasetError(f"structured {split} partition is empty")
