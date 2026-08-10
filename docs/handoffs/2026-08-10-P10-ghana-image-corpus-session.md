@@ -8,9 +8,10 @@
 - Base branch: `codex/p12-cnn-tampering`
 - Base SHA: `fe39556b67ccab26004bda1674593c335d2e35dd`
 - Work branch: `codex/p10-ghana-image-corpus`
-- Final head SHA: pending the final commit for this session; report the exact SHA at handoff
+- Implementation commit: `80bf6c6868cecab2acf46778becc916e68cac7c5`
+- Final head SHA: the documentation-only handoff follow-up is included after the implementation commit; report the resulting exact branch head at session close
 - Pull request: not opened
-- Push status: pending final commit/push
+- Push status: implementation branch pushed successfully to `origin/codex/p10-ghana-image-corpus`; this handoff update is the final documentation-only follow-up
 - Worktree status: preserve the four pre-existing untracked P12 evidence/model-card files; they are not part of this workstream
 
 ## Scope completed
@@ -108,9 +109,10 @@ Skipped/blocked checks and reason:
 git status --short:
   Preserve four pre-existing untracked P12 evidence/model-card files.
 git log --oneline <base>..HEAD:
-  Pending final commit for this session.
+  80bf6c6 feat(data): add Ghana MoMo fraud corpus tooling
+  Followed by the final documentation-only handoff update.
 push output:
-  Pending final branch push.
+  `codex/p10-ghana-image-corpus -> origin/codex/p10-ghana-image-corpus` succeeded.
 ```
 
 ## Next exact task
