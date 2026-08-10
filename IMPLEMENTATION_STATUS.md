@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p11-structured-model`
-- Base SHA: `593ebd91bdc2041c2574e72cd21ab661020853c2`
-- Head SHA: `P11 review head to be recorded after final handoff commit`
+- Current work branch: `codex/p11-publication`
+- Base SHA: `42a0ec69430f9a412211ada85a03d7c3171e4136`
+- Head SHA: `P11 publication update in progress`
 - Last updated: `2026-08-10`
 - CI status: `P11 local and signed-in Colab gates pass; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `P11 — In Review`
-- Next exact task: `Review and merge P11, publish the exact merge evidence, then begin P12 image-classification design without running training outside Google Colab.`
+- Current phase: `P11 — Complete`
+- Next exact task: `Begin P12 image-classification preflight and implementation on codex/p12-cnn-tampering; stop and notify the owner before reportable CNN training, which must run in Google Colab.`
 
 ## Phase status
 
@@ -30,7 +30,7 @@
 | P08 | Reference-record import and transaction verification | Complete | [PR #9](https://github.com/davidagyekum/momo-fraud-detection/pull/9) — merged | `36d39e0d59b4b36672890e51e22233a8ca01604e` merge commit | 90 backend tests at 90.40% coverage; 36 admin tests at 91.58% statement coverage; 3 Playwright tests and production build; 48 mobile tests at 89.80% statement coverage and 23-route static export; Chrome upload/validate/confirm/commit flow with no console warnings or errors | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs were prevented from starting by B-CI-001. Stored/imported references only, never live MNO verification. |
 | P09 | Deterministic image-forensics and manipulation evidence | Complete | [PR #10](https://github.com/davidagyekum/momo-fraud-detection/pull/10) — merged | `5ed38ac84bda4b3948f7893d2647096d3d70a0ed` merge commit | Registered backend gate: 96 tests at 87.58% branch coverage, Ruff, strict mypy, OpenAPI and ER pass; clean and previous-revision migrations pass; mobile gate: 48 tests at 89.80% statement coverage and 23-route export | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs had zero steps and were prevented from starting by B-CI-001. Supporting/contextual evidence only; no model was trained. |
 | P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | [PR #11](https://github.com/davidagyekum/momo-fraud-detection/pull/11) — merged | `2e2c1fd53863e09b03c52ae1d5f53c1111deec81` merge commit | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | Merged on 2026-08-10 using passing local evidence; all eight hosted jobs had zero steps and were prevented from starting by B-CI-001. No model was fit, evaluated or exported. |
-| P11 | Structured-feature fraud classifier | In Review | `codex/p11-structured-model` | final review SHA pending | ML gate: 71 tests at 91.03%; backend gate: 110 tests at 86.17%; signed-in Colab held-out macro F1/balanced accuracy 1.0 over three controlled samples; private artifact hash, registry lifecycle and real API inference pass | Controlled-only pipeline evidence; one held-out source group, no calibrator and no provider-wide/production claim. |
+| P11 | Structured-feature fraud classifier | Complete | [PR #13](https://github.com/davidagyekum/momo-fraud-detection/pull/13) — merged | `42a0ec69430f9a412211ada85a03d7c3171e4136` merge commit | ML gate: 71 tests at 91.03%; backend gate: 110 tests at 86.17%; signed-in Colab held-out macro F1/balanced accuracy 1.0 over three controlled samples; private artifact hash, registry lifecycle and real API inference pass | Merged on 2026-08-10 using passing local/Colab evidence. All eight hosted jobs had zero steps under B-CI-001. Controlled-only pipeline evidence; no provider-wide/production claim. |
 | P12 | CNN receipt-tampering classifier | Not Started |  |  |  |  |
 | P13 | End-to-end analysis orchestration, rules and risk aggregation | Not Started |  |  |  |  |
 | P14 | History, search, downloadable reports and notifications | Not Started |  |  |  |  |
@@ -70,7 +70,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 ## Last completed session
 
 - Handoff file: `docs/handoffs/2026-08-10-P11-session.md`
-- Summary: `P11 implemented the governed structured model lifecycle, completed the controlled-only signed-in Colab run, verified the private artifact through the API and entered review.`
+- Summary: `P11 implemented the governed structured model lifecycle, completed the controlled-only signed-in Colab run, verified the private artifact through the API and merged as PR #13.`
 
 ## Next session startup
 
