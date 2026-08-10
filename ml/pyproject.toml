@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "momo-fdvs-ml"
+version = "0.1.0"
+description = "Governed dataset and reproducibility tooling for MoMo-FDVS"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "Pillow==12.3.0",
+]
+
+[project.scripts]
+momo-fdvs-data = "momo_fdvs_ml.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "mypy==1.17.1",
+  "pytest==8.4.1",
+  "pytest-cov==6.2.1",
+  "ruff==0.15.22",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers --cov=momo_fdvs_ml --cov-report=term-missing --cov-fail-under=90"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["momo_fdvs_ml"]
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["momo_fdvs_ml"]
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["PIL.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106"]

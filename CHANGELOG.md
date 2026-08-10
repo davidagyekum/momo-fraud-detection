@@ -63,6 +63,11 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Owner/staff immutable analysis-evidence API that keeps verification, image evidence and unavailable fraud risk as separate projections and never exposes another user's identity or a storage key.
 - Mobile image-evidence card that explains deterministic signals as supporting evidence only and continues to show fraud risk as unavailable.
 - Controlled seeded manipulation, tiny-image, metadata, alignment, persistence, integrity, immutability and diagnostic-access regressions plus a P09 evidence catalogue.
+- P10 typed manifest loader with canonical dataset/split hashing, private-object boundaries, provenance validation and machine-readable error codes.
+- Deterministic generic Ghana-style demonstration receipt generator and six source-grouped controlled variants covering amount/reference/recipient replacement, crop, clone/paste, misalignment, font mismatch and recompression.
+- Small sanitised controlled dataset with declared parents, coordinates, seeds, SHA-256 values, train/validation/test group files, dataset card and reproducible report.
+- Leakage, path, hash, decode, duplicate/conflicting-label, class-distribution, permission, anonymisation and private-identifier regression suite plus a registered `--ml` verification gate.
+- Google Colab training-boundary handoff defining safe setup and the provenance, metric, dependency, commit and artifact evidence required from P11/P12 runs.
 
 ### Changed
 
@@ -78,6 +83,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - The generated OpenAPI contract now documents the P07 OCR run, review, immutable confirmation and analysis-readiness lifecycle.
 - The generated OpenAPI contract now documents P08 reference-import, masked reference-record and verification-analysis endpoints and error states.
 - The generated OpenAPI contract now documents P09 immutable analysis evidence and staff-only `ela`/`noise-map` receipt variants.
+- Repository verification now executes the P10 governed ML-data suite for `--ml`; it performs no model fitting or inference.
+- Private research dataset paths under `ml/data/private`, `raw` or authorised/authorized directories are ignored and rejected by the prohibited-artifact scanner.
 - The transitional partial-analysis response now includes deterministic image evidence when available and removes `IMAGE_ANALYSIS` from the unavailable-stage list without simulating model/risk completion.
 
 ### Fixed

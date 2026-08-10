@@ -1,0 +1,39 @@
+{
+  "dataset_scope": "synthetic_and_controlled_only",
+  "generation_seed": 20260810,
+  "generator_version": "generic-ghana-receipt-generator-v1",
+  "label_counts": {
+    "fraudulent": 6,
+    "genuine": 6
+  },
+  "limitations": [
+    "All committed images are generic controlled demonstrations.",
+    "They do not represent provider-wide layouts, users or real fraud prevalence.",
+    "Controlled edits do not cover all real manipulation techniques.",
+    "No model was fit or evaluated in P10; no performance claim is available."
+  ],
+  "manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "model_metrics": null,
+  "provider_scope": "generic_demonstration_not_provider_specific",
+  "record_count": 12,
+  "schema_version": "receipt-dataset-manifest-v1",
+  "source_group_count": 6,
+  "source_type_counts": {
+    "controlled_tamper": 6,
+    "synthetic": 6
+  },
+  "split_group_counts": {
+    "test": 1,
+    "train": 4,
+    "validation": 1
+  },
+  "split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "split_sample_counts": {
+    "test": 2,
+    "train": 8,
+    "validation": 2
+  },
+  "training_executed": false,
+  "validation_error_count": 0,
+  "validation_warning_count": 0
+}

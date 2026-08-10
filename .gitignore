@@ -15,6 +15,10 @@ private-storage/
 datasets/
 data/private/
 data/raw/
+ml/data/private/
+ml/data/raw/
+ml/data/authorised/
+ml/data/authorized/
 artifacts/
 model-artifacts/
 *.keras
