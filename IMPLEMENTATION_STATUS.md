@@ -8,7 +8,7 @@
 - Default branch: `main`
 - Current work branch: `codex/p12-cnn-tampering`
 - Base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
-- Head SHA: `65c6efc68034d0bd652a6cbeb25472544250ece1` (notebook pins training code `02d8967136853c5c46eaa0babe44a7327c843a32`)
+- Evidence parent SHA: `65c6efc68034d0bd652a6cbeb25472544250ece1` (notebook pins training code `02d8967136853c5c46eaa0babe44a7327c843a32`)
 - Last updated: `2026-08-10`
 - CI status: `P12 no-training local gates and signed-in Google Colab preflight pass; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`

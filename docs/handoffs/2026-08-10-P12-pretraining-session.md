@@ -11,7 +11,7 @@
 - Immutable training-code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Pre-evidence head SHA: `65c6efc68034d0bd652a6cbeb25472544250ece1`
 - Pull request: Not opened; P12 is intentionally incomplete before training
-- Push status: Training code and pinned notebook are pushed; signed-in Colab preflight evidence will be committed and pushed before handoff
+- Push status: Training code, pinned notebook and signed-in Colab preflight evidence are pushed to the phase branch
 - Worktree status: Expected clean after the handoff commit
 
 ## Scope completed
