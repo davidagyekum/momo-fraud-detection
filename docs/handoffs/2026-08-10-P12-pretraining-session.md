@@ -9,9 +9,9 @@
 - Base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
 - Work branch: `codex/p12-cnn-tampering`
 - Immutable training-code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
-- Final head SHA: pending notebook/handoff commit
+- Pre-evidence head SHA: `65c6efc68034d0bd652a6cbeb25472544250ece1`
 - Pull request: Not opened; P12 is intentionally incomplete before training
-- Push status: Training-code commit pushed; notebook/handoff commit pending
+- Push status: Training code and pinned notebook are pushed; signed-in Colab preflight evidence will be committed and pushed before handoff
 - Worktree status: Expected clean after the handoff commit
 
 ## Scope completed
@@ -75,9 +75,13 @@
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.venv\\Scripts\\python.exe scripts\\verify_ml.py` | PASS | Ruff, strict mypy, 99 tests, 91.83% coverage, controlled/structured/image report drift | 88.3s |
+| `.venv\\Scripts\\python.exe scripts\\verify_ml.py` | PASS | Ruff, strict mypy, 99 tests, 91.83% coverage, controlled/structured/image report drift; no training executed | 67.6s |
 | `TEST_DATABASE_URL=... .venv\\Scripts\\python.exe scripts\\verify_backend.py` | PASS | Ruff, strict mypy, 129 tests, 86.13% coverage, PostgreSQL lifecycle, OpenAPI and ER | 94.2s |
-| `.venv\\Scripts\\python.exe scripts\\check_secrets.py` | PASS | 374 candidate files; no prohibited artifact/secret | 6.0s |
+| `.venv\\Scripts\\python.exe scripts\\check_secrets.py` | PASS | 376 candidate files; no prohibited artifact/secret | 8.2s |
+| Signed-in Google Colab Cell 1 | PASS | Python `3.12.13`; checkout exactly `02d8967136853c5c46eaa0babe44a7327c843a32`; locked dependencies installed | 1m (Colab display) |
+| Signed-in Google Colab Cell 2 | PASS | `scripts/verify_ml.py` exited successfully; final output: `P12 Colab preflight passed; no model training has executed.` | 1m (Colab display) |
+
+The signed-in Drive copy is retained outside Git. Cell 4 (`p12-train`) remained `[ ]` after the preflight; Cells 5-7 also remained unexecuted. No model artifact was produced or downloaded.
 
 Skipped/blocked checks and reason: CNN training, metrics, `.keras` verification, activation, CPU-container latency and heatmap evidence are intentionally blocked at the owner/Colab checkpoint. No P12 schema migration or frontend change exists. GitHub Actions remains externally blocked by B-CI-001.
 
@@ -85,13 +89,13 @@ Skipped/blocked checks and reason: CNN training, metrics, `.keras` verification,
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| P12-TRAIN | High | Owner approval is required before the pinned Colab fit cell. | P12 cannot produce real metrics/artifact or complete. | Keep IMAGE adapter unavailable with null probability. | Project owner | Review this handoff and authorize the controlled-only Colab run. |
+| P12-TRAIN | High | Signed-in Colab checkout/preflight passed, but owner approval is required before the pinned fit cell. | P12 cannot produce real metrics/artifact or complete. | Keep IMAGE adapter unavailable with null probability. | Project owner | Review the recorded preflight and explicitly authorize `p12-train`. |
 | P12-DATA | High | Only six controlled source groups are available. | Results cannot estimate provider generalisation or calibration. | Label all future results controlled-only and require human review. | Project owner/data steward | Supply licensed, representative grouped data for a future version. |
 | B-CI-001 | High | GitHub Actions cannot allocate runners because of the account/billing lock. | No hosted gate evidence. | Preserve exact local evidence. | Repository owner | Restore Actions and rerun. |
 
 ## Documentation updated
 
-- `IMPLEMENTATION_STATUS.md`: P12 In Progress at the Google Colab stop boundary.
+- `IMPLEMENTATION_STATUS.md`: P12 In Progress at the successful Google Colab preflight/stop boundary.
 - `requirements_traceability.csv`: FR-ML-003 In Progress with tested unavailable/inference implementation.
 - `DECISION_LOG.md`: ADR-014 continues to govern Colab execution; no new deviation.
 - `CHANGELOG.md`: P12 pre-training pipeline and explicit no-artifact state recorded.
@@ -107,4 +111,4 @@ push output: training-code commit pushed to origin/codex/p12-cnn-tampering
 
 ## Next exact task
 
-Stop. The project owner should review this handoff and explicitly approve opening `ml/notebooks/P12_COLAB_IMAGE_TRAINING.ipynb` in signed-in Google Colab. Run checkout and preflight cells first, confirm their output, and obtain a second explicit approval before running the `p12-train` cell. Do not record P12 metrics or claim an artifact before that cell finishes successfully.
+Stop. The signed-in Google Colab checkout and preflight cells passed, and the `p12-train` cell remains unexecuted. The project owner must now explicitly authorize running `p12-train`. Do not record P12 metrics or claim an artifact before that cell finishes successfully.

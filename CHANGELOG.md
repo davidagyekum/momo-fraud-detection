@@ -76,6 +76,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - P12 pre-training binary image-task schema with deterministic 224×224 RGB/EXIF/resize/normalisation parity, frozen group partitions and a recorded no-training dataset report.
 - TensorFlow 2.21 MobileNetV3Small two-stage training/evaluation/package pipeline with train-only augmentation, class weights, validation-only threshold selection, held-out/calibration/CPU evidence generation and private `.keras` export commands.
 - Private image-model adapter and ADMIN lifecycle commands with hash-before-load, schema/shape checks and explicit unavailable/runtime/input/output error states; no P12 model has been trained or activated yet.
+- Signed-in Google Colab P12 checkout/preflight evidence pinned to training commit `02d8967136853c5c46eaa0babe44a7327c843a32`; Python 3.12.13 and `verify_ml.py` passed while the governed training cell remained unexecuted.
 
 ### Changed
 
