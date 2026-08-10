@@ -28,6 +28,7 @@ def _notebook() -> dict[str, object]:
                 "source": [
                     'RUN_PROFILE = "smoke"\n',
                     'TARGET_COMMIT = "REPLACE_WITH_PUSHED_PR12_SHA"\n',
+                    'sys.path.insert(0, str(repo / "ml/src"))\n',
                     "from momo_fdvs_ml.colab import ColabPaths\n",
                 ],
             },
@@ -87,6 +88,16 @@ def test_committed_standard_notebooks_are_clean_and_match_recorded_report() -> N
                 ]
             ),
             "NB_THIN_WRAPPER",
+        ),
+        (
+            lambda value: value["cells"][0].update(
+                source=[
+                    'RUN_PROFILE = "smoke"\n',
+                    'TARGET_COMMIT = "x"\n',
+                    "from momo_fdvs_ml import cli\n",
+                ]
+            ),
+            "NB_IMPORT_PATH",
         ),
         (lambda value: value.update(cells=value["cells"][:1]), "NB_STOP_BOUNDARY"),
         (

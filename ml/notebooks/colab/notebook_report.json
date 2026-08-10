@@ -5,10 +5,10 @@
   "issues": [],
   "notebook_count": 3,
   "notebook_hashes": {
-    "00_environment_preflight.ipynb": "15bb0852a3791f7d414a7e2aa2685ec146d5d23b29ef2f147f0199f13f62bf6f",
-    "01_tiny_restart_safe_smoke.ipynb": "f647677daabfa20f89a7eb3f70946809d02aa3040b18b8946aa4afd442c039a0",
-    "NOTEBOOK_TEMPLATE.ipynb": "53f34ba81ea240c0e77e22592565a4d2342a38132bce537abc38a85fff9bb7ed"
+    "00_environment_preflight.ipynb": "8a7915802fdcf59cb4677d3b13308e9f64dcbe7e2b59dd814cfea7cb19f5c71c",
+    "01_tiny_restart_safe_smoke.ipynb": "4a269145adbced6c08371b0942da9b43fc8efd6dff6f68bc7976c67486ec0551",
+    "NOTEBOOK_TEMPLATE.ipynb": "e6de5c36a10985e36915bd25504cca8cf9a276b0401fa9e0e42afb536954371a"
   },
   "outputs_stripped": true,
-  "policy_version": "colab-notebook-policy-v1"
+  "policy_version": "colab-notebook-policy-v2"
 }

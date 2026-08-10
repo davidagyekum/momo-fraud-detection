@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
 
-NOTEBOOK_POLICY_VERSION: Final = "colab-notebook-policy-v1"
+NOTEBOOK_POLICY_VERSION: Final = "colab-notebook-policy-v2"
 SECRET_PATTERNS: Final = {
     "private key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     "GitHub token": re.compile(r"\bgh[opusr]_[A-Za-z0-9_]{20,}\b"),
@@ -102,6 +102,11 @@ def validate_notebook(path: Path, *, root: Path) -> tuple[NotebookIssue, ...]:
             add("NB_COMMIT", "first code cell must visibly configure an immutable commit")
     if "momo_fdvs_ml" not in combined:
         add("NB_THIN_WRAPPER", "notebook must delegate reusable logic to momo_fdvs_ml")
+    if 'sys.path.insert(0, str(repo / "ml/src"))' not in combined:
+        add(
+            "NB_IMPORT_PATH",
+            "notebook must expose the checked-out source tree to the active Colab kernel",
+        )
     if "## Stop boundary" not in combined:
         add("NB_STOP_BOUNDARY", "notebook must state its stop boundary")
     for label, pattern in SECRET_PATTERNS.items():

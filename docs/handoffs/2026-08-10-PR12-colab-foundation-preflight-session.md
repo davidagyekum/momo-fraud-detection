@@ -19,7 +19,7 @@
 - Requirement IDs: FR-ML-005, FR-ML-006, NFR-AUD-001, NFR-DATA-001; logical PR12 blueprint acceptance items
 - Backlog task IDs: reconciliation items recorded under logical PR12 in `docs/audits/pr10-pr12-gap.md`
 - Goal: make one tiny signed-in Colab smoke reproducible and restart-safe before any acquisition or reportable training
-- Actual completed work: exact-lock/runtime/Git preflight, strict run manifest, atomic and mirrored checkpoint lifecycle, safe secret loader, deterministic bounded smoke flow, thin output-free notebooks, static notebook policy, recorded lock/notebook reports, recovery runbook, CI registration and negative/regression tests
+- Actual completed work: exact-lock/runtime/Git preflight, strict run manifest, atomic and mirrored checkpoint lifecycle, safe secret loader, deterministic bounded smoke flow, thin output-free notebooks, static notebook policy, recorded lock/notebook reports, recovery runbook, CI registration and negative/regression tests. After the owner's first clean Colab attempt exposed an editable-install import-path gap, notebook policy v2 and all three notebooks were repaired to expose the checked-out `ml/src` tree to the already-running kernel before imports.
 
 ## Changed files
 
@@ -75,9 +75,9 @@
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff, strict mypy, 280 tests, 93.12% branch-aware coverage, governance/lock/notebook drift and existing deterministic reports | 83.3 s |
+| `.venv\Scripts\python.exe scripts\verify_ml.py` after live-kernel import repair | PASS | Ruff, strict mypy, 281 tests, 93.13% branch-aware coverage, governance/lock/notebook drift and existing deterministic reports | 100.5 s |
 | `.venv\Scripts\python.exe scripts\verify.py --ml` | EXPECTED WRAPPER FAIL / ML PASS | Doctor reports host Node 22.11 instead of pinned 24.14 plus missing host Tesseract/PostgreSQL CLI; secret scan and complete ML gate pass | 93.6 s |
-| `pytest tests/test_notebooks.py -q --no-cov` plus recorded notebook validation after SHA pin | PASS | 17 tests; all 3 output-free notebooks match their recorded hashes and pin `cc3c59df047f10905392217d892f452bbd456771` | under 9 s |
+| `pytest tests/test_notebooks.py -q --no-cov` plus recorded notebook validation after import repair | PASS | 18 tests; all 3 output-free notebooks match policy v2 and their recorded hashes | under 9 s |
 | `.venv\Scripts\python.exe scripts\check_secrets.py` | PASS | 448 candidate files; no secret/prohibited artifact/PII filename/oversized-file finding | 2.9 s |
 | PowerShell CSV/JSON/notebook integrity checks | PASS | 98 traceability rows with 12 columns; contract and notebook JSON parse | 1.6 s |
 | `git diff --check` | PASS | no whitespace errors | 1.8 s |

@@ -4,6 +4,10 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ## Unreleased
 
+### Fixed
+
+- Colab notebooks now add the checked-out `ml/src` tree to the live kernel import path after editable installation, preventing a clean-session `ModuleNotFoundError` before preflight.
+
 ### Added
 
 - Logical PR12 clean-session Colab preflight, reusable thin notebook template and tiny restart-safe smoke notebook with stripped outputs, generic Drive/VM paths and immutable checkout recording.

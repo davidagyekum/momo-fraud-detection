@@ -50,7 +50,7 @@
 - Recovery: same-directory atomic writes, verified Drive mirrors and hash-before-resume reject missing or corrupt checkpoints and preserve the original run ID across a lost runtime.
 - Bounded smoke: deterministic fictitious train/validation-only transaction, OCR and one-epoch image-surrogate stages stay within 1,000 rows, 20 images and one epoch; JSON export/reload is verified and locked tests are excluded.
 - Honesty boundary: every smoke bundle declares acquisition, full training and promotion false; it cannot be registered or cited as accuracy evidence and does not change the failed historical P12 artifact.
-- Verification: registered ML gate passes locally with Ruff, strict mypy, lock/notebook drift checks and the expanded branch-aware test suite. Fresh signed-in Colab execution is still required before logical PR12 can be complete.
+- Verification: registered ML gate passes locally with Ruff, strict mypy, lock/notebook drift checks and the expanded branch-aware test suite. Notebook policy v2 requires the checked-out source tree on the active kernel import path, closing the clean-session editable-install failure observed in Colab. Fresh signed-in Colab execution is still required before logical PR12 can be complete.
 - Stop boundary: no dataset acquisition, private-data processing, locked-test access or FULL training was performed. Work stops after pushing the runnable notebooks so the owner can execute the fresh Colab smoke.
 
 ## Phase status
