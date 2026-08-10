@@ -179,3 +179,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** The measured macro F1 and balanced accuracy of 1.0 demonstrate pipeline correctness only. The model card must retain the one-group/three-sample limitation, human review remains required, and future authorised data requires a new version and evaluation. The private joblib artifact remains outside Git and is SHA-256 verified before every trusted load.
 - **Related requirements/phases:** P11, FR-ML-001, FR-ML-002, FR-ML-004, FR-ML-005, FR-ML-006, FR-ML-007, NFR-ACC-002, ADR-010, ADR-014.
 - **Supersedes:** None.
+
+## ADR-017 — Rights-gated Ghana mobile-money fraud corpus
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Project owner and authorised research annotators
+- **Context:** A future Ghanaian fraud-message classifier needs provider- and campaign-aware image data, but online screenshots and social-platform content do not automatically grant research/ML reuse rights. The existing P12 dataset is a controlled tampering corpus with a different task and must remain separate.
+- **Options considered:** Bulk-scrape public platforms; admit discovery images with unknown rights; build a rights-gated, redacted, provenance-first workspace and release only eligible rows.
+- **Decision:** Use the separate `ghana-mobile-money-fraud-message-v1` profile under the ignored `ml/data/authorized/ghana_momo_fraud/` workspace. Require documented official/licensed/consented rights, strong or moderate Ghana evidence, consistent redaction, SHA-256/pHash/OCR checks, source-group splits and adjudicated labels before release. Keep unknown-rights candidates in the private registry only; do not use synthetic filler to reach 500–600 images.
+- **Consequences:** The current corpus is explicitly `NOT_READY` with zero eligible images, and no fraud-message model metric may be claimed. Collection can resume after rights clearance and a 50-image double-annotation pilot. The canonical manifest uses private object IDs and never exposes original paths or creator identity.
+- **Related requirements/phases:** P10 follow-up, P11, P12, NFR-DATA-001, ADR-010, ADR-014.
+- **Supersedes:** None.

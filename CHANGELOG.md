@@ -77,6 +77,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - TensorFlow 2.21 MobileNetV3Small two-stage training/evaluation/package pipeline with train-only augmentation, class weights, validation-only threshold selection, held-out/calibration/CPU evidence generation and private `.keras` export commands.
 - Private image-model adapter and ADMIN lifecycle commands with hash-before-load, schema/shape checks and explicit unavailable/runtime/input/output error states; no P12 model has been trained or activated yet.
 - Signed-in Google Colab P12 checkout/preflight evidence pinned to training commit `02d8967136853c5c46eaa0babe44a7327c843a32`; Python 3.12.13 and `verify_ml.py` passed while the governed training cell remained unexecuted.
+- Ghana-only mobile-money fraud corpus protocol, provider/alias taxonomy, rights-gated source/query registry, privacy-aware redaction helper, pHash/OCR/duplicate/split validator, canonical private-object manifest projection and explicit `NOT_READY` QA report.
 
 ### Changed
 
@@ -122,6 +123,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 - GitHub-hosted P01 workflow jobs cannot start while the repository owner's GitHub Actions account is locked by a billing issue; equivalent P01 gates pass locally.
 - P11 controlled structured training is complete. P12 CNN training remains pending in Google Colab; no image-model metric or `.keras` artifact is claimed before that run.
+- The Ghana fraud-message corpus remains empty/NOT_READY until official, licensed or consented material passes rights, Ghana-evidence, redaction, provenance and annotation gates; discovery candidates are not training data.
 - `npm audit --omit=dev` reports 8 moderate and 15 high findings in the current Expo SDK 57/React Native/Metro dependency graph. Its proposed automatic fixes downgrade Expo to 53 or React Native to 0.72, so no incompatible force-fix was applied; monitor supported SDK 57 patches under B-SEC-002.
 
 ## Release entry template

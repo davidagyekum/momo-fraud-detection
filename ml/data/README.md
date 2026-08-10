@@ -33,3 +33,15 @@ Unknown or disputed consent/licence status is a stop condition. Do not replace i
 Keep raw and derived authorised data in separate private prefixes with least-privilege access and audit logging. The dataset card must name the retention/review rule and revocation process approved by the institution; this project does not invent a legal retention period. If permission is withdrawn, remove the affected private objects and all derivatives, rebuild manifests/splits, and invalidate training artifacts that depended on them.
 
 Run `scripts/verify.py --ml` before any training handoff. A valid report proves schema and leakage checks passed; it does not prove that the dataset is representative or that a model is accurate.
+
+## Ghana mobile-money fraud corpus
+
+The separate Ghana fraud-message collection workspace lives at the ignored path
+`ml/data/authorized/ghana_momo_fraud/`. Its protocol is documented in
+`docs/dataset-cards/GHANA_MOMO_FRAUD_DATASET_PROTOCOL.md` and its validator is
+`scripts/ghana_dataset.py`.
+
+This corpus uses `fraudulent`, `genuine` and `suspicious` labels and is not a
+replacement for the P12 `ORIGINAL` versus `CONTROLLED_TAMPERED` dataset. Real
+authorised rows must use private object IDs in the canonical manifest; local
+redacted copies are for controlled research work only and are never committed.

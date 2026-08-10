@@ -6,14 +6,23 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p12-cnn-tampering`
-- Base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
+- Current work branch: `codex/p10-ghana-image-corpus`
+- Base SHA: `fe39556b67ccab26004bda1674593c335d2e35dd`
 - Evidence parent SHA: `65c6efc68034d0bd652a6cbeb25472544250ece1` (notebook pins training code `02d8967136853c5c46eaa0babe44a7327c843a32`)
 - Last updated: `2026-08-10`
 - CI status: `P12 no-training local gates and signed-in Google Colab preflight pass; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
 - Current phase: `P12 — In Progress`
 - Next exact task: `Stop for owner review and obtain explicit approval before running the p12-train cell in the preflighted signed-in Google Colab notebook.`
+
+## Ghana fraud-message corpus workstream
+
+- Status: `Not Ready` — governance, source logging, redaction and validation tooling are implemented; the private workspace contains zero eligible images.
+- Dataset profile: `ghana-mobile-money-fraud-message-v1`, separate from the P12 controlled-tampering dataset.
+- Private workspace: `ml/data/authorized/ghana_momo_fraud/` (gitignored).
+- Current QA result: `status=NOT_READY`, `ready_count=0`, `training_executed=false`, `model_metrics=null`.
+- Rights boundary: discovery candidates are logged, but no rights-uncertain image was downloaded into the training corpus. Social-platform collection remains permission/API/creator-consent gated.
+- Next exact dataset task: obtain documented licences or creator/research consent, then run the 50-image double-annotation pilot and adjudication before scaling.
 
 ## Phase status
 
@@ -57,6 +66,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-TRAIN | P12 | The pinned Google Colab notebook passed checkout/preflight and has reached its explicit pre-training stop cell. | No P12 metric, `.keras` artifact, activation, CPU latency or heatmap evidence can be produced yet. | Keep image inference explicitly unavailable with a null tamper probability. | Project owner reviews the successful preflight evidence and authorises the controlled-only run. | Obtain explicit approval, then run `p12-train`; do not rerun or skip the governed stop boundary. |
+| GHANA-DATA-001 | Ghana corpus workstream | No rights-cleared, redacted Ghana image set is available yet; current discovery sources are not training-approved. | The planned classifier corpus cannot enter training or produce model metrics. | Keep the workspace empty/NOT_READY and retain only auditable discovery and rights records. | Obtain official/licensed/consented material, complete redaction and pilot adjudication, then validate before any split is released. |
 
 ## Active known limitations
 
@@ -68,11 +78,12 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - Actual P11 training ran in signed-in Google Colab at immutable code SHA `a914f065070558b5b601e6f49cf1691ff7bf9d42`; P12 and future reportable training runs must also use Google Colab. Local execution remains limited to tests, packaging and inference verification.
 - P11's held-out result contains only one controlled source group and three rows. It is pipeline-correctness evidence, not provider-wide accuracy, calibration or production readiness.
 - P12 has only six controlled source groups/twelve images. Training has not run; the canonical report records `training_executed: false` and `model_metrics: null`.
+- The Ghana fraud-message corpus has no eligible images yet. Its source registry and query log contain discovery records only; no 500–600 count, training readiness or classifier metric is claimed.
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-P12-pretraining-session.md`
-- Summary: `P12 preprocessing, governed MobileNetV3Small pipeline and safe unavailable adapter pass locally; signed-in Colab checkout/preflight also passed and Cell 4 remains unexecuted.`
+- Handoff file: `docs/handoffs/2026-08-10-P10-ghana-image-corpus-session.md`
+- Summary: `Ghana corpus workspace, source/rights logs, privacy-aware redaction helper, pHash/OCR/dedup validator and NOT_READY QA report implemented; no rights-uncertain images admitted.`
 
 ## Next session startup
 
@@ -83,3 +94,4 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 5. Confirm the saved Colab preflight evidence: Cells 1-2 completed successfully and Cell 4 remains `[ ]`.
 6. Do not run `p12-train` without explicit owner approval.
 7. Keep all P12 outputs controlled-only and the private `.keras` artifact outside Git.
+8. For the Ghana corpus, read `docs/handoffs/2026-08-10-P10-ghana-image-corpus-session.md`; do not add an image until provenance, rights, Ghana evidence, redaction and adjudicated labels are complete.
