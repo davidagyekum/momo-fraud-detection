@@ -1,0 +1,279 @@
+{
+  "acceptance_passed": true,
+  "acceptance_thresholds": {
+    "balanced_accuracy_minimum": 0.8,
+    "macro_f1_minimum": 0.85
+  },
+  "artifact": {
+    "committed_to_git": false,
+    "filename": "structured-rf-controlled-v1.joblib",
+    "sha256": "cc2137f85ac522bd5a4d58592779b2667a6b1ae2755015a8c1bd7977fa5c190b"
+  },
+  "dataset_manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "dataset_scope": "controlled_synthetic_only",
+  "feature_schema_hash": "5ce66b8b860b24c95f2a6933bb396128c1f083fe088171654404d4d066295699",
+  "feature_schema_version": "structured-evidence-features-v1",
+  "framework_versions": {
+    "implementation": "CPython",
+    "joblib": "1.5.3",
+    "numpy": "2.5.2",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0"
+  },
+  "held_out_test": {
+    "balanced_accuracy": 1.0,
+    "calibration": {
+      "bins": [
+        {
+          "accuracy": 1.0,
+          "count": 3,
+          "lower": 0.8,
+          "mean_confidence": 0.968889,
+          "upper": 1.0
+        }
+      ],
+      "calibration_applied": false,
+      "calibration_reason": "No calibrator was fit: the controlled validation partition has only one source group and three rows; fitting calibration would overstate evidence.",
+      "expected_calibration_error": 0.031111,
+      "multiclass_brier": 0.002267
+    },
+    "confusion_matrix": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "GENUINE",
+      "SUSPICIOUS",
+      "FRAUDULENT"
+    ],
+    "labels": [
+      "FRAUDULENT",
+      "GENUINE",
+      "SUSPICIOUS"
+    ],
+    "macro_f1": 1.0,
+    "per_class": {
+      "FRAUDULENT": {
+        "f1-score": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 1.0
+      },
+      "GENUINE": {
+        "f1-score": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 1.0
+      },
+      "SUSPICIOUS": {
+        "f1-score": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 1.0
+      }
+    },
+    "predicted": [
+      "FRAUDULENT",
+      "GENUINE",
+      "SUSPICIOUS"
+    ],
+    "probabilities": [
+      {
+        "FRAUDULENT": 0.96333333,
+        "GENUINE": 0.02666667,
+        "SUSPICIOUS": 0.01
+      },
+      {
+        "FRAUDULENT": 0.00333333,
+        "GENUINE": 0.99666667,
+        "SUSPICIOUS": 0.0
+      },
+      {
+        "FRAUDULENT": 0.01333333,
+        "GENUINE": 0.04,
+        "SUSPICIOUS": 0.94666667
+      }
+    ],
+    "risk_scalars": [
+      0.96833333,
+      0.00333333,
+      0.48666667
+    ],
+    "sample_count": 3,
+    "sample_ids": [
+      "structured-0003-fraudulent",
+      "structured-0003-genuine",
+      "structured-0003-suspicious"
+    ],
+    "source_group_count": 1,
+    "source_groups": [
+      "controlled-group-0003"
+    ]
+  },
+  "limitations": [
+    "Controlled/synthetic data only; no provider-wide or production claim is allowed.",
+    "The held-out test partition has one source group and three rows.",
+    "No probability calibrator was fit because the validation partition is too small.",
+    "The artifact must be hash-verified before trusted joblib deserialisation."
+  ],
+  "model_name": "momo-fdvs-structured-risk",
+  "model_version": "structured-rf-controlled-v1",
+  "partition_groups": {
+    "test": [
+      "controlled-group-0003"
+    ],
+    "train": [
+      "controlled-group-0002",
+      "controlled-group-0004",
+      "controlled-group-0005",
+      "controlled-group-0006"
+    ],
+    "validation": [
+      "controlled-group-0001"
+    ]
+  },
+  "preprocessing_version": "structured-column-transformer-v1",
+  "random_seed": 20260811,
+  "report_version": "structured-model-evaluation-v1",
+  "risk_scalar_version": "p-fraud-plus-half-p-suspicious-v1",
+  "split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "structured_dataset_hash": "30a74b15fe34ef229edd7b28d25b334add7d79e2a73d06d9baae3ba560dda07f",
+  "thresholds": {
+    "fraudulent": 0.55,
+    "suspicious": 0.05,
+    "validation_fraudulent_recall": 1.0,
+    "validation_macro_f1": 1.0
+  },
+  "train_sample_ids": [
+    "structured-0002-fraudulent",
+    "structured-0002-genuine",
+    "structured-0002-suspicious",
+    "structured-0004-fraudulent",
+    "structured-0004-genuine",
+    "structured-0004-suspicious",
+    "structured-0005-fraudulent",
+    "structured-0005-genuine",
+    "structured-0005-suspicious",
+    "structured-0006-fraudulent",
+    "structured-0006-genuine",
+    "structured-0006-suspicious"
+  ],
+  "training_commit_sha": "a914f065070558b5b601e6f49cf1691ff7bf9d42",
+  "validation": {
+    "balanced_accuracy": 1.0,
+    "calibration": {
+      "bins": [
+        {
+          "accuracy": 1.0,
+          "count": 3,
+          "lower": 0.8,
+          "mean_confidence": 0.95,
+          "upper": 1.0
+        }
+      ],
+      "calibration_applied": false,
+      "calibration_reason": "No calibrator was fit: the controlled validation partition has only one source group and three rows; fitting calibration would overstate evidence.",
+      "expected_calibration_error": 0.05,
+      "multiclass_brier": 0.004422
+    },
+    "confusion_matrix": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "GENUINE",
+      "SUSPICIOUS",
+      "FRAUDULENT"
+    ],
+    "labels": [
+      "FRAUDULENT",
+      "GENUINE",
+      "SUSPICIOUS"
+    ],
+    "macro_f1": 1.0,
+    "per_class": {
+      "FRAUDULENT": {
+        "f1-score": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 1.0
+      },
+      "GENUINE": {
+        "f1-score": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 1.0
+      },
+      "SUSPICIOUS": {
+        "f1-score": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 1.0
+      }
+    },
+    "predicted": [
+      "FRAUDULENT",
+      "GENUINE",
+      "SUSPICIOUS"
+    ],
+    "probabilities": [
+      {
+        "FRAUDULENT": 0.93666667,
+        "GENUINE": 0.05,
+        "SUSPICIOUS": 0.01333333
+      },
+      {
+        "FRAUDULENT": 0.03666667,
+        "GENUINE": 0.96333333,
+        "SUSPICIOUS": 0.0
+      },
+      {
+        "FRAUDULENT": 0.03333333,
+        "GENUINE": 0.01666667,
+        "SUSPICIOUS": 0.95
+      }
+    ],
+    "risk_scalars": [
+      0.94333333,
+      0.03666667,
+      0.50833333
+    ],
+    "sample_count": 3,
+    "sample_ids": [
+      "structured-0001-fraudulent",
+      "structured-0001-genuine",
+      "structured-0001-suspicious"
+    ],
+    "source_group_count": 1,
+    "source_groups": [
+      "controlled-group-0001"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "dataset_version": "controlled-structured-evidence-v1",
+  "feature_schema_hash": "5ce66b8b860b24c95f2a6933bb396128c1f083fe088171654404d4d066295699",
+  "feature_schema_version": "structured-evidence-features-v1",
+  "generation_seed": 20260811,
+  "group_count": 6,
+  "label_counts": {
+    "FRAUDULENT": 6,
+    "GENUINE": 6,
+    "SUSPICIOUS": 6
+  },
+  "limitations": [
+    "Rows are deterministic controlled scenarios, not real provider transactions.",
+    "Labels are declared scenario provenance, not outputs copied from fraud rules.",
+    "The dataset is intentionally small and cannot estimate production prevalence."
+  ],
+  "record_count": 18,
+  "scope": "controlled_synthetic_only",
+  "source_manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "source_split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "split_counts": {
+    "test": 3,
+    "train": 12,
+    "validation": 3
+  },
+  "structured_dataset_hash": "30a74b15fe34ef229edd7b28d25b334add7d79e2a73d06d9baae3ba560dda07f",
+  "training_executed": false
+}

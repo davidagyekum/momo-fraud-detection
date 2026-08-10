@@ -68,6 +68,11 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Small sanitised controlled dataset with declared parents, coordinates, seeds, SHA-256 values, train/validation/test group files, dataset card and reproducible report.
 - Leakage, path, hash, decode, duplicate/conflicting-label, class-distribution, permission, anonymisation and private-identifier regression suite plus a registered `--ml` verification gate.
 - Google Colab training-boundary handoff defining safe setup and the provenance, metric, dependency, commit and artifact evidence required from P11/P12 runs.
+- P11 immutable 46-field structured-evidence schema, forbidden-field/missingness guards and deterministic controlled scenario dataset derived from leakage-isolated P10 groups.
+- P11 scikit-learn `ColumnTransformer`/Random Forest pipeline with training-only fitting, validation-only thresholds, held-out per-class metrics, calibration diagnostics, confusion matrix, model card and trusted joblib packaging.
+- Signed-in Google Colab P11 run pinned to training commit `a914f065070558b5b601e6f49cf1691ff7bf9d42`, with controlled-only macro F1/balanced accuracy `1.0` over three held-out samples from one source group and explicit non-generalisation limits.
+- Administrator-only structured-model registration, activation and rollback CLI/services with explicit confirmation, audited lifecycle, private-root containment and SHA-256/schema/identity verification before joblib load.
+- Deterministic active-model inference with class probabilities, predicted class, risk scalar, schema/model/threshold provenance and explicit `UNAVAILABLE`/`ERROR` states.
 
 ### Changed
 
@@ -84,12 +89,14 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - The generated OpenAPI contract now documents P08 reference-import, masked reference-record and verification-analysis endpoints and error states.
 - The generated OpenAPI contract now documents P09 immutable analysis evidence and staff-only `ela`/`noise-map` receipt variants.
 - Repository verification now executes the P10 governed ML-data suite for `--ml`; it performs no model fitting or inference.
+- Repository ML verification now also validates the canonical P11 structured dataset and report drift; reportable model fitting remains Colab-only.
 - Private research dataset paths under `ml/data/private`, `raw` or authorised/authorized directories are ignored and rejected by the prohibited-artifact scanner.
 - The transitional partial-analysis response now includes deterministic image evidence when available and removes `IMAGE_ANALYSIS` from the unavailable-stage list without simulating model/risk completion.
 
 ### Fixed
 
-- None.
+- P11 Colab strict typing now parameterises pandas `Series`, keeping the pinned pipeline portable when pandas stubs are preinstalled.
+- Structured inference now accepts NumPy real scalars and tuple-backed categorical schemas produced by the trusted joblib bundle while continuing to reject booleans, unknown categories and schema drift.
 
 ### Security
 
