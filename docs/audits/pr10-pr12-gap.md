@@ -113,7 +113,7 @@ The blueprint's PR numbers are logical milestones. They do not match the actual 
 | SMOKE/FULL parameters | `complete` | UNIT, SMOKE and FULL are executable boundaries; smoke has hard row/image/epoch/test caps and all outputs are non-promotable. |
 | Colab Secrets loading without printing | `complete` | `SecretBundle` loads named Colab secrets in memory, redacts representation and exposes only names for safe logging. |
 | Notebook lint/output checks | `complete` | The registered notebook policy checks structure, outputs, counts, credentials, personal paths, ad-hoc installs, thin wrappers and stop boundaries. |
-| Tiny end-to-end smoke notebook | `prepared; Colab run pending` | The notebook covers fictitious transaction preprocessing/fit, lightweight OCR, one image surrogate epoch, export/reload/inference, checkpoints and manifest. A real fresh Colab run still needs owner authorization. |
+| Tiny end-to-end smoke notebook | `complete` | The owner-operated signed-in Colab run completed at clean code commit `b2e6b24a…`; the safe evidence records prediction digest `43833f49…`, owner-reported manifest SHA-256 `bb0ebffb…`, and acquisition/FULL/promotion false. |
 | Lost-runtime recovery runbook | `complete` | `ml/COLAB_RUNTIME_RECOVERY.md` documents same-run restore, corruption handling, evidence return and incident boundaries. |
 | CI cannot enter full mode | `complete` | CI pins UNIT and explicitly invokes `assert_ci_profile_is_safe`; code/tests reject CI FULL even with Colab markers. |
 
@@ -121,17 +121,17 @@ The blueprint's PR numbers are logical milestones. They do not match the actual 
 
 | Blueprint requirement | Status | Evidence and gap |
 |---|---|---|
-| Complete smoke flow emits a run manifest | `complete locally` | Local integration tests execute the full tiny flow and validate a completed, non-promotable manifest with three checkpoints and two safe artifacts. |
+| Complete smoke flow emits a run manifest | `complete` | Local integration tests validate the flow, and signed-in Colab produced run `20260810T161011Z_smoke-foundation_b2e6b24a_seed20260810` with an owner-reported manifest SHA-256. |
 | Deterministic fixture split/predictions | `complete locally` | Two isolated runs produce the same prediction digest; transaction/image smoke excludes the committed test split and export/reload uses `1e-9` tolerance. |
 | Corrupt checkpoint rejected; valid checkpoint resumes | `complete locally` | Tests simulate runtime loss, restore a valid mirrored checkpoint into a fresh VM path and reject modified durable bytes. |
 | Secrets absent from notebooks/logs | `complete` | Notebook policy plus repository secret/artifact scanning rejects assigned credentials and retained output; secret values are redacted by construction. |
 | Run manifest validates | `complete` | Portable JSON Schema and strict runtime validation cover Git/runtime/locks/data/config/features/artifacts/checkpoints/session history and execution flags. |
-| Restart-and-run-all | `awaiting owner Colab evidence` | Notebook cells are output-free and ordered for a clean runtime; actual signed-in Colab execution is deliberately not claimed yet. |
+| Restart-and-run-all | `complete` | The owner ran preflight and smoke in signed-in Colab. After one expected kernel restart to clear a NumPy in-process upgrade mismatch, the smoke completed without acquisition or FULL mode. Notebook policy v2 permanently enforces the live-kernel source path repair found during the first attempt. |
 | Full mode blocked locally/CI | `complete` | Existing reportable CLIs require acknowledged non-CI Colab FULL; CI explicitly checks its UNIT selection and smoke cannot enter those CLIs. |
 
 ### Done assessment
 
-`implementation complete locally; owner-operated Colab smoke pending`. Registered ML verification passes the runtime, notebook, manifest, deterministic prediction, corruption and resume suite without acquisition or reportable training. Logical PR12 is not complete until a fresh signed-in Colab session runs the preflight and smoke notebooks top to bottom and returns the safe manifest/hash evidence.
+`complete`. Registered ML verification passes the runtime, notebook, manifest, deterministic prediction, corruption and resume suite. The owner-operated signed-in Colab preflight/smoke completed at clean commit `b2e6b24a…`; safe evidence is recorded in `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json`. The run performed no acquisition, held-out evaluation, reportable training or artifact promotion.
 
 ## Preserved work and conflicts requiring migration
 

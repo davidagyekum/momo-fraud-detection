@@ -10,6 +10,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ### Added
 
+- Owner-operated signed-in Colab evidence for the completed logical PR12 smoke at code commit `b2e6b24a337c3cc1777c162cf64861d7e55d29f8`, including exact locks, runtime inventory, deterministic prediction digest and owner-reported manifest SHA-256; acquisition, FULL training and promotion remain false.
 - Logical PR12 clean-session Colab preflight, reusable thin notebook template and tiny restart-safe smoke notebook with stripped outputs, generic Drive/VM paths and immutable checkout recording.
 - `colab-run-manifest-v1` with allowlisted runtime inventory, lock/data/split/config hashes, artifacts, immutable checkpoint ledger, interrupted/resumed session history and explicit non-acquisition/non-promotable smoke flags.
 - Atomic JSON/checkpoint write and verified Drive-mirroring primitives, corrupt-checkpoint rejection, same-run resume, non-printing Colab Secret loading and a runtime-loss recovery runbook.

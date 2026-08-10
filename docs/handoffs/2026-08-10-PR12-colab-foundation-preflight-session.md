@@ -9,9 +9,9 @@
 - Base SHA: `438d2d007496a2d0163cfed75c76da48bbb215ca`
 - Work branch: `codex/p12-colab-foundation`
 - Immutable notebook code SHA: `b2e6b24a337c3cc1777c162cf64861d7e55d29f8`
-- Final head SHA: produced by the final notebook-pin commit
+- Final head SHA: produced by the final Colab-evidence commit
 - Pull request: not created in this session
-- Push status: pending final commits/push at handoff authoring time
+- Push status: pending final Colab-evidence commit/push at handoff update time
 - Worktree status: intended clean after the final commit
 
 ## Scope completed
@@ -19,7 +19,7 @@
 - Requirement IDs: FR-ML-005, FR-ML-006, NFR-AUD-001, NFR-DATA-001; logical PR12 blueprint acceptance items
 - Backlog task IDs: reconciliation items recorded under logical PR12 in `docs/audits/pr10-pr12-gap.md`
 - Goal: make one tiny signed-in Colab smoke reproducible and restart-safe before any acquisition or reportable training
-- Actual completed work: exact-lock/runtime/Git preflight, strict run manifest, atomic and mirrored checkpoint lifecycle, safe secret loader, deterministic bounded smoke flow, thin output-free notebooks, static notebook policy, recorded lock/notebook reports, recovery runbook, CI registration and negative/regression tests. After the owner's first clean Colab attempt exposed an editable-install import-path gap, notebook policy v2 and all three notebooks were repaired to expose the checked-out `ml/src` tree to the already-running kernel before imports.
+- Actual completed work: exact-lock/runtime/Git preflight, strict run manifest, atomic and mirrored checkpoint lifecycle, safe secret loader, deterministic bounded smoke flow, thin output-free notebooks, static notebook policy, recorded lock/notebook reports, recovery runbook, CI registration and negative/regression tests. After the owner's first clean Colab attempt exposed an editable-install import-path gap, notebook policy v2 and all three notebooks were repaired to expose the checked-out `ml/src` tree to the already-running kernel before imports. The owner then completed the signed-in Colab preflight/smoke and returned the safe summary plus manifest SHA-256.
 
 ## Changed files
 
@@ -51,16 +51,16 @@
 
 - Screens/components: none
 - States covered: not applicable
-- Viewports/devices: Google Colab notebooks remain to be run by the signed-in owner
+- Viewports/devices: owner-operated signed-in Google Colab, Python 3.12.13, two CPU cores, accelerator reported `unknown`
 - Screenshot/evidence paths: none claimed
 - Accessibility notes: no UI change
 
 ## OCR/image/ML/verification
 
 - Pipeline/model/rule/template versions: `colab-foundation-v1`, `colab-run-manifest-v1`, `colab-smoke-flow-v1`; reportable model versions unchanged
-- Dataset/split/artifact hashes: dependency-lock and notebook hashes are recorded in `ml/colab_lock_report.json` and `ml/notebooks/colab/notebook_report.json`; each smoke artifact/checkpoint is SHA-256 recorded at runtime
-- Metrics actually measured: local test coverage only; no reportable model metric and no held-out score was produced
-- Limitations: local tests exercise a dedicated fictitious train/validation-only surrogate; the fresh signed-in Colab smoke is still pending and cannot establish quality, provider generalisation or P12 acceptance
+- Dataset/split/artifact hashes: dependency-lock and notebook hashes are recorded in `ml/colab_lock_report.json` and `ml/notebooks/colab/notebook_report.json`; signed-in smoke prediction digest `43833f498906e8063c7d1cfe592004f17f3d5570bb00076061263f737de77624`; owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279`
+- Metrics actually measured: local test coverage and deterministic smoke digest only; no reportable model metric and no held-out score was produced
+- Limitations: the signed-in Colab smoke used the dedicated fictitious train/validation-only surrogate and cannot establish quality, provider generalisation or historical P12 model acceptance
 - No fabricated or unavailable evidence: smoke and manifest force `acquisition_executed: false`, `full_training_executed: false` and `promotable: false`; historical failed P12 evidence remains unchanged/inactive
 
 ## Security/privacy
@@ -78,13 +78,14 @@
 | `.venv\Scripts\python.exe scripts\verify_ml.py` after live-kernel import repair | PASS | Ruff, strict mypy, 281 tests, 93.13% branch-aware coverage, governance/lock/notebook drift and existing deterministic reports | 100.5 s |
 | `.venv\Scripts\python.exe scripts\verify.py --ml` | EXPECTED WRAPPER FAIL / ML PASS | Doctor reports host Node 22.11 instead of pinned 24.14 plus missing host Tesseract/PostgreSQL CLI; secret scan and complete ML gate pass | 93.6 s |
 | `pytest tests/test_notebooks.py -q --no-cov` plus recorded notebook validation after import repair | PASS | 18 tests; all 3 output-free notebooks match policy v2 and their recorded hashes | under 9 s |
-| `.venv\Scripts\python.exe scripts\check_secrets.py` | PASS | 448 candidate files; no secret/prohibited artifact/PII filename/oversized-file finding | 2.9 s |
-| PowerShell CSV/JSON/notebook integrity checks | PASS | 98 traceability rows with 12 columns; contract and notebook JSON parse | 1.6 s |
+| `.venv\Scripts\python.exe scripts\check_secrets.py` | PASS | 449 candidate files; no secret/prohibited artifact/PII filename/oversized-file finding | 10.8 s |
+| PowerShell CSV/evidence-JSON integrity checks | PASS | 98 traceability rows with 12 columns; evidence JSON parses, hashes are 64-hex and all unsafe execution flags are false | 1.5 s |
 | `git diff --check` | PASS | no whitespace errors | 1.8 s |
+| Owner-operated signed-in Colab preflight | PASS | clean `b2e6b24a…`, Python 3.12.13, exact three-lock contract, SMOKE, acquisition/FULL false | owner-reported output |
+| Owner-operated signed-in Colab tiny smoke | PASS | run `20260810T161011Z_smoke-foundation_b2e6b24a_seed20260810`; prediction digest `43833f49…`; manifest SHA-256 `bb0ebffb…`; non-promotable | owner-reported output/hash |
 
 Skipped/blocked checks and reason:
 
-- Fresh signed-in Google Colab execution is intentionally the owner stop point. Logical PR12 remains incomplete until the pushed preflight and smoke notebooks pass there.
 - Dataset acquisition, private-data handling, locked-test access and FULL/reportable training were intentionally out of scope and were not executed.
 - Hosted GitHub Actions remain unable to allocate runners under B-CI-001; local gates are reported without claiming hosted success.
 - The repository wrapper remains non-zero because the unqualified host Node is 22.11 rather than pinned 24.14 and host Tesseract/PostgreSQL CLI are absent. The scoped ML gate is green; this PR does not require frontend builds, host OCR or local PostgreSQL diagnostics.
@@ -93,26 +94,25 @@ Skipped/blocked checks and reason:
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR12-COLAB-SMOKE | Acceptance | Fresh signed-in Colab preflight/smoke has not yet run | Logical PR12 cannot be marked complete | Keep all outputs non-promotable and stop before acquisition/FULL | Project owner with signed-in Colab | Run the two pinned notebooks and return only safe manifest evidence |
 | B-CI-001 | External | Repository owner's Actions account remains billing-locked | Hosted checks cannot reproduce local gates | Preserve exact local evidence and pinned workflow | Repository owner/GitHub | Resolve account lock and rerun |
 | P12-ACCEPTANCE | High | Historical controlled image model failed macro-F1 acceptance | Artifact cannot be activated | Keep image inference unavailable/null | Project owner/data steward | Obtain authorised representative data only after the later governed gate |
 
 ## Documentation updated
 
-- `IMPLEMENTATION_STATUS.md`: PR12-prepared/Colab-pending state and exact next action
+- `IMPLEMENTATION_STATUS.md`: logical PR12 complete with Colab evidence; historical P12 model still incomplete/inactive; exact PR13 governance boundary
 - `requirements_traceability.csv`: strengthened FR-ML-005/006 and NFR-AUD-001 evidence
 - `DECISION_LOG.md`: ADR-022 non-promotable restart-safe smoke boundary
 - `CHANGELOG.md`: Colab manifest/checkpoint/notebook/smoke additions
-- Evidence manifest/docs: recorded lock/notebook reports, gap audit, plan, recovery runbook and ML operating docs
+- Evidence manifest/docs: `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json`, recorded lock/notebook reports, gap audit, plan, recovery runbook and ML operating docs
 
 ## Git evidence
 
 ```text
 git status --short: expected clean after final commit
-git log --oneline 438d2d00..HEAD: implementation commit plus immutable notebook-pin commit expected
+git log --oneline 438d2d00..HEAD: foundation, notebook-pin, live-kernel repair, repaired pin and Colab-evidence commits
 push output: recorded in the final session report after push
 ```
 
 ## Next exact task
 
-From the pushed `codex/p12-colab-foundation` branch, open `ml/notebooks/colab/00_environment_preflight.ipynb` and then `ml/notebooks/colab/01_tiny_restart_safe_smoke.ipynb` in a fresh signed-in Google Colab runtime. Confirm each notebook's pinned immutable code SHA, run all cells in order and return only the safe summary plus manifest path/hash. Stop after the smoke: do not acquire data, access locked tests or select FULL training.
+Review the completed logical PR12 evidence, then create a new bounded logical PR13 branch only after source-by-source permission/licence/consent evidence is ready for review. Keep unknown-rights registry entries disabled. Do not acquire datasets, access locked tests or select FULL training as part of this handoff.
