@@ -357,6 +357,14 @@ Server validates that the referenced OCR result belongs to the transaction/user 
 
 **Response:** `202`
 
+During the phase-gated P08 build, stored/imported-record verification may complete before the
+image, model and risk components exist. In that state the endpoint persists an immutable
+`PARTIAL` analysis, returns both `analysis_run_id` and the transitional `analysis_id` alias,
+sets `risk.status` to `UNAVAILABLE` with null class/score, returns the available
+`verification` object, and lists the unavailable stages. It must not return a simulated queued
+or completed risk result. P13 replaces this transitional response with the queued full-pipeline
+response below while retaining idempotency and the separate verification object.
+
 ```json
 {
   "data": {
@@ -591,6 +599,13 @@ Parses/normalises without committing reference rows.
 ```json
 {
   "data": {
+    "batch": {
+      "id": "uuid",
+      "status": "VALIDATED",
+      "total_rows": 100,
+      "valid_rows": 94,
+      "invalid_rows": 6
+    },
     "batch_id": "uuid",
     "status": "VALIDATED",
     "total_rows": 100,
@@ -599,7 +614,8 @@ Parses/normalises without committing reference rows.
     "errors": [
       {"row": 4, "field": "amount", "code": "INVALID_DECIMAL"}
     ],
-    "invalid_rows_download": "/api/v1/admin/reference-imports/uuid/invalid-rows"
+    "invalid_rows_download": "/api/v1/admin/reference-imports/uuid/invalid-rows",
+    "preview_truncated": false
   },
   "meta": {"request_id": "..."}
 }

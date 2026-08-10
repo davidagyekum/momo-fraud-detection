@@ -13,6 +13,7 @@ from momo_fdvs.api.v1.ocr_schemas import (
     OCRConfirmationEnvelopeSchema,
     OCRConfirmationRequestSchema,
     OCRReviewEnvelopeSchema,
+    PartialAnalysisEnvelopeSchema,
 )
 from momo_fdvs.errors import error_response
 from momo_fdvs.extensions import db, limiter
@@ -25,6 +26,11 @@ from momo_fdvs.services.ocr import (
     latest_confirmation,
     latest_ocr_result,
     run_and_store_ocr,
+)
+from momo_fdvs.services.verification import (
+    VerificationFailure,
+    run_partial_verification_analysis,
+    verification_projection,
 )
 from momo_fdvs.storage.base import ObjectStorage
 
@@ -274,28 +280,90 @@ class OCRConfirmationResource(MethodView):
 @ocr_blueprint.route("/<uuid:transaction_id>/analyses")
 class AnalysisReadinessResource(MethodView):
     @require_roles("USER")
+    @limiter.limit(
+        lambda: current_app.config["RATE_LIMIT_OCR_REVIEW"],
+        key_func=lambda: str(g.current_user.id),
+    )
     @ocr_blueprint.doc(
+        parameters=[
+            {
+                "in": "header",
+                "name": "Idempotency-Key",
+                "required": True,
+                "schema": {"type": "string", "minLength": 8, "maxLength": 200},
+            }
+        ],
         responses={
             409: {"description": "OCR review is required before analysis."},
-            503: {"description": "The P13 analysis pipeline is not implemented in this phase."},
-        }
+            503: {"description": "Stored verification configuration is unavailable."},
+        },
     )
+    @ocr_blueprint.response(202, PartialAnalysisEnvelopeSchema)
     def post(self, transaction_id: uuid.UUID) -> Any:
-        """Enforce OCR readiness while analysis orchestration remains out of scope."""
+        """Run stored-record verification and expose unavailable risk stages honestly."""
         transaction = owned_transaction(transaction_id)
         if transaction is None:
             return error_response("TRANSACTION_NOT_FOUND", "Transaction not found.", 404)
-        if transaction.status != "READY" or latest_confirmation(transaction) is None:
+        confirmation = latest_confirmation(transaction)
+        if transaction.status not in {"READY", "PARTIAL"} or confirmation is None:
             return error_response(
                 "OCR_REVIEW_REQUIRED",
                 "Confirm the OCR fields before starting analysis.",
                 409,
             )
-        return error_response(
-            "ANALYSIS_PIPELINE_UNAVAILABLE",
-            "Analysis orchestration is not available in this build.",
-            503,
-        )
+        try:
+            key = request.headers.get("Idempotency-Key", "").strip()
+            if not key:
+                raise VerificationFailure(
+                    "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.", 400
+                )
+            result = run_partial_verification_analysis(
+                transaction=transaction,
+                confirmation=confirmation,
+                user=g.current_user,
+                roles=set(g.current_roles),
+                idempotency_key=key,
+            )
+            return {
+                "data": {
+                    "analysis_id": result.run.id,
+                    "analysis_run_id": result.run.id,
+                    "transaction_id": transaction.id,
+                    "status": "PARTIAL",
+                    "current_stage": result.run.current_stage,
+                    "risk": {
+                        "status": "UNAVAILABLE",
+                        "class": None,
+                        "score": None,
+                        "reason_code": "MODEL_AND_RISK_STAGES_NOT_AVAILABLE",
+                        "summary": "Fraud risk has not been calculated in this build.",
+                    },
+                    "verification": verification_projection(result.verification),
+                    "unavailable_stages": [
+                        "IMAGE_ANALYSIS",
+                        "STRUCTURED_MODEL",
+                        "IMAGE_MODEL",
+                        "RISK_AGGREGATION",
+                    ],
+                    "replayed": result.replayed,
+                },
+                "meta": _meta(),
+            }
+        except VerificationFailure as failure:
+            db.session.rollback()
+            audit_event(
+                "verification.request_rejected",
+                "FAILURE",
+                actor_id=g.current_user.id,
+                roles=set(g.current_roles),
+                target_type="transaction",
+                target_id=transaction.id,
+                metadata={"reason_code": failure.code, "http_status": failure.status},
+            )
+            db.session.commit()
+            return error_response(
+                failure.code, failure.message, failure.status, failure.field_errors
+            )
 
 
 __all__ = ["ocr_blueprint"]

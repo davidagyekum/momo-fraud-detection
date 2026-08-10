@@ -7,6 +7,7 @@ import { FeatureShellPage } from "../pages/feature-shell-page";
 import { ForgotPasswordPage } from "../pages/forgot-password-page";
 import { LoginPage } from "../pages/login-page";
 import { ProfilePage } from "../pages/profile-page";
+import { ReferenceImportsPage } from "../pages/reference-imports-page";
 import { NoAccessPage, NotFoundPage } from "../pages/system-pages";
 
 export function AppRouter(): React.ReactNode {
@@ -28,6 +29,8 @@ export function AppRouter(): React.ReactNode {
                 <PermissionGuard roles={route.roles}>
                   {route.path === "/dashboard" ? (
                     <DashboardPage />
+                  ) : route.path === "/reference-imports" ? (
+                    <ReferenceImportsPage />
                   ) : (
                     <FeatureShellPage route={route} />
                   )}

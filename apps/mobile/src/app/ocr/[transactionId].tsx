@@ -38,6 +38,12 @@ import {
   validateOCRConfirmation,
 } from "@/lib/ocr-client";
 import { fetchPrivateThumbnail } from "@/lib/receipt-client";
+import {
+  createAnalysisIdempotencyKey,
+  runStoredReferenceVerification,
+  verificationTone,
+  verificationWarning,
+} from "@/lib/verification-client";
 import { useAuth } from "@/state/auth-context";
 import { useIsOnline } from "@/state/network-context";
 import { palette, radius, spacing } from "@/theme/tokens";
@@ -105,6 +111,7 @@ export default function OCRReviewScreen() {
   const validId = typeof transactionId === "string" && transactionId.length > 0;
   const runKey = useRef(createOCRIdempotencyKey("run"));
   const confirmationKey = useRef(createOCRIdempotencyKey("confirm"));
+  const analysisKey = useRef(createAnalysisIdempotencyKey());
   const [fields, setFields] = useState<OCRConfirmedFields | null>(null);
   const [reasons, setReasons] = useState<Partial<Record<OCRFieldName, string>>>(
     {},
@@ -156,6 +163,19 @@ export default function OCRReviewScreen() {
       );
     },
     onSuccess: () => setConfirmVisible(false),
+  });
+  const analysis = useMutation({
+    mutationFn: () => {
+      if (!confirmation.data)
+        throw new Error(
+          "Confirm the receipt details before checking a reference.",
+        );
+      return runStoredReferenceVerification(
+        request,
+        confirmation.data.next_action.endpoint,
+        analysisKey.current,
+      );
+    },
   });
 
   const requestConfirmation = () => {
@@ -299,6 +319,7 @@ export default function OCRReviewScreen() {
                             [name]: undefined,
                           }));
                           confirmation.reset();
+                          analysis.reset();
                         }}
                         error={errors[name]}
                         hint={confidenceLabel(source)}
@@ -369,18 +390,78 @@ export default function OCRReviewScreen() {
           <Text style={uiStyles.cardTitle}>OCR review complete</Text>
           <Text selectable style={uiStyles.body}>
             Your confirmed snapshot is saved separately from the original OCR
-            result. Fraud analysis has not run yet.
+            result. You can now compare it with stored/imported reference data.
           </Text>
           <InlineAlert
             tone="info"
-            title="Next phase"
-            message="Reference verification and risk analysis are separate steps and are not available in this build yet."
+            title="Verification is not live provider confirmation"
+            message="This check uses reference records imported by an administrator. It does not query a mobile-network operator."
           />
+          {analysis.isError ? (
+            <InlineAlert
+              tone="error"
+              title="Reference check unavailable"
+              message={readableError(analysis.error)}
+            />
+          ) : null}
           <AppButton
-            label="Return to home"
-            onPress={() => router.replace("/(tabs)/home")}
+            label="Check stored/imported reference"
+            onPress={() => analysis.mutate()}
+            loading={analysis.isPending}
+            disabled={!online}
           />
         </AppCard>
+      ) : null}
+      {analysis.data ? (
+        <>
+          <AppCard>
+            <View style={uiStyles.row}>
+              <Text style={uiStyles.cardTitle}>Transaction verification</Text>
+              <StatusBadge
+                label={analysis.data.verification.label}
+                tone={verificationTone(analysis.data.verification.status)}
+              />
+            </View>
+            <Text selectable style={uiStyles.body}>
+              {analysis.data.verification.summary}
+            </Text>
+            <Text style={uiStyles.muted}>
+              {analysis.data.verification.matched_field_count} matched ·{" "}
+              {analysis.data.verification.mismatched_field_count} mismatched
+            </Text>
+            {analysis.data.verification.warnings.map((warning) => (
+              <InlineAlert
+                key={warning}
+                tone="warning"
+                title="Verification note"
+                message={verificationWarning(warning)}
+              />
+            ))}
+            <InlineAlert
+              tone="info"
+              title="Evidence basis"
+              message={analysis.data.verification.disclaimer}
+            />
+          </AppCard>
+          <AppCard>
+            <View style={uiStyles.row}>
+              <Text style={uiStyles.cardTitle}>Fraud risk</Text>
+              <StatusBadge label="Unavailable" tone="info" />
+            </View>
+            <Text selectable style={uiStyles.body}>
+              {analysis.data.risk.summary}
+            </Text>
+            <InlineAlert
+              tone="info"
+              title="Separate result"
+              message="Reference verification does not assign a fraud-risk class. Model and risk stages have not run."
+            />
+            <AppButton
+              label="Return to home"
+              onPress={() => router.replace("/(tabs)/home")}
+            />
+          </AppCard>
+        </>
       ) : null}
       <AppButton
         label="Back"
