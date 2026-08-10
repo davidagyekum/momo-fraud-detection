@@ -8,7 +8,7 @@
 - Default branch: `main`
 - Current work branch: `codex/p07-ocr-review`
 - Base SHA: `62f411aee2bd39a7d2feb8e49073ca4bdcf04922`
-- Head SHA: `P07 work in progress; exact pushed head will be recorded at handoff`
+- Head SHA: `fd9481e6175e7747ad58019be5aaf20a7fea03b6` functional implementation; handoff commit pending
 - Last updated: `2026-08-10`
 - CI status: `GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P07 backend/mobile gates pass locally`
 - Deployment status: `Not deployed`
