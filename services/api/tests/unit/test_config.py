@@ -35,6 +35,13 @@ def test_rejects_invalid_pool_size(monkeypatch: pytest.MonkeyPatch) -> None:
         load_config("development")
 
 
+def test_request_limit_must_exceed_receipt_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("UPLOAD_MAX_BYTES", "1000")
+    monkeypatch.setenv("UPLOAD_REQUEST_MAX_BYTES", "1000")
+    with pytest.raises(ConfigurationError, match="UPLOAD_REQUEST_MAX_BYTES"):
+        load_config("development")
+
+
 def test_rejects_invalid_environment() -> None:
     with pytest.raises(ConfigurationError, match="APP_ENV"):
         load_config("demo")

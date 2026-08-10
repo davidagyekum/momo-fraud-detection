@@ -23,17 +23,19 @@ function getErrorMessage(
   );
 }
 
-export async function apiRequest<T>(
+export async function apiResponse(
   path: string,
   init: RequestInit = {},
   accessToken?: string,
-): Promise<T> {
+): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
   const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
   headers.set("X-Client-Type", "mobile");
-  if (init.body) headers.set("Content-Type", "application/json");
+  if (typeof init.body === "string" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
 
   try {
@@ -42,17 +44,17 @@ export async function apiRequest<T>(
       headers,
       signal: controller.signal,
     });
-    const payload = (await response.json().catch(() => null)) as
-      T | ErrorEnvelope | null;
     if (!response.ok) {
-      const error = payload as ErrorEnvelope | null;
+      const error = (await response
+        .json()
+        .catch(() => null)) as ErrorEnvelope | null;
       throw new ApiError(
         getErrorMessage(error, response.status),
         response.status,
         error?.error?.code,
       );
     }
-    return payload as T;
+    return response;
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
@@ -70,4 +72,13 @@ export async function apiRequest<T>(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function apiRequest<T>(
+  path: string,
+  init: RequestInit = {},
+  accessToken?: string,
+): Promise<T> {
+  const response = await apiResponse(path, init, accessToken);
+  return (await response.json()) as T;
 }

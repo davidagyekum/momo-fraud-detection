@@ -298,6 +298,22 @@
         ],
         "type": "object"
       },
+      "DuplicateWarning": {
+        "additionalProperties": false,
+        "properties": {
+          "exact_match_found": {
+            "type": "boolean"
+          },
+          "near_match_found": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "exact_match_found",
+          "near_match_found"
+        ],
+        "type": "object"
+      },
       "Error": {
         "additionalProperties": false,
         "properties": {
@@ -398,6 +414,22 @@
         },
         "required": [
           "request_id"
+        ],
+        "type": "object"
+      },
+      "NextAction": {
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint",
+          "type"
         ],
         "type": "object"
       },
@@ -520,6 +552,57 @@
         ],
         "type": "object"
       },
+      "ReceiptDimensions": {
+        "additionalProperties": false,
+        "properties": {
+          "height_px": {
+            "type": "integer"
+          },
+          "width_px": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "height_px",
+          "width_px"
+        ],
+        "type": "object"
+      },
+      "ReceiptMedia": {
+        "additionalProperties": false,
+        "properties": {
+          "original_url": {
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "original_url",
+          "thumbnail_url"
+        ],
+        "type": "object"
+      },
+      "ReceiptQuality": {
+        "additionalProperties": false,
+        "properties": {
+          "score": {
+            "type": "number"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "score",
+          "warnings"
+        ],
+        "type": "object"
+      },
       "Refresh": {
         "additionalProperties": false,
         "properties": {
@@ -621,6 +704,120 @@
         "required": [
           "data",
           "meta"
+        ],
+        "type": "object"
+      },
+      "TransactionUploadData": {
+        "additionalProperties": false,
+        "properties": {
+          "next_action": {
+            "$ref": "#/components/schemas/NextAction"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/UploadedReceipt"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "transaction": {
+            "$ref": "#/components/schemas/UploadedTransaction"
+          }
+        },
+        "required": [
+          "next_action",
+          "receipt",
+          "replayed",
+          "transaction"
+        ],
+        "type": "object"
+      },
+      "TransactionUploadEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransactionUploadData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "UploadedReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "dimensions": {
+            "$ref": "#/components/schemas/ReceiptDimensions"
+          },
+          "duplicate_warning": {
+            "$ref": "#/components/schemas/DuplicateWarning"
+          },
+          "height_px": {
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "media": {
+            "$ref": "#/components/schemas/ReceiptMedia"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/ReceiptQuality"
+          },
+          "quality_warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "size_bytes": {
+            "type": "integer"
+          },
+          "width_px": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dimensions",
+          "duplicate_warning",
+          "height_px",
+          "id",
+          "media",
+          "media_type",
+          "quality",
+          "quality_warnings",
+          "size_bytes",
+          "width_px"
+        ],
+        "type": "object"
+      },
+      "UploadedTransaction": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "status"
         ],
         "type": "object"
       },
@@ -1326,6 +1523,158 @@
         ]
       }
     },
+    "/api/v1/transactions": {
+      "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "client_captured_at": {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  "client_metadata": {
+                    "description": "A size-limited JSON object of safe scalar values.",
+                    "type": "string"
+                  },
+                  "receipt": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "source": {
+                    "enum": [
+                      "CAMERA",
+                      "GALLERY"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "receipt",
+                  "source"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionUploadEnvelope"
+                }
+              }
+            },
+            "description": "A completed idempotent upload was replayed."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionUploadEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid image metadata or idempotency key."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "The USER role is required."
+          },
+          "409": {
+            "description": "Idempotency conflict."
+          },
+          "413": {
+            "description": "Encoded bytes or decoded pixels exceed a limit."
+          },
+          "415": {
+            "description": "Unsupported, corrupt, disguised, or unsafe image."
+          },
+          "429": {
+            "description": "Per-user upload rate limit exceeded."
+          },
+          "503": {
+            "description": "Private storage is unavailable."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Create a transaction from a strictly validated private receipt.",
+        "tags": [
+          "transactions-v1"
+        ]
+      }
+    },
+    "/api/v1/transactions/{transaction_id}/receipt": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "variant",
+            "required": false,
+            "schema": {
+              "default": "thumbnail",
+              "enum": [
+                "thumbnail",
+                "original"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private receipt image bytes."
+          },
+          "404": {
+            "description": "Receipt not found or not visible to the caller."
+          },
+          "503": {
+            "description": "Private storage is unavailable."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Stream an owner-authorised original or derived thumbnail.",
+        "tags": [
+          "transactions-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/version": {
       "get": {
         "responses": {
@@ -1366,6 +1715,10 @@
     {
       "description": "Administrator user management",
       "name": "admin-users-v1"
+    },
+    {
+      "description": "Private transaction receipt evidence",
+      "name": "transactions-v1"
     }
   ]
 }

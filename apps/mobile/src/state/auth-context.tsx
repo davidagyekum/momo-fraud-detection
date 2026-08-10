@@ -26,6 +26,7 @@ type AuthContextValue = {
   retryRestore: () => Promise<void>;
   updateUser: (user: User) => void;
   request: <T>(path: string, init?: RequestInit) => Promise<T>;
+  response: (path: string, init?: RequestInit) => Promise<Response>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -98,6 +99,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       retryRestore,
       updateUser: setUser,
       request: (path, init) => manager.authorizedRequest(path, init),
+      response: (path, init) => manager.authorizedResponse(path, init),
     }),
     [manager, restoreError, retryRestore, status, user],
   );

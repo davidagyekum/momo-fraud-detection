@@ -1,4 +1,4 @@
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest, apiResponse, ApiError } from "@/lib/api";
 import { AuthSessionManager } from "@/lib/auth-session";
 import {
   clearRefreshToken,
@@ -9,6 +9,7 @@ import type { Envelope, SessionData } from "@/types/api";
 
 jest.mock("@/lib/api", () => ({
   apiRequest: jest.fn(),
+  apiResponse: jest.fn(),
   ApiError: class MockApiError extends Error {
     readonly status: number;
     readonly code: string;
@@ -27,6 +28,7 @@ jest.mock("@/lib/api", () => ({
 jest.mock("@/lib/token-vault");
 
 const mockedApi = jest.mocked(apiRequest);
+const mockedResponse = jest.mocked(apiResponse);
 const mockedRead = jest.mocked(readRefreshToken);
 const mockedWrite = jest.mocked(writeRefreshToken);
 const mockedClear = jest.mocked(clearRefreshToken);
@@ -107,6 +109,23 @@ test("logout without a stored token remains local", async () => {
   await new AuthSessionManager().logout();
   expect(mockedApi).not.toHaveBeenCalled();
   expect(mockedClear).toHaveBeenCalled();
+});
+
+test("authorizes a private binary response", async () => {
+  mockedApi.mockResolvedValue(session);
+  const privateResponse = { ok: true, status: 200 } as Response;
+  mockedResponse.mockResolvedValue(privateResponse);
+  const manager = new AuthSessionManager();
+  await manager.login({ email: "ama@example.test", password: "secret" });
+
+  await expect(
+    manager.authorizedResponse("/api/v1/transactions/id/receipt"),
+  ).resolves.toBe(privateResponse);
+  expect(mockedResponse).toHaveBeenCalledWith(
+    "/api/v1/transactions/id/receipt",
+    {},
+    "fixture-access-token",
+  );
 });
 
 test("reports a partial session instead of faking success", async () => {

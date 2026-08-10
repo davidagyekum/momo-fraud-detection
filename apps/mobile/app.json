@@ -28,6 +28,14 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow MoMo-FDVS to select a receipt you choose for private verification.",
+          "cameraPermission": "Allow MoMo-FDVS to photograph a receipt for private verification.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#071A13",

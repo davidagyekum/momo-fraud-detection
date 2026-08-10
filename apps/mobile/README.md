@@ -1,6 +1,6 @@
 # MoMo-FDVS mobile application
 
-Expo SDK 57, React Native and TypeScript client for end users. P04 implements the secure authentication lifecycle, profile management, accessible UI states and the five-tab application shell. Receipt capture, history retrieval and notifications are deliberately labelled inactive until their owning phases.
+Expo SDK 57, React Native and TypeScript client for end users. P04 implements the secure authentication lifecycle, profile management, accessible UI states and five-tab shell. P06 adds private receipt capture, preview, upload and protected-preview reopening. History, OCR and notifications remain inactive until their owning phases.
 
 ## Runtime and configuration
 
@@ -25,3 +25,11 @@ npm run build:web
 The access token exists only in process memory. The rotating mobile refresh token is stored through Expo SecureStore using device-only accessibility and is deleted on logout or rejected restoration. On platforms where SecureStore is unavailable, the refresh token falls back to volatile process memory rather than browser or unencrypted persistent storage.
 
 The API must return a refresh token for a mobile session. If it does not, the client reports an explicit partial-session error and does not claim a successful sign-in.
+
+## Receipt capture and privacy
+
+- Camera permission is requested when the camera action is chosen; gallery permission is requested only when the gallery action is chosen.
+- JPEG, PNG and WebP images up to 10 MB are accepted. Client checks improve feedback, but the API independently validates all untrusted bytes.
+- Multipart boundaries are set by the native/web runtime. Every retry reuses the selection's idempotency key.
+- Protected thumbnails are fetched with the in-memory access token and represented only as an in-memory preview URI. Raw object keys and other users' duplicate details are never exposed.
+- Image-quality and duplicate notices are not fraud results and are not transaction-verification results.
