@@ -1,6 +1,6 @@
 # MoMo-FDVS machine-learning workspace
 
-This workspace contains governed data tooling and, in later phases, the structured and image model packages. P10 deliberately provides no training command: it creates validated, leakage-resistant inputs for P11 and P12.
+This workspace contains governed data tooling plus the structured and image model packages. Reportable fitting remains Google Colab-only; local verification exercises schemas, preprocessing, packaging orchestration and inference contracts without fitting a model.
 
 ## P10 commands
 
@@ -21,3 +21,17 @@ $env:PYTHONPATH = "ml/src"
 `.local/` is ignored by Git. Never point the generator or validator at a directory containing private data unless its consent, licence, retention and anonymisation records have been approved.
 
 See [data/README.md](data/README.md) for governance rules and [COLAB_TRAINING_HANDOFF.md](COLAB_TRAINING_HANDOFF.md) for the boundary before training.
+
+## P12 pre-training commands
+
+Validate the frozen binary image task and exact 224×224 RGB preprocessing contract:
+
+```powershell
+$env:PYTHONPATH = "ml/src"
+.venv\Scripts\python.exe -m momo_fdvs_ml validate-image `
+  --manifest ml/data/controlled/manifest.csv `
+  --root ml/data/controlled `
+  --recorded-report ml/data/controlled/image_dataset_report.json
+```
+
+`train-image` exists for the pinned Colab notebook. Do not execute it locally or record a metric before the owner-approved Colab run. The `.keras` output is private and must remain outside Git.

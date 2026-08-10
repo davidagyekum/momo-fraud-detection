@@ -7,6 +7,15 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from momo_fdvs_ml.image_model import (
+    ImageModelError,
+    load_and_verify_image_artifact,
+    train_and_package_image_model,
+)
+from momo_fdvs_ml.image_model import (
+    runtime_fingerprint as image_runtime_fingerprint,
+)
+from momo_fdvs_ml.image_schema import ImageDatasetError, image_dataset_report
 from momo_fdvs_ml.manifest import ManifestError, load_manifest, validate_manifest
 from momo_fdvs_ml.structured_dataset import (
     STRUCTURED_DATASET_SEED,
@@ -83,6 +92,32 @@ def build_parser() -> argparse.ArgumentParser:
     verify_artifact.add_argument("--artifact", type=Path, required=True)
     verify_artifact.add_argument("--sha256", required=True)
     verify_artifact.add_argument("--schema-hash", required=True)
+
+    validate_image = subparsers.add_parser(
+        "validate-image",
+        help="validate P12 binary image data and preprocessing without model training",
+    )
+    validate_image.add_argument("--manifest", type=Path, required=True)
+    validate_image.add_argument("--root", type=Path, required=True)
+    validate_image.add_argument("--recorded-report", type=Path)
+
+    train_image = subparsers.add_parser(
+        "train-image",
+        help="fit/evaluate/package P12; reportable execution is Google Colab only",
+    )
+    train_image.add_argument("--manifest", type=Path, required=True)
+    train_image.add_argument("--root", type=Path, required=True)
+    train_image.add_argument("--output-dir", type=Path, required=True)
+    train_image.add_argument("--model-version", required=True)
+    train_image.add_argument("--training-commit-sha", required=True)
+
+    verify_image = subparsers.add_parser(
+        "verify-image-artifact",
+        help="hash, schema and shape-check one trusted Keras image artifact",
+    )
+    verify_image.add_argument("--artifact", type=Path, required=True)
+    verify_image.add_argument("--sha256", required=True)
+    verify_image.add_argument("--schema-hash", required=True)
     return parser
 
 
@@ -160,6 +195,58 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(summary, indent=2, sort_keys=True))
             return 0 if outputs.report["acceptance_passed"] else 2
 
+        if args.command == "validate-image":
+            report = image_dataset_report(args.manifest, root=args.root)
+            if args.recorded_report is not None:
+                recorded = json.loads(args.recorded_report.read_text(encoding="utf-8"))
+                if recorded != report:
+                    raise ImageDatasetError(
+                        "recorded image dataset report does not match canonical data"
+                    )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "train-image":
+            image_outputs = train_and_package_image_model(
+                manifest_path=args.manifest,
+                dataset_root=args.root,
+                output_dir=args.output_dir,
+                model_version=args.model_version,
+                training_commit_sha=args.training_commit_sha,
+            )
+            summary = {
+                "artifact_path": str(image_outputs.artifact_path),
+                "artifact_sha256": image_outputs.artifact_sha256,
+                "report_path": str(image_outputs.report_path),
+                "model_card_path": str(image_outputs.model_card_path),
+                "registry_payload_path": str(image_outputs.registry_payload_path),
+                "confusion_matrix_path": str(image_outputs.confusion_matrix_path),
+                "acceptance_passed": image_outputs.report["acceptance_passed"],
+                "runtime": image_runtime_fingerprint(),
+            }
+            print(json.dumps(summary, indent=2, sort_keys=True))
+            return 0 if image_outputs.report["acceptance_passed"] else 2
+
+        if args.command == "verify-image-artifact":
+            model = load_and_verify_image_artifact(
+                args.artifact,
+                expected_sha256=args.sha256,
+                expected_schema_hash=args.schema_hash,
+            )
+            print(
+                json.dumps(
+                    {
+                        "artifact_verified": True,
+                        "input_shape": list(model.input_shape),
+                        "output_shape": list(model.output_shape),
+                        "preprocessing_schema_hash": args.schema_hash,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
         bundle = load_and_verify_artifact(
             args.artifact,
             expected_sha256=args.sha256,
@@ -178,7 +265,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         )
         return 0
-    except (ManifestError, StructuredDatasetError, StructuredModelError) as exc:
+    except (
+        ImageDatasetError,
+        ImageModelError,
+        ManifestError,
+        StructuredDatasetError,
+        StructuredModelError,
+    ) as exc:
         print(json.dumps({"error": str(exc)}, indent=2, sort_keys=True))
         return 1
 

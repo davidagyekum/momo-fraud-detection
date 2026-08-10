@@ -47,6 +47,21 @@ COMMANDS = [
             str(CONTROLLED_ROOT / "structured_dataset_report.json"),
         ],
     ),
+    (
+        "image dataset",
+        [
+            sys.executable,
+            "-m",
+            "momo_fdvs_ml",
+            "validate-image",
+            "--manifest",
+            str(CONTROLLED_ROOT / "manifest.csv"),
+            "--root",
+            str(CONTROLLED_ROOT),
+            "--recorded-report",
+            str(CONTROLLED_ROOT / "image_dataset_report.json"),
+        ],
+    ),
 ]
 
 

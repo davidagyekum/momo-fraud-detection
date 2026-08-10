@@ -24,6 +24,9 @@ dev = [
   "pytest-cov==6.2.1",
   "ruff==0.15.22",
 ]
+training = [
+  "tensorflow==2.21.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -54,7 +57,7 @@ module = ["PIL.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["joblib.*", "pandas.*", "sklearn.*"]
+module = ["joblib.*", "pandas.*", "sklearn.*", "tensorflow.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

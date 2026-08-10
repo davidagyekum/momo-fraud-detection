@@ -1,0 +1,2 @@
+# Google Colab reportable image-model training only (Python 3.12).
+tensorflow==2.21.0

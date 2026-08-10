@@ -73,6 +73,9 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Signed-in Google Colab P11 run pinned to training commit `a914f065070558b5b601e6f49cf1691ff7bf9d42`, with controlled-only macro F1/balanced accuracy `1.0` over three held-out samples from one source group and explicit non-generalisation limits.
 - Administrator-only structured-model registration, activation and rollback CLI/services with explicit confirmation, audited lifecycle, private-root containment and SHA-256/schema/identity verification before joblib load.
 - Deterministic active-model inference with class probabilities, predicted class, risk scalar, schema/model/threshold provenance and explicit `UNAVAILABLE`/`ERROR` states.
+- P12 pre-training binary image-task schema with deterministic 224×224 RGB/EXIF/resize/normalisation parity, frozen group partitions and a recorded no-training dataset report.
+- TensorFlow 2.21 MobileNetV3Small two-stage training/evaluation/package pipeline with train-only augmentation, class weights, validation-only threshold selection, held-out/calibration/CPU evidence generation and private `.keras` export commands.
+- Private image-model adapter and ADMIN lifecycle commands with hash-before-load, schema/shape checks and explicit unavailable/runtime/input/output error states; no P12 model has been trained or activated yet.
 
 ### Changed
 
@@ -117,7 +120,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 ### Known limitations
 
 - GitHub-hosted P01 workflow jobs cannot start while the repository owner's GitHub Actions account is locked by a billing issue; equivalent P01 gates pass locally.
-- Real model training remains pending and no metric or model artifact is claimed; execution will occur in Google Colab after the P10 data-governance phase.
+- P11 controlled structured training is complete. P12 CNN training remains pending in Google Colab; no image-model metric or `.keras` artifact is claimed before that run.
 - `npm audit --omit=dev` reports 8 moderate and 15 high findings in the current Expo SDK 57/React Native/Metro dependency graph. Its proposed automatic fixes downgrade Expo to 53 or React Native to 0.72, so no incompatible force-fix was applied; monitor supported SDK 57 patches under B-SEC-002.
 
 ## Release entry template

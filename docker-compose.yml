@@ -32,6 +32,7 @@ services:
       CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
       LOCAL_PRIVATE_STORAGE_ROOT: /app/.local/private-storage
       STRUCTURED_MODEL_ROOT: /app/.local/model-artifacts/structured
+      IMAGE_MODEL_ROOT: /app/.local/model-artifacts/image
       MIGRATIONS_DIR: /app/migrations
       TESSERACT_CMD: tesseract
     ports:
