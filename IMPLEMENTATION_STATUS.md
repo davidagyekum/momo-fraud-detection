@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p10-dataset-governance`
-- Base SHA: `5ed38ac84bda4b3948f7893d2647096d3d70a0ed`
-- Head SHA: `2ed35827083fab0cf0fc49a1a6635a7d10e42ff3` (pushed P10 review head; merged by `2e2c1fd53863e09b03c52ae1d5f53c1111deec81`)
+- Current work branch: `codex/p11-structured-model`
+- Base SHA: `593ebd91bdc2041c2574e72cd21ab661020853c2`
+- Head SHA: `P11 implementation in progress`
 - Last updated: `2026-08-10`
-- CI status: `GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P10 ML/backend gates pass locally`
+- CI status: `GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; P11 local and Colab evidence is in progress`
 - Deployment status: `Not deployed`
-- Current phase: `P10 — Complete and merged; stopped at the Google Colab boundary`
-- Next exact task: `Wait for the project owner to open the P10 Colab preflight and confirm whether P11 will use authorised real data or the controlled-only dataset.`
+- Current phase: `P11 — In Progress`
+- Next exact task: `Implement and publish the structured-model pipeline/notebook, then execute the real controlled-only training run in the signed-in Google Colab session.`
 
 ## Phase status
 
@@ -30,7 +30,7 @@
 | P08 | Reference-record import and transaction verification | Complete | [PR #9](https://github.com/davidagyekum/momo-fraud-detection/pull/9) — merged | `36d39e0d59b4b36672890e51e22233a8ca01604e` merge commit | 90 backend tests at 90.40% coverage; 36 admin tests at 91.58% statement coverage; 3 Playwright tests and production build; 48 mobile tests at 89.80% statement coverage and 23-route static export; Chrome upload/validate/confirm/commit flow with no console warnings or errors | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs were prevented from starting by B-CI-001. Stored/imported references only, never live MNO verification. |
 | P09 | Deterministic image-forensics and manipulation evidence | Complete | [PR #10](https://github.com/davidagyekum/momo-fraud-detection/pull/10) — merged | `5ed38ac84bda4b3948f7893d2647096d3d70a0ed` merge commit | Registered backend gate: 96 tests at 87.58% branch coverage, Ruff, strict mypy, OpenAPI and ER pass; clean and previous-revision migrations pass; mobile gate: 48 tests at 89.80% statement coverage and 23-route export | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs had zero steps and were prevented from starting by B-CI-001. Supporting/contextual evidence only; no model was trained. |
 | P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | [PR #11](https://github.com/davidagyekum/momo-fraud-detection/pull/11) — merged | `2e2c1fd53863e09b03c52ae1d5f53c1111deec81` merge commit | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | Merged on 2026-08-10 using passing local evidence; all eight hosted jobs had zero steps and were prevented from starting by B-CI-001. No model was fit, evaluated or exported. |
-| P11 | Structured-feature fraud classifier | Not Started |  |  |  |  |
+| P11 | Structured-feature fraud classifier | In Progress | `codex/p11-structured-model` |  | ML gate: 71 tests at 91.03%; backend gate: 108 tests at 86.35%; PostgreSQL registry lifecycle and API image build pass | Controlled-only scope; no provider-wide claim. Actual training has not run and must run in Colab. |
 | P12 | CNN receipt-tampering classifier | Not Started |  |  |  |  |
 | P13 | End-to-end analysis orchestration, rules and risk aggregation | Not Started |  |  |  |  |
 | P14 | History, search, downloadable reports and notifications | Not Started |  |  |  |  |
@@ -64,7 +64,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - Brand/deployment credentials are not yet supplied.
 - Docker Desktop 29.6.2 with Compose v5.3.1 is installed per-user; the API container supplies Tesseract 5.3.0 and the PostgreSQL container supplies the database CLI.
 - The unqualified Windows `python` command resolves to 3.11.7; use `py -3.12` for the selected Python 3.12 runtime. The unqualified Node.js is 22.11.0; activate pinned Node.js 24.14.0 for Expo work.
-- Actual P11/P12 model-training runs must use Google Colab. Local implementation proceeds through P10 and then pauses for a Colab handoff before any training execution.
+- Actual P11/P12 model-training runs must use Google Colab. Local execution is limited to non-reportable unit/inference fixtures and packaging checks; only Colab output may become training evidence.
 
 ## Last completed session
 
@@ -76,6 +76,6 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
 3. Read `docs/handoffs/2026-08-10-P09-session.md`.
-4. Open `ml/notebooks/P10_COLAB_DATA_PREFLIGHT.ipynb` in Google Colab using an exact final `main` SHA supplied in the handoff message.
-5. Run only the data preflight, then confirm whether authorised real data is available or controlled-only evaluation is approved.
-6. After that project-owner confirmation, begin P11 by implementing the structured-feature schema/training notebook and execute training only in Colab.
+4. Continue `codex/p11-structured-model` from the final P10 main SHA.
+5. Keep all actual P11 training execution in Google Colab and label the governed dataset controlled-only.
+6. Import only safe evaluation/provenance evidence and artifact hashes; keep the trusted model binary outside Git.

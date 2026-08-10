@@ -18,6 +18,7 @@ from momo_fdvs.config import load_config
 from momo_fdvs.errors import register_error_handlers
 from momo_fdvs.extensions import api, cors, db, limiter, migrate
 from momo_fdvs.logging import configure_logging, register_request_hooks
+from momo_fdvs.model_commands import register_model_commands
 from momo_fdvs.seeds import register_seed_commands
 from momo_fdvs.storage import create_storage
 
@@ -63,6 +64,7 @@ def create_app(config_name: str | None = None) -> Flask:
     register_request_hooks(app)
     register_error_handlers(app)
     register_seed_commands(app)
+    register_model_commands(app)
     return app
 
 

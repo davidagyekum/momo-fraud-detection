@@ -49,6 +49,8 @@ def test_loads_bounded_ocr_configuration() -> None:
     assert config["OCR_PIPELINE_VERSION"] == "ocr-pipeline-v1"
     assert config["OCR_PARSER_VERSION"] == "generic-parser-v1"
     assert config["OCR_FIELD_SCHEMA_VERSION"] == "ocr-fields-v1"
+    assert config["STRUCTURED_MODEL_ROOT"].name == "structured"
+    assert config["STRUCTURED_MODEL_MAX_BYTES"] == 268_435_456
 
 
 def test_request_limit_must_exceed_receipt_limit(monkeypatch: pytest.MonkeyPatch) -> None:

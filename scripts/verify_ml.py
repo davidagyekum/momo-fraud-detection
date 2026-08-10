@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the complete P10 machine-learning data quality gate."""
+"""Run the complete implemented machine-learning data and code quality gate."""
 
 from __future__ import annotations
 
@@ -32,6 +32,21 @@ COMMANDS = [
             "--check-recorded-report",
         ],
     ),
+    (
+        "structured dataset",
+        [
+            sys.executable,
+            "-m",
+            "momo_fdvs_ml",
+            "validate-structured",
+            "--dataset",
+            str(CONTROLLED_ROOT / "structured_features.csv"),
+            "--source-manifest",
+            str(CONTROLLED_ROOT / "manifest.csv"),
+            "--recorded-report",
+            str(CONTROLLED_ROOT / "structured_dataset_report.json"),
+        ],
+    ),
 ]
 
 
@@ -44,7 +59,7 @@ def main() -> int:
         if result.returncode != 0:
             print(f"ML verification failed at {label} (exit {result.returncode})")
             return result.returncode
-    print("\nML data verification passed; no model training was executed")
+    print("\nML data/code verification passed; no model training was executed")
     return 0
 
 
