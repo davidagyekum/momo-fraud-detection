@@ -191,3 +191,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** P12 remains In Progress. Image-model inference continues to return an explicit unavailable state with null probability. The private artifact stays outside Git. Documentation must distinguish the deterministic dataset-preflight report from the external Colab-run evidence.
 - **Related requirements/phases:** P12, FR-ML-003, FR-ML-005, FR-ML-006, ADR-010, ADR-014.
 - **Supersedes:** None.
+
+## ADR-019 — Adopt the PR10-PR20 blueprint through compatibility reconciliation
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Project owner and Codex
+- **Context:** The owner supplied a Colab-first PR10-PR20 blueprint after the repository had already merged P00-P11 and prepared/executed a controlled P12 experiment. The blueprint was intentionally drafted without repository visibility and proposes stronger data, split, calibration, locked-test and evidence-separation controls, but also uses logical PR numbers and taxonomies that do not match the implemented contracts.
+- **Options considered:** Replace the repository plan verbatim; ignore the blueprint; adopt it as a lower-precedence reconciled roadmap while preserving correct work and requiring compatibility migrations for conflicts.
+- **Decision:** Add the blueprint under `docs/plans`, include it in source precedence below the fixed scope/requirements/contracts, and use logical milestone numbering without rewriting Git history. Preserve existing stored-reference verification and technology choices. Audit every logical PR10-PR12 item as complete, partial, absent or conflicting before acquisition or additional full training.
+- **Consequences:** The old master plan remains historical for completed phases. Missing PR10-PR12 foundations enter a dedicated reconciliation branch. Risk-band, image-label, endpoint and artifact-format changes are not effective until versioned compatibility work and tests exist. Full training remains Google Colab-only and locked tests remain unopened until their governed milestone.
+- **Related requirements/phases:** Logical PR10-PR20, P10-P12, ADR-014, ADR-018, all analytical and data-governance requirements.
+- **Supersedes:** The unreconciled P13-P20 sequencing in `01_CODEX_MASTER_IMPLEMENTATION_PLAN.md`; it does not supersede fixed product scope or completed phase evidence.

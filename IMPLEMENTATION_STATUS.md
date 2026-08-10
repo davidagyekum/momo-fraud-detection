@@ -6,14 +6,22 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p12-cnn-tampering`
-- Base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
-- Evidence parent SHA: `65c6efc68034d0bd652a6cbeb25472544250ece1` (notebook pins training code `02d8967136853c5c46eaa0babe44a7327c843a32`)
+- Current work branch: `codex/audit-fix-10-pr10-pr12-reconciliation`
+- Base SHA: `fa72c5b989f8ce75cda1a15a3b56f28aa7b0e6c4`
+- P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-10`
-- CI status: `P12 governed Colab run completed but failed its controlled acceptance gate; the image model remains unavailable; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR10-PR12 audit complete locally; registered ML and secret gates pass; P12 image model remains unavailable; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `P12 — In Progress`
-- Next exact task: `Preserve the failed P12 experiment, keep the artifact inactive, and reconcile the approved PR10-PR20 blueprint before collecting or training additional data.`
+- Current phase: `Logical PR10-PR12 reconciliation audit — Complete; historical P12 remains In Progress`
+- Next exact task: `Implement shared evidence-mode compatibility contracts and enforceable UNIT/SMOKE/FULL execution profiles on a new reconciliation implementation branch; do not acquire data or run full training yet.`
+
+## PR10-PR12 reconciliation status
+
+- Blueprint: `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md` (2,446 lines; repository copy verified equal to the supplied source after newline normalisation).
+- Audit: `docs/audits/pr10-pr12-gap.md`.
+- Result: logical PR10, PR11 and PR12 are all `partial/not done`; correct historical work is preserved and missing foundations are ordered before acquisition.
+- Compatibility boundary: current public risk/verification enums and Keras/scikit-learn stack remain effective until versioned migrations are implemented and tested.
+- Training boundary: no additional full run is allowed before the reconciliation foundations, governed dataset and newly frozen partitions pass.
 
 ## Phase status
 
@@ -71,16 +79,15 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-P12-failed-experiment-session.md`
-- Summary: `The controlled P12 Colab run completed, failed its macro-F1 acceptance gate, and was preserved without activation; roadmap reconciliation is the next task.`
+- Handoff file: `docs/handoffs/2026-08-10-PR10-PR12-reconciliation-session.md`
+- Summary: `The supplied blueprint was imported exactly, formally placed in source precedence, and audited against actual PR10-PR12 evidence; all three logical milestones remain partial and acquisition/training stays gated.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-P12-failed-experiment-session.md`.
-4. Confirm branch `codex/p12-cnn-tampering` and training-code SHA `02d8967136853c5c46eaa0babe44a7327c843a32`.
-5. Confirm evaluation acceptance is `false`, held-out macro F1 is `0.333333`, and artifact SHA-256 is `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`.
-6. Do not register or activate the failed artifact and do not repeat training on the same tiny split.
-7. Keep all P12 outputs controlled-only and the private `.keras` artifact outside Git.
-8. Reconcile the approved PR10-PR20 blueprint before acquisition or additional Colab training.
+3. Read `docs/handoffs/2026-08-10-PR10-PR12-reconciliation-session.md` and `docs/audits/pr10-pr12-gap.md`.
+4. Confirm branch `codex/audit-fix-10-pr10-pr12-reconciliation` and its pushed head.
+5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
+6. Create the next bounded reconciliation implementation branch for shared evidence modes and execution profiles.
+7. Do not download datasets, access locked tests or execute a full Colab training run until the documented prerequisites pass and the owner reviews the next stop boundary.

@@ -17,9 +17,12 @@ When requirements conflict, use this order:
 5. `07_OCR_IMAGE_ML_VERIFICATION_SPEC.md`
 6. `06_UI_UX_IMPLEMENTATION_SPEC.md`
 7. `08_SECURITY_PRIVACY_AUDIT_SPEC.md`
-8. `01_CODEX_MASTER_IMPLEMENTATION_PLAN.md`
-9. `backlog.csv`
-10. Existing implementation
+8. `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md` for reconciled logical PR10-PR20 sequencing, data and evaluation controls
+9. `01_CODEX_MASTER_IMPLEMENTATION_PLAN.md`
+10. `backlog.csv`
+11. Existing implementation
+
+The PR10-PR20 blueprint does not silently replace the fixed product taxonomy, API or database contracts above it. Where it proposes a breaking label, risk-band, endpoint or artifact change, record a compatibility decision and migration before implementation.
 
 Do not silently change the product scope or stack. Record a necessary deviation in `DECISION_LOG.md`, explain why, and keep backward-compatible behaviour where possible.
 

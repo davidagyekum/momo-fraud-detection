@@ -78,6 +78,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Private image-model adapter and ADMIN lifecycle commands with hash-before-load, schema/shape checks and explicit unavailable/runtime/input/output error states; no P12 model has been trained or activated yet.
 - Signed-in Google Colab P12 checkout/preflight evidence pinned to training commit `02d8967136853c5c46eaa0babe44a7327c843a32`; Python 3.12.13 and `verify_ml.py` passed while the governed training cell remained unexecuted.
 - Signed-in Google Colab P12 controlled experiment evidence: held-out macro F1 `0.333333` over two samples, failed acceptance, private Keras artifact SHA-256 `3d074298...`, confusion matrix, model card and CPU latency diagnostics; the artifact remains inactive and outside Git.
+- Repository-local PR10-PR20 Colab-first blueprint and formal source-precedence reconciliation preserving existing contracts and actual GitHub history.
+- Evidence-backed logical PR10-PR12 gap audit and reconciliation session plan.
 
 ### Changed
 
