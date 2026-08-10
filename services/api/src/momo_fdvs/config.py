@@ -36,6 +36,17 @@ def _integer(name: str, default: int, minimum: int = 1) -> int:
     return value
 
 
+def _float(name: str, default: float, minimum: float = 0.0, maximum: float = 1.0) -> float:
+    raw = os.getenv(name, str(default))
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ConfigurationError(f"{name} must be a number") from exc
+    if not minimum <= value <= maximum:
+        raise ConfigurationError(f"{name} must be between {minimum} and {maximum}")
+    return value
+
+
 def _origins() -> list[str]:
     raw = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8081")
     origins = [origin.strip().rstrip("/") for origin in raw.split(",") if origin.strip()]
@@ -155,6 +166,8 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "RATE_LIMIT_REGISTRATION": _rate_limit("RATE_LIMIT_REGISTRATION", "5 per hour"),
         "RATE_LIMIT_UPLOAD": _rate_limit("RATE_LIMIT_UPLOAD", "30 per hour"),
         "RATE_LIMIT_RECEIPT_READ": _rate_limit("RATE_LIMIT_RECEIPT_READ", "60 per minute"),
+        "RATE_LIMIT_OCR": _rate_limit("RATE_LIMIT_OCR", "10 per hour"),
+        "RATE_LIMIT_OCR_REVIEW": _rate_limit("RATE_LIMIT_OCR_REVIEW", "60 per minute"),
         "UPLOAD_MAX_BYTES": upload_max_bytes,
         "UPLOAD_REQUEST_MAX_BYTES": upload_request_max_bytes,
         "MAX_CONTENT_LENGTH": upload_request_max_bytes,
@@ -176,6 +189,14 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "S3_SERVER_SIDE_ENCRYPTION": os.getenv("S3_SERVER_SIDE_ENCRYPTION", "AES256"),
         "SIGNED_URL_TTL_SECONDS": _integer("SIGNED_URL_TTL_SECONDS", 300),
         "TESSERACT_CMD": os.getenv("TESSERACT_CMD", "tesseract"),
+        "TESSERACT_LANG": os.getenv("TESSERACT_LANG", "eng").strip(),
+        "TESSERACT_TIMEOUT_SECONDS": _integer("TESSERACT_TIMEOUT_SECONDS", 20),
+        "OCR_REVIEW_CONFIDENCE_THRESHOLD": _float("OCR_REVIEW_CONFIDENCE_THRESHOLD", 0.75),
+        "OCR_MAX_VARIANTS": _integer("OCR_MAX_VARIANTS", 6),
+        "OCR_TARGET_MIN_WIDTH_PX": _integer("OCR_TARGET_MIN_WIDTH_PX", 1_200),
+        "OCR_PIPELINE_VERSION": os.getenv("OCR_PIPELINE_VERSION", "ocr-pipeline-v1").strip(),
+        "OCR_PARSER_VERSION": os.getenv("OCR_PARSER_VERSION", "generic-parser-v1").strip(),
+        "OCR_FIELD_SCHEMA_VERSION": os.getenv("OCR_FIELD_SCHEMA_VERSION", "ocr-fields-v1").strip(),
         "CORS_ALLOWED_ORIGINS": origins,
         "CORS_ALLOW_CREDENTIALS": credentials,
         "API_TITLE": "MoMo-FDVS API",

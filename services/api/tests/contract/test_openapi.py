@@ -23,6 +23,10 @@ def test_openapi_documents_system_routes_and_error_responses(app: Flask) -> None
         "/api/v1/admin/users/{user_id}/revoke-sessions",
         "/api/v1/transactions",
         "/api/v1/transactions/{transaction_id}/receipt",
+        "/api/v1/transactions/{transaction_id}/ocr",
+        "/api/v1/transactions/{transaction_id}/ocr-review",
+        "/api/v1/transactions/{transaction_id}/ocr-confirmations",
+        "/api/v1/transactions/{transaction_id}/analyses",
     }
     assert "503" in paths["/api/v1/ready"]["get"]["responses"]
     upload = paths["/api/v1/transactions"]["post"]
@@ -32,3 +36,9 @@ def test_openapi_documents_system_routes_and_error_responses(app: Flask) -> None
         for parameter in upload["parameters"]
     )
     assert {"400", "409", "413", "415", "429", "503"} <= set(upload["responses"])
+    ocr = paths["/api/v1/transactions/{transaction_id}/ocr"]["post"]
+    assert any(
+        parameter["name"] == "Idempotency-Key" and parameter["required"]
+        for parameter in ocr["parameters"]
+    )
+    assert {"400", "404", "409", "429", "503"} <= set(ocr["responses"])

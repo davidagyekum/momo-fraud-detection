@@ -433,6 +433,254 @@
         ],
         "type": "object"
       },
+      "OCRConfirmationData": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmation_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "corrected_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "next_action": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "ocr_result_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation_id",
+          "corrected_fields",
+          "next_action",
+          "ocr_result_id",
+          "replayed",
+          "schema_version",
+          "status",
+          "transaction_id"
+        ],
+        "type": "object"
+      },
+      "OCRConfirmationEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OCRConfirmationData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "OCRConfirmationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "correction_reasons": {
+            "additionalProperties": {
+              "maxLength": 300,
+              "minLength": 5,
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "fields": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "ocr_result_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "ocr_result_id"
+        ],
+        "type": "object"
+      },
+      "OCRField": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "type": "number"
+          },
+          "currency": {
+            "nullable": true,
+            "type": "string"
+          },
+          "masked": {
+            "nullable": true,
+            "type": "string"
+          },
+          "raw_value": {
+            "nullable": true
+          },
+          "requires_review": {
+            "type": "boolean"
+          },
+          "source_token_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "value": {
+            "nullable": true
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "confidence",
+          "requires_review",
+          "source_token_ids",
+          "valid",
+          "warnings"
+        ],
+        "type": "object"
+      },
+      "OCRProvider": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "type": "number"
+          },
+          "requires_review": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "confidence",
+          "requires_review",
+          "value",
+          "warnings"
+        ],
+        "type": "object"
+      },
+      "OCRReviewData": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmation_endpoint": {
+            "type": "string"
+          },
+          "engine_version": {
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/OCRField"
+            },
+            "type": "object"
+          },
+          "ocr_result_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pipeline_version": {
+            "type": "string"
+          },
+          "preview_url": {
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/OCRProvider"
+          },
+          "raw_text": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "selected_variant": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "confirmation_endpoint",
+          "engine_version",
+          "fields",
+          "ocr_result_id",
+          "pipeline_version",
+          "preview_url",
+          "provider",
+          "raw_text",
+          "replayed",
+          "selected_variant",
+          "status",
+          "transaction_id",
+          "warnings"
+        ],
+        "type": "object"
+      },
+      "OCRReviewEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OCRReviewData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "PaginationMetadata": {
         "additionalProperties": false,
         "properties": {
@@ -1627,6 +1875,227 @@
         ]
       }
     },
+    "/api/v1/transactions/{transaction_id}/analyses": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "responses": {
+          "409": {
+            "description": "OCR review is required before analysis."
+          },
+          "503": {
+            "description": "The P13 analysis pipeline is not implemented in this phase."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Enforce OCR readiness while analysis orchestration remains out of scope.",
+        "tags": [
+          "ocr-v1"
+        ]
+      }
+    },
+    "/api/v1/transactions/{transaction_id}/ocr": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OCRReviewEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "description": "Missing or invalid idempotency key."
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "The USER role is required."
+          },
+          "404": {
+            "description": "Transaction not found."
+          },
+          "409": {
+            "description": "Invalid state, idempotency conflict or hash mismatch."
+          },
+          "429": {
+            "description": "Per-user OCR rate limit exceeded."
+          },
+          "503": {
+            "description": "Private storage or OCR processing is unavailable."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Run a bounded, reconstructable OCR pipeline for an owned receipt.",
+        "tags": [
+          "ocr-v1"
+        ]
+      }
+    },
+    "/api/v1/transactions/{transaction_id}/ocr-confirmations": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OCRConfirmationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OCRConfirmationEnvelope"
+                }
+              }
+            },
+            "description": "A completed idempotent confirmation was replayed."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OCRConfirmationEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "description": "Missing or invalid idempotency key."
+          },
+          "404": {
+            "description": "Transaction or OCR result not found."
+          },
+          "409": {
+            "description": "Invalid review state or idempotency conflict."
+          },
+          "422": {
+            "description": "Canonical field or correction-reason validation failed."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Create an immutable canonical snapshot and correction audit.",
+        "tags": [
+          "ocr-v1"
+        ]
+      }
+    },
+    "/api/v1/transactions/{transaction_id}/ocr-review": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OCRReviewEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "The USER role is required."
+          },
+          "404": {
+            "description": "Transaction not found."
+          },
+          "409": {
+            "description": "OCR has not been run."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return the latest owner-safe OCR projection without raw token boxes.",
+        "tags": [
+          "ocr-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/transactions/{transaction_id}/receipt": {
       "get": {
         "parameters": [
@@ -1719,6 +2188,10 @@
     {
       "description": "Private transaction receipt evidence",
       "name": "transactions-v1"
+    },
+    {
+      "description": "Private OCR evidence and owner correction workflow",
+      "name": "ocr-v1"
     }
   ]
 }

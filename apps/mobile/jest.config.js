@@ -1,7 +1,7 @@
 module.exports = {
   preset: "jest-expo",
   collectCoverageFrom: [
-    "src/lib/{api,auth-session,receipt-client,token-vault,validation}.ts",
+    "src/lib/{api,auth-session,ocr-client,receipt-client,token-vault,validation}.ts",
     "!src/**/*.d.ts",
   ],
   coverageThreshold: {

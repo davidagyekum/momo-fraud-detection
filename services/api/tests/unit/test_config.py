@@ -35,6 +35,22 @@ def test_rejects_invalid_pool_size(monkeypatch: pytest.MonkeyPatch) -> None:
         load_config("development")
 
 
+def test_rejects_invalid_ocr_confidence_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OCR_REVIEW_CONFIDENCE_THRESHOLD", "1.5")
+    with pytest.raises(ConfigurationError, match="between"):
+        load_config("development")
+
+
+def test_loads_bounded_ocr_configuration() -> None:
+    config = load_config("testing")
+    assert config["OCR_REVIEW_CONFIDENCE_THRESHOLD"] == 0.75
+    assert config["OCR_PIPELINE_VERSION"] == "ocr-pipeline-v1"
+    assert config["OCR_PARSER_VERSION"] == "generic-parser-v1"
+    assert config["OCR_FIELD_SCHEMA_VERSION"] == "ocr-fields-v1"
+
+
 def test_request_limit_must_exceed_receipt_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("UPLOAD_MAX_BYTES", "1000")
     monkeypatch.setenv("UPLOAD_REQUEST_MAX_BYTES", "1000")

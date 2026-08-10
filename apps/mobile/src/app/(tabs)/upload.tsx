@@ -251,6 +251,15 @@ export default function UploadScreen() {
             />
           )}
           <AppButton
+            label="Review extracted details"
+            onPress={() =>
+              router.push({
+                pathname: "/ocr/[transactionId]",
+                params: { transactionId: uploaded.transaction.id },
+              } as unknown as Href)
+            }
+          />
+          <AppButton
             label="Open private receipt"
             onPress={() =>
               router.push({
@@ -258,6 +267,7 @@ export default function UploadScreen() {
                 params: { transactionId: uploaded.transaction.id },
               } as unknown as Href)
             }
+            variant="secondary"
           />
           <AppButton
             label="Secure another receipt"
