@@ -122,6 +122,8 @@ class PartialAnalysisDataSchema(Schema):
     current_stage = fields.String(required=True)
     risk = fields.Dict(keys=fields.String(), values=fields.Raw(), required=True)
     verification = fields.Dict(keys=fields.String(), values=fields.Raw(), required=True)
+    image_evidence = fields.Dict(keys=fields.String(), values=fields.Raw(), required=True)
+    evidence_url = fields.String(required=True)
     unavailable_stages = fields.List(fields.String(), required=True)
     replayed = fields.Boolean(required=True)
 

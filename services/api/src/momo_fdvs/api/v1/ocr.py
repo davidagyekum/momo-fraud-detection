@@ -20,6 +20,10 @@ from momo_fdvs.extensions import db, limiter
 from momo_fdvs.models import OCRResult
 from momo_fdvs.policies.auth import owned_transaction, require_roles
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.image_forensics import (
+    image_evidence_projection,
+    unavailable_image_evidence,
+)
 from momo_fdvs.services.ocr import (
     OCRFailure,
     confirm_ocr,
@@ -323,7 +327,26 @@ class AnalysisReadinessResource(MethodView):
                 user=g.current_user,
                 roles=set(g.current_roles),
                 idempotency_key=key,
+                storage=_storage(),
             )
+            image_evidence = (
+                image_evidence_projection(
+                    result.image_analysis,
+                    transaction_id=transaction.id,
+                    include_diagnostics=False,
+                )
+                if result.image_analysis is not None
+                else unavailable_image_evidence(
+                    result.image_error_code or "IMAGE_ANALYSIS_UNAVAILABLE"
+                )
+            )
+            unavailable_stages = [
+                "STRUCTURED_MODEL",
+                "IMAGE_MODEL",
+                "RISK_AGGREGATION",
+            ]
+            if result.image_analysis is None:
+                unavailable_stages.insert(0, "IMAGE_ANALYSIS")
             return {
                 "data": {
                     "analysis_id": result.run.id,
@@ -339,12 +362,9 @@ class AnalysisReadinessResource(MethodView):
                         "summary": "Fraud risk has not been calculated in this build.",
                     },
                     "verification": verification_projection(result.verification),
-                    "unavailable_stages": [
-                        "IMAGE_ANALYSIS",
-                        "STRUCTURED_MODEL",
-                        "IMAGE_MODEL",
-                        "RISK_AGGREGATION",
-                    ],
+                    "image_evidence": image_evidence,
+                    "evidence_url": f"/api/v1/analyses/{result.run.id}/evidence",
+                    "unavailable_stages": unavailable_stages,
                     "replayed": result.replayed,
                 },
                 "meta": _meta(),

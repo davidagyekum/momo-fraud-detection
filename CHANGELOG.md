@@ -57,6 +57,12 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - P08 administrator reference-import workspace with private upload, validation preview, confirmed commit, masked list/detail views and permission-denied/error/empty states.
 - P08 mobile result presentation with separate transaction-verification and fraud-risk cards and explicit stored/imported-record—not live MNO—wording.
 - Controlled reference CSV template and import contract documentation containing demonstration data only.
+- P09 versioned deterministic image-forensics service covering safe metadata, exact/near duplicates, controlled recompression/ELA, regional noise residuals, OCR box alignment, crop proximity, aspect ratio and quality context.
+- P09 per-signal immutable evidence with observed values, thresholds, severity, confidence, reason codes, limitations, extractor/feature versions and explicit not-applicable states.
+- P09 private ELA and noise-map derivatives with generated keys, staff-only protected streaming and audited success/denial.
+- Owner/staff immutable analysis-evidence API that keeps verification, image evidence and unavailable fraud risk as separate projections and never exposes another user's identity or a storage key.
+- Mobile image-evidence card that explains deterministic signals as supporting evidence only and continues to show fraud risk as unavailable.
+- Controlled seeded manipulation, tiny-image, metadata, alignment, persistence, integrity, immutability and diagnostic-access regressions plus a P09 evidence catalogue.
 
 ### Changed
 
@@ -71,6 +77,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - The generated OpenAPI contract now documents receipt multipart fields, `Idempotency-Key`, private media variants and upload error states.
 - The generated OpenAPI contract now documents the P07 OCR run, review, immutable confirmation and analysis-readiness lifecycle.
 - The generated OpenAPI contract now documents P08 reference-import, masked reference-record and verification-analysis endpoints and error states.
+- The generated OpenAPI contract now documents P09 immutable analysis evidence and staff-only `ela`/`noise-map` receipt variants.
+- The transitional partial-analysis response now includes deterministic image evidence when available and removes `IMAGE_ANALYSIS` from the unavailable-stage list without simulating model/risk completion.
 
 ### Fixed
 
@@ -86,6 +94,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Added a mobile token-storage policy that rejects unencrypted persistence and isolates SecureStore access to refresh tokens only.
 - Extended secret-scanner syntax handling and added regression tests for TypeScript declarations versus hard-coded tokens.
 - Kept reference originals and invalid-row reports in private storage, enforced ADMIN/INVESTIGATOR permissions, masked sensitive values and audited evidential reads and privileged import actions.
+- Kept forensic diagnostics outside public/static paths, enforced staff roles server-side, returned owner-safe evidence without diagnostic URLs and verified the immutable original remains byte-identical.
 - Added an administrator browser-security policy that rejects local/session/IndexedDB token persistence and `dangerouslySetInnerHTML`; access tokens remain memory-only and refresh credentials remain HTTP-only.
 - Verified the P05 production dependency graph with `npm audit --omit=dev`: zero known vulnerabilities at the recorded run.
 - P06 originals remain byte-identical private evidence; only derived thumbnails receive EXIF orientation and metadata stripping. Protected streams enforce owner/staff policy, generated filenames, `nosniff` and private no-store caching.

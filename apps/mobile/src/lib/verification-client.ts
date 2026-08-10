@@ -25,6 +25,26 @@ export type StoredReferenceVerification = {
   disclaimer: string;
 };
 
+export type DeterministicImageEvidence = {
+  status: "COMPLETED" | "UNAVAILABLE";
+  algorithm_version?: string;
+  reason_code?: string;
+  classification: null;
+  tamper_probability: null;
+  summary: string;
+  triggered_signals?: {
+    code: string;
+    severity: "INFORMATIONAL" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    reason: string;
+    confidence: number;
+  }[];
+  warnings?: string[];
+  policy: {
+    supporting_evidence_only: true;
+    single_weak_signal_can_classify_fraud: false;
+  };
+};
+
 export type PartialAnalysisData = {
   analysis_id: string;
   analysis_run_id: string;
@@ -39,6 +59,8 @@ export type PartialAnalysisData = {
     summary: string;
   };
   verification: StoredReferenceVerification;
+  image_evidence: DeterministicImageEvidence;
+  evidence_url: string;
   unavailable_stages: string[];
   replayed: boolean;
 };

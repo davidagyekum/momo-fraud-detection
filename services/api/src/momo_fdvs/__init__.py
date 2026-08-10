@@ -6,6 +6,7 @@ from flask import Flask
 
 from momo_fdvs.api.v1 import api_v1
 from momo_fdvs.api.v1.admin_users import admin_users_blueprint
+from momo_fdvs.api.v1.analyses import analyses_blueprint
 from momo_fdvs.api.v1.auth import auth_blueprint, identity_blueprint
 from momo_fdvs.api.v1.ocr import ocr_blueprint
 from momo_fdvs.api.v1.reference_imports import (
@@ -38,6 +39,7 @@ def create_app(config_name: str | None = None) -> Flask:
     api.register_blueprint(auth_blueprint)
     api.register_blueprint(identity_blueprint)
     api.register_blueprint(admin_users_blueprint)
+    api.register_blueprint(analyses_blueprint)
     api.register_blueprint(transactions_blueprint)
     api.register_blueprint(ocr_blueprint)
     api.register_blueprint(reference_imports_blueprint)

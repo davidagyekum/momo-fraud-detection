@@ -445,6 +445,39 @@ export default function OCRReviewScreen() {
           </AppCard>
           <AppCard>
             <View style={uiStyles.row}>
+              <Text style={uiStyles.cardTitle}>Image evidence</Text>
+              <StatusBadge
+                label={
+                  analysis.data.image_evidence.status === "COMPLETED"
+                    ? "Recorded"
+                    : "Unavailable"
+                }
+                tone={
+                  analysis.data.image_evidence.status === "COMPLETED"
+                    ? "success"
+                    : "info"
+                }
+              />
+            </View>
+            <Text selectable style={uiStyles.body}>
+              {analysis.data.image_evidence.summary}
+            </Text>
+            {analysis.data.image_evidence.triggered_signals?.map((signal) => (
+              <InlineAlert
+                key={signal.code}
+                tone="warning"
+                title={signal.code.replaceAll("_", " ").toLowerCase()}
+                message={signal.reason}
+              />
+            ))}
+            <InlineAlert
+              tone="info"
+              title="Supporting evidence only"
+              message="Metadata, duplicate, compression, residual and text-layout checks can highlight details for review. They do not prove fraud or assign a fraud-risk class."
+            />
+          </AppCard>
+          <AppCard>
+            <View style={uiStyles.row}>
               <Text style={uiStyles.cardTitle}>Fraud risk</Text>
               <StatusBadge label="Unavailable" tone="info" />
             </View>
