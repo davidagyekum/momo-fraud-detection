@@ -286,11 +286,14 @@ def test_confirmation_preserves_original_and_enforces_analysis_guard(
     assert replay.status_code == 200
     assert replay.json["data"]["replayed"] is True
 
-    unavailable = client.post(
-        f"/api/v1/transactions/{transaction_id}/analyses", headers=_headers(owner)
+    partial = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
     )
-    assert unavailable.status_code == 503
-    assert unavailable.json["error"]["code"] == "ANALYSIS_PIPELINE_UNAVAILABLE"
+    assert partial.status_code == 202
+    assert partial.json["data"]["status"] == "PARTIAL"
+    assert partial.json["data"]["verification"]["status"] == "UNVERIFIED"
+    assert partial.json["data"]["risk"]["status"] == "UNAVAILABLE"
 
     with app.app_context():
         result = db.session.get(OCRResult, uuid.UUID(run["ocr_result_id"]))

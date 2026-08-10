@@ -715,6 +715,74 @@
         },
         "type": "object"
       },
+      "PartialAnalysisData": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "analysis_run_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "current_stage": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "risk": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unavailable_stages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "verification": {
+            "additionalProperties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "analysis_id",
+          "analysis_run_id",
+          "current_stage",
+          "replayed",
+          "risk",
+          "status",
+          "transaction_id",
+          "unavailable_stages",
+          "verification"
+        ],
+        "type": "object"
+      },
+      "PartialAnalysisEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PartialAnalysisData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "ProfileUpdate": {
         "additionalProperties": false,
         "properties": {
@@ -848,6 +916,350 @@
         "required": [
           "score",
           "warnings"
+        ],
+        "type": "object"
+      },
+      "ReferenceCommit": {
+        "additionalProperties": false,
+        "properties": {
+          "batch": {
+            "$ref": "#/components/schemas/ReferenceImport"
+          },
+          "committed_rows": {
+            "type": "integer"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "batch",
+          "committed_rows",
+          "replayed"
+        ],
+        "type": "object"
+      },
+      "ReferenceCommitEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReferenceCommit"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "ReferenceImport": {
+        "additionalProperties": false,
+        "properties": {
+          "committed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "file_sha256": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "invalid_rows": {
+            "type": "integer"
+          },
+          "invalid_rows_download": {
+            "nullable": true,
+            "type": "string"
+          },
+          "original_filename": {
+            "type": "string"
+          },
+          "source_label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total_rows": {
+            "type": "integer"
+          },
+          "uploaded_by": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "valid_rows": {
+            "type": "integer"
+          },
+          "validated_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "file_sha256",
+          "id",
+          "invalid_rows",
+          "original_filename",
+          "source_label",
+          "status",
+          "total_rows",
+          "uploaded_by",
+          "valid_rows"
+        ],
+        "type": "object"
+      },
+      "ReferenceImportEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReferenceImport"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "ReferenceImportListData": {
+        "additionalProperties": false,
+        "properties": {
+          "imports": {
+            "items": {
+              "$ref": "#/components/schemas/ReferenceImport"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "imports",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "type": "object"
+      },
+      "ReferenceImportListEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReferenceImportListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "ReferenceTransaction": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "import_batch_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "provider_code": {
+            "type": "string"
+          },
+          "receiver_phone_masked": {
+            "nullable": true,
+            "type": "string"
+          },
+          "sender_phone_masked": {
+            "nullable": true,
+            "type": "string"
+          },
+          "source_label": {
+            "type": "string"
+          },
+          "transaction_reference_masked": {
+            "type": "string"
+          },
+          "transaction_status": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "created_at",
+          "currency",
+          "id",
+          "import_batch_id",
+          "provider_code",
+          "source_label",
+          "transaction_reference_masked"
+        ],
+        "type": "object"
+      },
+      "ReferenceTransactionEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReferenceTransaction"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "ReferenceTransactionListData": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/ReferenceTransaction"
+            },
+            "type": "array"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page",
+          "page_size",
+          "references",
+          "total"
+        ],
+        "type": "object"
+      },
+      "ReferenceTransactionListEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReferenceTransactionListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "ReferenceValidation": {
+        "additionalProperties": false,
+        "properties": {
+          "batch": {
+            "$ref": "#/components/schemas/ReferenceImport"
+          },
+          "batch_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "invalid_rows": {
+            "type": "integer"
+          },
+          "invalid_rows_download": {
+            "nullable": true,
+            "type": "string"
+          },
+          "preview_truncated": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total_rows": {
+            "type": "integer"
+          },
+          "valid_rows": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "batch",
+          "batch_id",
+          "errors",
+          "invalid_rows",
+          "preview_truncated",
+          "status",
+          "total_rows",
+          "valid_rows"
+        ],
+        "type": "object"
+      },
+      "ReferenceValidationEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReferenceValidation"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
         ],
         "type": "object"
       },
@@ -1174,6 +1586,376 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/api/v1/admin/reference-imports": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "UPLOADED",
+                "VALIDATED",
+                "COMMITTED",
+                "FAILED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 150,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceImportListEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-imports-v1"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "source_label": {
+                    "maxLength": 200,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file",
+                  "source_label"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceImportEnvelope"
+                }
+              }
+            },
+            "description": "A completed upload or duplicate file was replayed."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceImportEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-imports-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/reference-imports/{batch_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceImportEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-imports-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "batch_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/reference-imports/{batch_id}/commit": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "batch_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceCommitEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-imports-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/reference-imports/{batch_id}/invalid-rows": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-imports-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "batch_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/reference-imports/{batch_id}/validate": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "batch_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceValidationEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-imports-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/reference-transactions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provider_code",
+            "required": false,
+            "schema": {
+              "maxLength": 50,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 150,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceTransactionListEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-transactions-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/reference-transactions/{reference_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceTransactionEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "reference-transactions-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "reference_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/admin/users": {
       "get": {
         "parameters": [
@@ -1888,18 +2670,40 @@
         }
       ],
       "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartialAnalysisEnvelope"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
           "409": {
             "description": "OCR review is required before analysis."
           },
           "503": {
-            "description": "The P13 analysis pipeline is not implemented in this phase."
+            "description": "Stored verification configuration is unavailable."
           },
           "default": {
             "$ref": "#/components/responses/DEFAULT_ERROR"
           }
         },
-        "summary": "Enforce OCR readiness while analysis orchestration remains out of scope.",
+        "summary": "Run stored-record verification and expose unavailable risk stages honestly.",
         "tags": [
           "ocr-v1"
         ]
@@ -2192,6 +2996,14 @@
     {
       "description": "Private OCR evidence and owner correction workflow",
       "name": "ocr-v1"
+    },
+    {
+      "description": "Private stored-reference import workflow",
+      "name": "reference-imports-v1"
+    },
+    {
+      "description": "Masked stored-reference lookup",
+      "name": "reference-transactions-v1"
     }
   ]
 }

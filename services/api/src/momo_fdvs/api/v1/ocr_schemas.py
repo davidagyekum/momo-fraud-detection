@@ -2,6 +2,7 @@
 
 from marshmallow import Schema, fields, validate
 
+from momo_fdvs.api.v1.reference_schemas import PartialAnalysisEnvelopeSchema
 from momo_fdvs.api.v1.schemas import MetaSchema
 
 
@@ -88,3 +89,11 @@ class AnalysisUnavailableDataSchema(Schema):
 class AnalysisUnavailableEnvelopeSchema(Schema):
     data = fields.Nested(AnalysisUnavailableDataSchema, required=True)
     meta = fields.Nested(MetaSchema, required=True)
+
+
+__all__ = [
+    "OCRConfirmationEnvelopeSchema",
+    "OCRConfirmationRequestSchema",
+    "OCRReviewEnvelopeSchema",
+    "PartialAnalysisEnvelopeSchema",
+]

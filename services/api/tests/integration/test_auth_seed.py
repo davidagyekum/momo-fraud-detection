@@ -8,7 +8,7 @@ from flask import Flask
 from sqlalchemy import select
 
 from momo_fdvs.extensions import db
-from momo_fdvs.models import User
+from momo_fdvs.models import FraudRuleSet, User
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("TEST_DATABASE_URL"),
@@ -42,3 +42,6 @@ def test_development_seed_creates_argon2_bootstrap_accounts_idempotently(
         assert len(admins) == len(investigators) == 1
         assert admins[0].password_hash.startswith("$argon2id$")
         assert admins[0].must_change_password is True
+        active = db.session.scalar(select(FraudRuleSet).where(FraudRuleSet.status == "ACTIVE"))
+        assert active is not None
+        assert active.version == "demo-1"

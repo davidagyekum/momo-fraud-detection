@@ -51,6 +51,12 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - P07 owner-only OCR run/review/confirmation APIs with idempotent replay, correction reasons, immutable confirmation evidence, audit events and analysis-readiness enforcement.
 - P07 Expo OCR review experience with a private zoomable receipt, editable fields, understandable confidence guidance and complete loading/offline/error/partial/confirmation states.
 - Deterministic controlled OCR evaluation covering clean, rotated, low-contrast, noisy and cropped receipts; all 20 declared required-field checks passed without claiming production generalisation.
+- P08 private reference CSV upload with generated storage keys, SHA-256 evidence, strict UTF-8/header/row validation, formula-safe invalid-row reports and explicit preview-before-commit confirmation.
+- P08 deterministic stored-reference verifier with ambiguity-safe candidate lookup, configured field comparisons, masked evidence, immutable version snapshots and duplicate/reuse warning codes.
+- P08 immutable `PARTIAL` analysis results that preserve transaction verification while explicitly leaving fraud risk unavailable and null until later model phases.
+- P08 administrator reference-import workspace with private upload, validation preview, confirmed commit, masked list/detail views and permission-denied/error/empty states.
+- P08 mobile result presentation with separate transaction-verification and fraud-risk cards and explicit stored/imported-record—not live MNO—wording.
+- Controlled reference CSV template and import contract documentation containing demonstration data only.
 
 ### Changed
 
@@ -64,6 +70,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Repository verification now executes the complete P05 administrator portal suite for `--admin`.
 - The generated OpenAPI contract now documents receipt multipart fields, `Idempotency-Key`, private media variants and upload error states.
 - The generated OpenAPI contract now documents the P07 OCR run, review, immutable confirmation and analysis-readiness lifecycle.
+- The generated OpenAPI contract now documents P08 reference-import, masked reference-record and verification-analysis endpoints and error states.
 
 ### Fixed
 
@@ -78,6 +85,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Added fail-closed production auth secrets, secure cookie/SameSite validation, access-token role/version checks, reset/session revocation and cross-user object-hiding tests.
 - Added a mobile token-storage policy that rejects unencrypted persistence and isolates SecureStore access to refresh tokens only.
 - Extended secret-scanner syntax handling and added regression tests for TypeScript declarations versus hard-coded tokens.
+- Kept reference originals and invalid-row reports in private storage, enforced ADMIN/INVESTIGATOR permissions, masked sensitive values and audited evidential reads and privileged import actions.
 - Added an administrator browser-security policy that rejects local/session/IndexedDB token persistence and `dangerouslySetInnerHTML`; access tokens remain memory-only and refresh credentials remain HTTP-only.
 - Verified the P05 production dependency graph with `npm audit --omit=dev`: zero known vulnerabilities at the recorded run.
 - P06 originals remain byte-identical private evidence; only derived thumbnails receive EXIF orientation and metadata stripping. Protected streams enforce owner/staff policy, generated filenames, `nosniff` and private no-store caching.

@@ -168,6 +168,7 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "RATE_LIMIT_RECEIPT_READ": _rate_limit("RATE_LIMIT_RECEIPT_READ", "60 per minute"),
         "RATE_LIMIT_OCR": _rate_limit("RATE_LIMIT_OCR", "10 per hour"),
         "RATE_LIMIT_OCR_REVIEW": _rate_limit("RATE_LIMIT_OCR_REVIEW", "60 per minute"),
+        "RATE_LIMIT_REFERENCE_IMPORT": _rate_limit("RATE_LIMIT_REFERENCE_IMPORT", "20 per hour"),
         "UPLOAD_MAX_BYTES": upload_max_bytes,
         "UPLOAD_REQUEST_MAX_BYTES": upload_request_max_bytes,
         "MAX_CONTENT_LENGTH": upload_request_max_bytes,
@@ -197,6 +198,15 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "OCR_PIPELINE_VERSION": os.getenv("OCR_PIPELINE_VERSION", "ocr-pipeline-v1").strip(),
         "OCR_PARSER_VERSION": os.getenv("OCR_PARSER_VERSION", "generic-parser-v1").strip(),
         "OCR_FIELD_SCHEMA_VERSION": os.getenv("OCR_FIELD_SCHEMA_VERSION", "ocr-fields-v1").strip(),
+        "REFERENCE_AMOUNT_TOLERANCE": _float("REFERENCE_AMOUNT_TOLERANCE", 0.0, maximum=100.0),
+        "REFERENCE_TIMESTAMP_TOLERANCE_MINUTES": _integer(
+            "REFERENCE_TIMESTAMP_TOLERANCE_MINUTES", 30, minimum=0
+        ),
+        "REFERENCE_NAME_SIMILARITY_THRESHOLD": _float("REFERENCE_NAME_SIMILARITY_THRESHOLD", 0.90),
+        "REFERENCE_IMPORT_MAX_BYTES": _integer("REFERENCE_IMPORT_MAX_BYTES", 10_485_760),
+        "REFERENCE_IMPORT_MAX_ROWS": _integer("REFERENCE_IMPORT_MAX_ROWS", 100_000),
+        "REFERENCE_IMPORT_PREVIEW_ERRORS": _integer("REFERENCE_IMPORT_PREVIEW_ERRORS", 100),
+        "VERIFIER_VERSION": os.getenv("VERIFIER_VERSION", "stored-reference-verifier-v1").strip(),
         "CORS_ALLOWED_ORIGINS": origins,
         "CORS_ALLOW_CREDENTIALS": credentials,
         "API_TITLE": "MoMo-FDVS API",

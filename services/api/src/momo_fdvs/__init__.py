@@ -8,6 +8,10 @@ from momo_fdvs.api.v1 import api_v1
 from momo_fdvs.api.v1.admin_users import admin_users_blueprint
 from momo_fdvs.api.v1.auth import auth_blueprint, identity_blueprint
 from momo_fdvs.api.v1.ocr import ocr_blueprint
+from momo_fdvs.api.v1.reference_imports import (
+    reference_imports_blueprint,
+    reference_transactions_blueprint,
+)
 from momo_fdvs.api.v1.transactions import transactions_blueprint
 from momo_fdvs.config import load_config
 from momo_fdvs.errors import register_error_handlers
@@ -36,6 +40,8 @@ def create_app(config_name: str | None = None) -> Flask:
     api.register_blueprint(admin_users_blueprint)
     api.register_blueprint(transactions_blueprint)
     api.register_blueprint(ocr_blueprint)
+    api.register_blueprint(reference_imports_blueprint)
+    api.register_blueprint(reference_transactions_blueprint)
     cors.init_app(
         app,
         resources={r"/api/*": {"origins": app.config["CORS_ALLOWED_ORIGINS"]}},

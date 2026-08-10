@@ -1,0 +1,2 @@
+provider_code,transaction_reference,amount,currency,sender_name,sender_phone,receiver_name,receiver_phone,occurred_at,transaction_status,source_system_id
+DEMO_MOMO,SYNTHETIC-REFERENCE-001,10.00,GHS,CONTROLLED SENDER,0240000002,CONTROLLED RECEIVER,0240000001,2026-08-08T14:30:00Z,SUCCESSFUL,controlled-example-001

@@ -112,14 +112,19 @@ def register_seed_commands(app: Flask) -> None:
             )
 
         rule_set = db.session.scalar(select(FraudRuleSet).where(FraudRuleSet.version == "demo-1"))
+        active_rule_set = db.session.scalar(
+            select(FraudRuleSet).where(FraudRuleSet.status == "ACTIVE")
+        )
         if rule_set is None:
             rule_set = FraudRuleSet(
                 version="demo-1",
-                status="DRAFT",
+                status="ACTIVE" if active_rule_set is None else "DRAFT",
                 risk_weights={"image": 0.4, "structured": 0.4, "rules": 0.2},
                 thresholds={"suspicious": 35, "fraudulent": 70},
                 description="Controlled development rule set",
                 created_by=admin.id,
+                activated_by=admin.id if active_rule_set is None else None,
+                activated_at=datetime.now(UTC) if active_rule_set is None else None,
                 row_version=1,
             )
             db.session.add(rule_set)
@@ -136,6 +141,10 @@ def register_seed_commands(app: Flask) -> None:
                     enabled=True,
                 )
             )
+        elif active_rule_set is None:
+            rule_set.status = "ACTIVE"
+            rule_set.activated_by = admin.id
+            rule_set.activated_at = datetime.now(UTC)
 
         batch = db.session.scalar(
             select(ReferenceImportBatch).where(
