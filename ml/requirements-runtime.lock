@@ -1,0 +1,2 @@
+# P10 governed data tooling runtime, pinned for Python 3.12 / Google Colab setup.
+Pillow==12.3.0

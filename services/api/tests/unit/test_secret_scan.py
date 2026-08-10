@@ -52,3 +52,16 @@ def test_typescript_hard_coded_token_remains_a_finding(tmp_path, monkeypatch) ->
     assert [finding.reason for finding in findings] == [
         "possible non-placeholder secret assigned to ACCESS_TOKEN"
     ]
+
+
+def test_private_ml_dataset_paths_remain_prohibited(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(check_secrets, "REPO_ROOT", tmp_path)
+    source = tmp_path / "ml" / "data" / "private" / "receipt.csv"
+    source.parent.mkdir(parents=True)
+    source.write_text("private research row\n", encoding="utf-8")
+
+    findings = check_secrets.inspect_file(source)
+
+    assert [finding.reason for finding in findings] == [
+        "path is reserved for private research data"
+    ]

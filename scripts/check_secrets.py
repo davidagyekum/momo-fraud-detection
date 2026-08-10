@@ -36,6 +36,12 @@ PROHIBITED_PARTS = {
     "private_uploads",
     "uploads",
 }
+PROHIBITED_PATH_PREFIXES = {
+    ("ml", "data", "authorised"),
+    ("ml", "data", "authorized"),
+    ("ml", "data", "private"),
+    ("ml", "data", "raw"),
+}
 PLACEHOLDER_MARKERS = {
     "change-me",
     "change_me",
@@ -121,6 +127,14 @@ def inspect_file(path: Path) -> list[Finding]:
         )
     if lowered_parts & PROHIBITED_PARTS:
         findings.append(Finding(relative, "path is reserved for private/runtime data"))
+    lowered_path_parts = tuple(
+        part.lower() for part in path.relative_to(REPO_ROOT).parts
+    )
+    if any(
+        lowered_path_parts[: len(prefix)] == prefix
+        for prefix in PROHIBITED_PATH_PREFIXES
+    ):
+        findings.append(Finding(relative, "path is reserved for private research data"))
 
     try:
         size = path.stat().st_size
