@@ -2,6 +2,14 @@
 
 This workspace contains governed data tooling plus the structured and image model packages. Reportable fitting remains Google Colab-only; local verification exercises schemas, preprocessing, packaging orchestration and inference contracts without fitting a model.
 
+## Execution profiles
+
+- `unit`: schemas, deterministic tests and verification; never fits a model.
+- `smoke`: reserved for the bounded restart-safe reconciliation smoke workflow; current training commands reject it.
+- `full`: reportable fitting and packaging in Google Colab only.
+
+Both training commands now require `--profile full --acknowledge-full-training I_ACKNOWLEDGE_FULL_COLAB_TRAINING`. FULL is rejected in CI and outside a detected Colab runtime even when the acknowledgement is supplied. The acknowledgement is a safety rail, not a secret or an authorisation to use data.
+
 ## P10 commands
 
 From the repository root with the Python 3.12 virtual environment active:
@@ -34,4 +42,4 @@ $env:PYTHONPATH = "ml/src"
   --recorded-report ml/data/controlled/image_dataset_report.json
 ```
 
-`train-image` exists for the pinned Colab notebook. Do not execute it locally or record a metric before the owner-approved Colab run. The `.keras` output is private and must remain outside Git.
+`train-image` exists for the pinned Colab notebook and is protected by the execution guard. Do not execute it locally or record a metric before an owner-approved, governed Colab run. The `.keras` output is private and must remain outside Git.

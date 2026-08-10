@@ -203,3 +203,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** The old master plan remains historical for completed phases. Missing PR10-PR12 foundations enter a dedicated reconciliation branch. Risk-band, image-label, endpoint and artifact-format changes are not effective until versioned compatibility work and tests exist. Full training remains Google Colab-only and locked tests remain unopened until their governed milestone.
 - **Related requirements/phases:** Logical PR10-PR20, P10-P12, ADR-014, ADR-018, all analytical and data-governance requirements.
 - **Supersedes:** The unreconciled P13-P20 sequencing in `01_CODEX_MASTER_IMPLEMENTATION_PLAN.md`; it does not supersede fixed product scope or completed phase evidence.
+
+## ADR-020 — Additive evidence contracts and fail-closed Colab execution profiles
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Project owner and Codex within ADR-014/ADR-019
+- **Context:** The reconciled blueprint requires explicit screenshot-only, transaction-only, combined and inconclusive modes; canonical manipulation/risk terms; null unavailable signals; and enforceable UNIT/SMOKE/FULL profiles. Existing API/database/artifact taxonomies cannot be replaced silently, and documentation alone did not prevent a local or CI caller from entering a training command.
+- **Options considered:** Immediately replace persisted/public enums; keep policy only in prose; introduce an additive portable contract with explicit legacy projections and a fail-closed training guard.
+- **Decision:** Adopt `evidence-result-v1` with canonical `unaltered`/`tampered` labels and low/medium/high/inconclusive risk bands while preserving existing enums through named compatibility functions. Unavailable signals must carry null scores/labels. Existing training CLIs require FULL mode, a deliberate acknowledgement token, detected Google Colab context and a non-CI runtime. UNIT and SMOKE cannot enter the existing reportable fitting paths.
+- **Consequences:** Existing clients, records and failed P12 evidence remain unchanged. New dataset schemas must reject authenticity labels. Inconclusive cannot be projected into a fabricated legacy risk class. CI is pinned to UNIT and now registers the ML verification gate. A later migration must wire the new contract into orchestration/API/UI and implement the bounded restart-safe SMOKE workflow.
+- **Related requirements/phases:** Logical PR10-PR12, FR-ML-003, FR-ML-005, FR-ML-006, FR-RISK-004, FR-RISK-005, NFR-AUD-001, ADR-014, ADR-018, ADR-019.
+- **Supersedes:** None; this is an additive compatibility foundation.

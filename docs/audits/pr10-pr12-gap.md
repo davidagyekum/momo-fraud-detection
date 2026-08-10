@@ -154,3 +154,16 @@ The blueprint's PR numbers are logical milestones. They do not match the actual 
 ## Audit conclusion
 
 Logical PR10, PR11 and PR12 are all `partial/not done`. The repository contains substantial correct foundations, but proceeding directly to acquisition or another reportable training run would bypass blueprint prerequisites. The next implementation branch should be limited to the ordered reconciliation backlog above.
+
+## Post-audit implementation update — evidence and execution foundation
+
+Branch `codex/p10-evidence-execution-foundation` implements the first two ordered backlog items without changing the historical audit evidence:
+
+- `evidence-result-v1` now defines screenshot-only, transaction-only, combined and inconclusive modes with explicit nullable unavailable signals;
+- new contracts use `unaltered`/`tampered` and low/medium/high/inconclusive, while named adapters preserve existing manifests, artifacts, database records and public enums;
+- newly governed image labels reject `genuine`, `fake` and other authenticity terms;
+- current structured/image training entry points require acknowledged FULL mode in detected Google Colab and reject local/CI execution;
+- CI pins UNIT and registers `scripts/verify_ml.py`;
+- unit tests enforce the blueprint's mode/nullability/wording/full-guard requirements.
+
+Logical PR10 is still `partial/not done` because final production orchestration/API/UI adoption and the reusable SMOKE workflow remain later versioned work. Dataset acquisition and model training did not occur in this update.

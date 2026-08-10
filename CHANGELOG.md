@@ -6,6 +6,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ### Added
 
+- Logical PR10 `evidence-result-v1` portable/runtime contracts with explicit screenshot-only, transaction-only, combined and inconclusive modes, canonical manipulation labels, risk bands, nullable unavailable signals and tested legacy projections.
+- Fail-closed UNIT/SMOKE/FULL ML execution profiles; existing fitting commands now require acknowledged Google Colab FULL mode and reject CI/local execution, while CI pins UNIT and runs the registered ML gate.
 - Initial implementation package, scope, requirements, architecture, database, API, UI, analytical, security, test, GitHub, deployment and inspection specifications.
 - P00 repository policy files, root project/security documentation and version pins.
 - P00 gap analysis and a local milestone index derived from the 222-task backlog.

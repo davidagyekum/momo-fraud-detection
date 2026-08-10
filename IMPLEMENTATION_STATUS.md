@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/audit-fix-10-pr10-pr12-reconciliation`
-- Base SHA: `fa72c5b989f8ce75cda1a15a3b56f28aa7b0e6c4`
+- Current work branch: `codex/p10-evidence-execution-foundation`
+- Base SHA: `080f8d750e16c0969d8f6ce5ff11fd406523d236`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-10`
-- CI status: `Logical PR10-PR12 audit complete locally; registered ML and secret gates pass; P12 image model remains unavailable; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR10 evidence/execution foundation passes registered ML and PostgreSQL-backed backend gates locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR10-PR12 reconciliation audit — Complete; historical P12 remains In Progress`
-- Next exact task: `Implement shared evidence-mode compatibility contracts and enforceable UNIT/SMOKE/FULL execution profiles on a new reconciliation implementation branch; do not acquire data or run full training yet.`
+- Current phase: `Logical PR10 evidence and execution foundation — Complete locally; historical P12 remains In Progress`
+- Next exact task: `Implement logical PR11 canonical dataset registry, portable schemas, data-access/threat documentation and executable privacy/withdrawal validators on a new phase branch; do not acquire data or run training yet.`
 
 ## PR10-PR12 reconciliation status
 
@@ -22,6 +22,16 @@
 - Result: logical PR10, PR11 and PR12 are all `partial/not done`; correct historical work is preserved and missing foundations are ordered before acquisition.
 - Compatibility boundary: current public risk/verification enums and Keras/scikit-learn stack remain effective until versioned migrations are implemented and tested.
 - Training boundary: no additional full run is allowed before the reconciliation foundations, governed dataset and newly frozen partitions pass.
+
+## Logical PR10 evidence/execution foundation
+
+- Portable contract: `packages/evidence-contracts/evidence-result-v1.schema.json`.
+- Runtime contract: explicit screenshot-only, transaction-only, combined and inconclusive modes; unavailable signals require null scores and labels.
+- Compatibility: new `unaltered`/`tampered` and risk-band terms are additive; current database/API/artifact values remain unchanged through named projections.
+- Execution policy: UNIT/SMOKE cannot enter existing fitting commands; FULL requires exact acknowledgement, detected Google Colab and a non-CI runtime.
+- CI policy: workflow pins UNIT and registers the ML verification job.
+- Verification: 111 ML tests at 92.00% coverage; 140 PostgreSQL-backed backend tests at 86.01% coverage; OpenAPI, ER, migration-current/check and targeted negative guard checks pass.
+- Training/data boundary: no acquisition, private-data access, fitting, threshold selection or artifact registration occurred.
 
 ## Phase status
 
@@ -56,7 +66,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-10 — P11 completes FR-ML-001/002/004/005/006 and controlled-only NFR-ACC-002 with signed-in Colab evidence; limitations remain explicit`
+- Traceability file last verified: `2026-08-10 — logical PR10 adds tested evidence-mode/nullability/reason compatibility foundations for FR-RISK-004/005 and NFR-AUD-001; production orchestration remains incomplete`
 
 ## Current blockers
 
@@ -79,15 +89,15 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-PR10-PR12-reconciliation-session.md`
-- Summary: `The supplied blueprint was imported exactly, formally placed in source precedence, and audited against actual PR10-PR12 evidence; all three logical milestones remain partial and acquisition/training stays gated.`
+- Handoff file: `docs/handoffs/2026-08-10-PR10-evidence-execution-foundation-session.md`
+- Summary: `Added versioned evidence-mode and compatibility contracts plus fail-closed Colab execution profiles; all local scoped gates pass and acquisition/training stays gated.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-PR10-PR12-reconciliation-session.md` and `docs/audits/pr10-pr12-gap.md`.
-4. Confirm branch `codex/audit-fix-10-pr10-pr12-reconciliation` and its pushed head.
+3. Read `docs/handoffs/2026-08-10-PR10-evidence-execution-foundation-session.md` and `docs/audits/pr10-pr12-gap.md`.
+4. Confirm branch `codex/p10-evidence-execution-foundation` and its pushed head.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
-6. Create the next bounded reconciliation implementation branch for shared evidence modes and execution profiles.
-7. Do not download datasets, access locked tests or execute a full Colab training run until the documented prerequisites pass and the owner reviews the next stop boundary.
+6. Create the next bounded logical PR11 reconciliation branch for registry/schema/privacy-governance foundations.
+7. Do not download datasets, access locked tests or execute a Colab training run until the documented prerequisites pass and the owner reviews the next stop boundary.

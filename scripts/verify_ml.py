@@ -8,10 +8,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ML_ROOT = REPO_ROOT / "ml"
 CONTROLLED_ROOT = ML_ROOT / "data" / "controlled"
+sys.path.insert(0, str(ML_ROOT / "src"))
+
+from momo_fdvs_ml.execution import (  # noqa: E402
+    ExecutionGuardError,
+    assert_ci_profile_is_safe,
+)
 
 COMMANDS = [
     ("format", [sys.executable, "-m", "ruff", "format", "--check", "."]),
@@ -68,13 +73,20 @@ COMMANDS = [
 def main() -> int:
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(ML_ROOT / "src")
+    try:
+        assert_ci_profile_is_safe(environment)
+    except ExecutionGuardError as exc:
+        print(f"ML verification blocked by execution policy: {exc}")
+        return 2
     for label, command in COMMANDS:
         print(f"\n== ml {label} ==", flush=True)
         result = subprocess.run(command, cwd=ML_ROOT, env=environment, check=False)
         if result.returncode != 0:
             print(f"ML verification failed at {label} (exit {result.returncode})")
             return result.returncode
-    print("\nML data/code verification passed; this command does not execute model training")
+    print(
+        "\nML data/code verification passed; this command does not execute model training"
+    )
     return 0
 
 

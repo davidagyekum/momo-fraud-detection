@@ -20,6 +20,13 @@ IMAGE_INPUT_WIDTH: Final = 224
 IMAGE_INPUT_CHANNELS: Final = 3
 IMAGE_CLASSES: Final = ("ORIGINAL", "CONTROLLED_TAMPERED")
 IMAGE_LABEL_INDEX: Final = {"genuine": 0, "fraudulent": 1}
+CANONICAL_IMAGE_LABELS: Final = ("unaltered", "tampered")
+LEGACY_TO_CANONICAL_IMAGE_LABEL: Final = {
+    "genuine": "unaltered",
+    "fraudulent": "tampered",
+    "ORIGINAL": "unaltered",
+    "CONTROLLED_TAMPERED": "tampered",
+}
 IMAGE_PREPROCESSING_VERSION: Final = "image-rgb224-minus1-to1-v1"
 IMAGE_DATASET_SCHEMA_VERSION: Final = "controlled-image-binary-v1"
 IMAGE_MODEL_NAME: Final = "momo-fdvs-controlled-tamper"
@@ -28,6 +35,23 @@ IMAGE_RANDOM_SEED: Final = 20260812
 
 class ImageDatasetError(RuntimeError):
     """Raised when governed image-model input is unsafe or inconsistent."""
+
+
+def validate_canonical_image_label(value: str) -> str:
+    """Accept only the manipulation taxonomy used by newly governed datasets."""
+
+    if value not in CANONICAL_IMAGE_LABELS:
+        raise ImageDatasetError("canonical image label must be unaltered or tampered")
+    return value
+
+
+def project_legacy_image_label(value: str) -> str:
+    """Project existing controlled manifests/models without silently relabelling artifacts."""
+
+    try:
+        return LEGACY_TO_CANONICAL_IMAGE_LABEL[value]
+    except KeyError as exc:
+        raise ImageDatasetError("unsupported legacy image label") from exc
 
 
 @dataclass(frozen=True)

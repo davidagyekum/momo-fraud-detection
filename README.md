@@ -2,12 +2,14 @@
 
 MoMo-FDVS is an evidence-based prototype for analysing Mobile Money receipt images. It combines OCR, deterministic image checks, versioned machine-learning outputs, configurable rules, and comparison with stored or imported reference transactions.
 
-The system produces two independent outcomes:
+The currently implemented public contract produces two independent outcomes:
 
 - fraud risk: `GENUINE`, `SUSPICIOUS`, or `FRAUDULENT`;
 - verification status: `VERIFIED`, `UNVERIFIED`, or `MISMATCH`.
 
 The prototype does not claim a live connection to MTN, Telecel, AT Money, or another Mobile Network Operator. Verification is based on authorised stored/imported reference records.
+
+Logical PR10 reconciliation adds an additive evidence contract with explicit `screenshot_only`, `transaction_only`, `combined` and `inconclusive` modes. New image evidence uses `unaltered`/`tampered`, and new policy results use low/medium/high/inconclusive risk bands. Existing public/database enums remain in force until a separately migrated API version. See [the evidence and execution contract](docs/architecture/PR10_EVIDENCE_EXECUTION_CONTRACT.md).
 
 ## Repository status
 
@@ -34,6 +36,7 @@ py -3.12 scripts/doctor.py
 py -3.12 scripts/check_secrets.py
 py -3.12 scripts/verify.py --quick
 py -3.12 scripts/verify.py --backend
+py -3.12 scripts/verify.py --ml
 ```
 
 On macOS/Linux with Python 3.12 selected:

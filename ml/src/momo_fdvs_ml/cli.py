@@ -7,6 +7,12 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from momo_fdvs_ml.execution import (
+    FULL_TRAINING_ACKNOWLEDGEMENT,
+    ExecutionGuardError,
+    ExecutionProfile,
+    require_training_execution,
+)
 from momo_fdvs_ml.image_model import (
     ImageModelError,
     load_and_verify_image_artifact,
@@ -84,6 +90,14 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--output-dir", type=Path, required=True)
     train.add_argument("--model-version", required=True)
     train.add_argument("--training-commit-sha", required=True)
+    train.add_argument(
+        "--profile", choices=[profile.value for profile in ExecutionProfile], required=True
+    )
+    train.add_argument(
+        "--acknowledge-full-training",
+        metavar="TOKEN",
+        help=f"required for FULL mode: {FULL_TRAINING_ACKNOWLEDGEMENT}",
+    )
 
     verify_artifact = subparsers.add_parser(
         "verify-structured-artifact",
@@ -110,6 +124,14 @@ def build_parser() -> argparse.ArgumentParser:
     train_image.add_argument("--output-dir", type=Path, required=True)
     train_image.add_argument("--model-version", required=True)
     train_image.add_argument("--training-commit-sha", required=True)
+    train_image.add_argument(
+        "--profile", choices=[profile.value for profile in ExecutionProfile], required=True
+    )
+    train_image.add_argument(
+        "--acknowledge-full-training",
+        metavar="TOKEN",
+        help=f"required for FULL mode: {FULL_TRAINING_ACKNOWLEDGEMENT}",
+    )
 
     verify_image = subparsers.add_parser(
         "verify-image-artifact",
@@ -173,6 +195,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.command == "train-structured":
+            require_training_execution(
+                ExecutionProfile(args.profile),
+                acknowledgement=args.acknowledge_full_training,
+            )
             dataset = load_structured_dataset(
                 path=args.dataset, source_manifest_path=args.source_manifest
             )
@@ -207,6 +233,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.command == "train-image":
+            require_training_execution(
+                ExecutionProfile(args.profile),
+                acknowledgement=args.acknowledge_full_training,
+            )
             image_outputs = train_and_package_image_model(
                 manifest_path=args.manifest,
                 dataset_root=args.root,
@@ -266,6 +296,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     except (
+        ExecutionGuardError,
         ImageDatasetError,
         ImageModelError,
         ManifestError,

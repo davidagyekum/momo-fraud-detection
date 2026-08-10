@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from momo_fdvs_ml import cli
 from momo_fdvs_ml.cli import main
+from momo_fdvs_ml.execution import FULL_TRAINING_ACKNOWLEDGEMENT
 from momo_fdvs_ml.image_model import ImageTrainingOutputs
 
 
@@ -75,6 +76,7 @@ def test_cli_image_training_and_verification_dispatch(tmp_path: Path, capsys, mo
     )
     monkeypatch.setattr(cli, "train_and_package_image_model", lambda **kwargs: outputs)
     monkeypatch.setattr(cli, "image_runtime_fingerprint", lambda: {"tensorflow": "test"})
+    monkeypatch.setattr(cli, "require_training_execution", lambda *args, **kwargs: None)
     assert (
         main(
             [
@@ -89,6 +91,10 @@ def test_cli_image_training_and_verification_dispatch(tmp_path: Path, capsys, mo
                 "v1",
                 "--training-commit-sha",
                 "a" * 40,
+                "--profile",
+                "full",
+                "--acknowledge-full-training",
+                FULL_TRAINING_ACKNOWLEDGEMENT,
             ]
         )
         == 0
@@ -114,3 +120,29 @@ def test_cli_image_training_and_verification_dispatch(tmp_path: Path, capsys, mo
     verified = json.loads(capsys.readouterr().out)
     assert verified["artifact_verified"] is True
     assert verified["output_shape"] == [None, 1]
+
+
+def test_cli_blocks_full_training_before_loading_missing_data(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert (
+        main(
+            [
+                "train-image",
+                "--manifest",
+                "missing.csv",
+                "--root",
+                ".",
+                "--output-dir",
+                ".",
+                "--model-version",
+                "blocked-v1",
+                "--training-commit-sha",
+                "a" * 40,
+                "--profile",
+                "full",
+                "--acknowledge-full-training",
+                FULL_TRAINING_ACKNOWLEDGEMENT,
+            ]
+        )
+        == 1
+    )
+    assert "permitted only in Google Colab" in capsys.readouterr().out

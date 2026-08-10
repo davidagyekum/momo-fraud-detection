@@ -2,6 +2,8 @@
 
 P10 ends with governed manifests, deterministic fixtures and leakage checks. P11's controlled structured model has now run in Colab. P12 image-model fitting must likewise begin only in Google Colab after the project owner approves the pinned notebook revision.
 
+The training entry points now fail closed. A reportable command must select `--profile full`, provide `--acknowledge-full-training I_ACKNOWLEDGE_FULL_COLAB_TRAINING`, run outside CI and expose the expected Colab runtime markers. UNIT/SMOKE profiles cannot enter the existing fitting functions. This does not grant dataset permission; all consent, split and owner-review gates still apply.
+
 For P12, open `ml/notebooks/P12_COLAB_IMAGE_TRAINING.ipynb` only after the P12 pre-training handoff. Verify its immutable SHA, run the preflight cells, then stop at its explicit training boundary until approval.
 
 ## Safe Colab preparation

@@ -8,6 +8,7 @@ import pytest
 from PIL import Image
 
 from momo_fdvs_ml.image_schema import (
+    CANONICAL_IMAGE_LABELS,
     IMAGE_CLASSES,
     IMAGE_INPUT_CHANNELS,
     IMAGE_INPUT_HEIGHT,
@@ -19,11 +20,31 @@ from momo_fdvs_ml.image_schema import (
     preprocess_image_bytes,
     preprocess_image_path,
     preprocessing_schema_payload,
+    project_legacy_image_label,
+    validate_canonical_image_label,
 )
 from momo_fdvs_ml.manifest import load_manifest
 
 CONTROLLED_ROOT = Path(__file__).parents[1] / "data" / "controlled"
 MANIFEST = CONTROLLED_ROOT / "manifest.csv"
+
+
+def test_new_canonical_image_labels_reject_authenticity_terms() -> None:
+    assert CANONICAL_IMAGE_LABELS == ("unaltered", "tampered")
+    assert validate_canonical_image_label("unaltered") == "unaltered"
+    assert validate_canonical_image_label("tampered") == "tampered"
+    for invalid in ("genuine", "fake", "fraudulent", "ORIGINAL"):
+        with pytest.raises(ImageDatasetError, match="unaltered or tampered"):
+            validate_canonical_image_label(invalid)
+
+
+def test_existing_image_labels_have_explicit_compatibility_projection() -> None:
+    assert project_legacy_image_label("genuine") == "unaltered"
+    assert project_legacy_image_label("fraudulent") == "tampered"
+    assert project_legacy_image_label("ORIGINAL") == "unaltered"
+    assert project_legacy_image_label("CONTROLLED_TAMPERED") == "tampered"
+    with pytest.raises(ImageDatasetError, match="unsupported legacy"):
+        project_legacy_image_label("fake")
 
 
 def test_preprocessing_schema_is_stable_and_training_only() -> None:
