@@ -8,8 +8,10 @@ from momo_fdvs_ml.execution import (
     FULL_TRAINING_ACKNOWLEDGEMENT,
     ExecutionGuardError,
     ExecutionProfile,
+    SmokeLimits,
     assert_ci_profile_is_safe,
     detect_execution_context,
+    require_smoke_execution,
     require_training_execution,
 )
 
@@ -89,3 +91,45 @@ def test_ci_profile_guard_rejects_full_and_invalid_values() -> None:
         assert_ci_profile_is_safe({"CI": "true", "MOMO_FDVS_EXECUTION_PROFILE": "full"})
     with pytest.raises(ExecutionGuardError, match="unknown"):
         assert_ci_profile_is_safe({"CI": "true", "MOMO_FDVS_EXECUTION_PROFILE": "turbo"})
+
+
+def test_smoke_profile_permits_only_bounded_non_test_fitting() -> None:
+    require_smoke_execution(
+        ExecutionProfile.SMOKE,
+        transaction_rows=1_000,
+        image_count=20,
+        epochs=1,
+        uses_locked_test=False,
+    )
+
+
+@pytest.mark.parametrize(
+    ("profile", "rows", "images", "epochs", "locked_test", "message"),
+    [
+        (ExecutionProfile.UNIT, 1, 1, 1, False, "explicit smoke"),
+        (ExecutionProfile.FULL, 1, 1, 1, False, "explicit smoke"),
+        (ExecutionProfile.SMOKE, 0, 1, 1, False, "positive integer"),
+        (ExecutionProfile.SMOKE, 1, True, 1, False, "positive integer"),
+        (ExecutionProfile.SMOKE, 1_001, 1, 1, False, "row cap"),
+        (ExecutionProfile.SMOKE, 1, 21, 1, False, "image cap"),
+        (ExecutionProfile.SMOKE, 1, 1, 2, False, "epoch cap"),
+        (ExecutionProfile.SMOKE, 1, 1, 1, True, "locked test"),
+    ],
+)
+def test_smoke_profile_rejects_scope_and_resource_violations(
+    profile: ExecutionProfile,
+    rows: int,
+    images: int,
+    epochs: int,
+    locked_test: bool,
+    message: str,
+) -> None:
+    with pytest.raises(ExecutionGuardError, match=message):
+        require_smoke_execution(
+            profile,
+            transaction_rows=rows,
+            image_count=images,
+            epochs=epochs,
+            uses_locked_test=locked_test,
+            limits=SmokeLimits(),
+        )

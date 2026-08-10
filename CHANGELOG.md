@@ -6,6 +6,10 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ### Added
 
+- Logical PR12 clean-session Colab preflight, reusable thin notebook template and tiny restart-safe smoke notebook with stripped outputs, generic Drive/VM paths and immutable checkout recording.
+- `colab-run-manifest-v1` with allowlisted runtime inventory, lock/data/split/config hashes, artifacts, immutable checkpoint ledger, interrupted/resumed session history and explicit non-acquisition/non-promotable smoke flags.
+- Atomic JSON/checkpoint write and verified Drive-mirroring primitives, corrupt-checkpoint rejection, same-run resume, non-printing Colab Secret loading and a runtime-loss recovery runbook.
+- Bounded deterministic smoke flow over fictitious fixtures: transaction preprocessing/fit, lightweight OCR, one image surrogate epoch, JSON export/reload and inference without touching test partitions.
 - Logical PR11 canonical fail-closed registry for PaySim, MoMTSim v1/v2, STFD, optional FSTS and Ghana-private; all sources remain disabled and unacquired pending verified permission/licence/consent evidence.
 - Portable strict JSON schemas and fictitious fixtures for transactions, screenshots, OCR truth, edit manifests, frozen split manifests and reproducible run manifests, plus a versioned tamper taxonomy whose targets sum to 100%.
 - Participant information/consent templates, withdrawal/deletion controls, de-identification rules, access roles, retention, incident response, publication checks, data-access rules and a data threat model.

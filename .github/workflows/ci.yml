@@ -88,7 +88,9 @@ jobs:
           python -m pip install --requirement ml/requirements-dev.lock
           python -m pip install --no-deps --editable ml
       - name: Run ML verification in fail-closed UNIT mode
-        run: python scripts/verify_ml.py
+        run: |
+          python -c "from momo_fdvs_ml.execution import assert_ci_profile_is_safe; assert_ci_profile_is_safe()"
+          python scripts/verify_ml.py
 
   mobile-quality:
     runs-on: ubuntu-24.04

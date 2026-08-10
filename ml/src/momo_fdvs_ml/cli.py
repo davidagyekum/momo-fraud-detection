@@ -7,6 +7,13 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from momo_fdvs_ml.colab import (
+    ColabFoundationError,
+    ColabPaths,
+    colab_preflight_report,
+    install_lock_contract,
+    repository_state,
+)
 from momo_fdvs_ml.execution import (
     FULL_TRAINING_ACKNOWLEDGEMENT,
     ExecutionGuardError,
@@ -24,6 +31,11 @@ from momo_fdvs_ml.image_model import (
 )
 from momo_fdvs_ml.image_schema import ImageDatasetError, image_dataset_report
 from momo_fdvs_ml.manifest import ManifestError, load_manifest, validate_manifest
+from momo_fdvs_ml.notebooks import (
+    NotebookPolicyError,
+    require_clean_notebooks,
+)
+from momo_fdvs_ml.smoke import SmokeOutputs, run_smoke_flow
 from momo_fdvs_ml.structured_dataset import (
     STRUCTURED_DATASET_SEED,
     StructuredDatasetError,
@@ -72,6 +84,41 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_governance.add_argument("--root", type=Path, required=True)
     validate_governance.add_argument("--recorded-report", type=Path)
+
+    validate_notebooks = subparsers.add_parser(
+        "validate-notebooks",
+        help="validate standard Colab notebooks are clean, thin and restart-safe",
+    )
+    validate_notebooks.add_argument("--root", type=Path, required=True)
+    validate_notebooks.add_argument("--recorded-report", type=Path)
+
+    lock_report = subparsers.add_parser(
+        "colab-lock-report", help="record exact shared Colab environment lock hashes"
+    )
+    lock_report.add_argument("--repository-root", type=Path, required=True)
+    lock_report.add_argument("--recorded-report", type=Path)
+
+    colab_preflight = subparsers.add_parser(
+        "colab-preflight", help="validate clean runtime, checkout, locks and path layout"
+    )
+    colab_preflight.add_argument("--repository-root", type=Path, required=True)
+    colab_preflight.add_argument("--notebook", required=True)
+    colab_preflight.add_argument(
+        "--profile", choices=[profile.value for profile in ExecutionProfile], required=True
+    )
+    colab_preflight.add_argument("--require-colab", action="store_true")
+
+    smoke = subparsers.add_parser(
+        "smoke-colab", help="run/resume the tiny non-promotable fictitious smoke flow"
+    )
+    smoke.add_argument("--repository-root", type=Path, required=True)
+    smoke.add_argument("--vm-root", type=Path, required=True)
+    smoke.add_argument("--drive-root", type=Path, required=True)
+    smoke.add_argument("--notebook", required=True)
+    smoke.add_argument("--run-id")
+    smoke.add_argument(
+        "--profile", choices=[profile.value for profile in ExecutionProfile], required=True
+    )
 
     structured_data = subparsers.add_parser(
         "generate-structured",
@@ -181,6 +228,66 @@ def main(argv: Sequence[str] | None = None) -> int:
                         "recorded governance report does not match canonical data"
                     )
             print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "validate-notebooks":
+            report = require_clean_notebooks(args.root)
+            if args.recorded_report is not None:
+                recorded = json.loads(args.recorded_report.read_text(encoding="utf-8"))
+                if recorded != report:
+                    raise NotebookPolicyError(
+                        "recorded notebook report does not match canonical notebooks"
+                    )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "colab-lock-report":
+            report = install_lock_contract(args.repository_root)
+            if args.recorded_report is not None:
+                recorded = json.loads(args.recorded_report.read_text(encoding="utf-8"))
+                if recorded != report:
+                    raise ColabFoundationError(
+                        "recorded Colab lock report does not match repository locks"
+                    )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "colab-preflight":
+            report = colab_preflight_report(
+                args.repository_root,
+                paths=ColabPaths.from_environment(),
+                profile=ExecutionProfile(args.profile),
+                notebook=args.notebook,
+                require_colab=args.require_colab,
+            )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "smoke-colab":
+            if ExecutionProfile(args.profile) is not ExecutionProfile.SMOKE:
+                raise ColabFoundationError("smoke-colab requires --profile smoke")
+            smoke_outputs: SmokeOutputs = run_smoke_flow(
+                repository_root=args.repository_root,
+                vm_root=args.vm_root,
+                drive_root=args.drive_root,
+                git_state=repository_state(args.repository_root),
+                notebook=args.notebook,
+                run_id=args.run_id,
+            )
+            print(
+                json.dumps(
+                    {
+                        "run_id": smoke_outputs.run_id,
+                        "manifest_path": str(smoke_outputs.manifest_path),
+                        "report_path": str(smoke_outputs.report_path),
+                        "bundle_path": str(smoke_outputs.bundle_path),
+                        "prediction_digest": smoke_outputs.prediction_digest,
+                        "resumed": smoke_outputs.resumed,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
             return 0
 
         if args.command == "generate-structured":
@@ -315,11 +422,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     except (
+        ColabFoundationError,
         ExecutionGuardError,
         GovernanceError,
         ImageDatasetError,
         ImageModelError,
         ManifestError,
+        NotebookPolicyError,
         StructuredDatasetError,
         StructuredModelError,
     ) as exc:

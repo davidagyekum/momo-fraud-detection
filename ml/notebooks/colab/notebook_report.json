@@ -1,0 +1,14 @@
+{
+  "execution_counts_stripped": true,
+  "full_mode_selected": false,
+  "issue_count": 0,
+  "issues": [],
+  "notebook_count": 3,
+  "notebook_hashes": {
+    "00_environment_preflight.ipynb": "0ca991cd3cd9dc64ebca14db704dd6b7e197e7a926dd4b0725299f0257ff891b",
+    "01_tiny_restart_safe_smoke.ipynb": "dc6efbaac98ebaeef008396dd4a07f63d6d4df4ee1bca41eaffd7e6a263d7e2f",
+    "NOTEBOOK_TEMPLATE.ipynb": "37c9ab5c01746eb27222c73d2ed644dca9bb82212f7de2bb4fb60dca20ded879"
+  },
+  "outputs_stripped": true,
+  "policy_version": "colab-notebook-policy-v1"
+}

@@ -46,7 +46,7 @@ Generated summaries use cautious evidence language, require human review where r
 | Profile | Intended use | Existing training CLI behaviour |
 |---|---|---|
 | `UNIT` | Deterministic tests, schemas, validation and packaging checks | Model fitting blocked |
-| `SMOKE` | Future tiny restart-safe PR12 smoke workflow | Current reportable model-fitting commands blocked |
+| `SMOKE` | Tiny restart-safe PR12 flow over fictitious fixtures under hard caps | Reportable training commands blocked; non-promotable smoke surrogate allowed |
 | `FULL` | Reportable structured/image fitting | Allowed only in acknowledged Google Colab outside CI |
 
 `train-structured` and `train-image` require `--profile full` plus the exact non-secret acknowledgement token `I_ACKNOWLEDGE_FULL_COLAB_TRAINING`. The guard then requires both standard Colab runtime markers and rejects every CI environment. The markers and token prevent accidental execution; they are not an authentication boundary and do not replace repository permissions, dataset consent or owner approval.
@@ -59,6 +59,6 @@ The P11/P12 notebooks already committed as historical run evidence continue to c
 
 - No API response or database column has changed in this slice.
 - The contract is not yet wired into final P13/P19 analysis orchestration.
-- `SMOKE` defines the boundary but the restart-safe smoke notebook/run manifest arrives in logical PR12 reconciliation.
+- Logical PR12 implements the restart-safe smoke notebook, atomic checkpoint/resume ledger and `colab-run-manifest-v1`; an actual fresh Colab smoke remains an owner-operated handoff.
 - This guard does not authorise data use and cannot make an ungoverned dataset acceptable.
 - No model was trained and no threshold or accuracy result was produced in this phase.

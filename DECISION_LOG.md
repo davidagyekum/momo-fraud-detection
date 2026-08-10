@@ -227,3 +227,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** Registry/schema/governance development and Colab foundations can proceed without inventing data rights or exposing personal data. Future acquisition must update the relevant card and evidence outside Git before enabling a source. Withdrawal and publication checks may require dataset/model rebuilds. This decision records no legal conclusion and grants no redistribution right.
 - **Related requirements/phases:** Logical PR11, PR12, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-014, ADR-019, ADR-020.
 - **Supersedes:** None.
+
+## ADR-022 — Treat restart-safe smoke output as non-promotable infrastructure evidence
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Project owner and Codex within ADR-014/ADR-020/ADR-021
+- **Context:** Logical PR12 needs a real end-to-end Colab smoke before expensive runs, while existing structured/image training commands are reportable FULL workflows and the historical P12 image artifact failed acceptance. Reusing those commands or their held-out tests for smoke would blur evidence boundaries and risk accidental promotion.
+- **Options considered:** Let SMOKE call the existing reportable trainers; perform no fitting in smoke; implement a separately capped surrogate flow over fictitious train/validation fixtures with its own manifest and non-promotable bundle.
+- **Decision:** SMOKE may fit only the dedicated PR12 surrogate under hard limits of 1,000 transaction rows, 20 synthetic images, one epoch and no locked-test access. It emits JSON-only infrastructure evidence with `acquisition_executed: false`, `full_training_executed: false` and `promotable: false`. Existing structured/image training CLIs continue to require acknowledged non-CI Google Colab FULL. Every session/checkpoint/artifact is hash-recorded and a lost runtime resumes under the same run ID only after verification.
+- **Consequences:** Laptop/CI tests can prove deterministic orchestration and recovery without claiming model quality. The owner must still execute one fresh signed-in Colab smoke before logical PR12 completes. Smoke metrics/artifacts cannot be registered, cited as accuracy evidence or used to rehabilitate the failed P12 image artifact. Future reportable workflows reuse the manifest/checkpoint semantics but require governed data and separate acceptance evidence.
+- **Related requirements/phases:** Logical PR12, FR-ML-005, FR-ML-006, NFR-AUD-001, NFR-DATA-001, ADR-014, ADR-018, ADR-020, ADR-021.
+- **Supersedes:** None.

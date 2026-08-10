@@ -5,7 +5,7 @@ This workspace contains governed data tooling plus the structured and image mode
 ## Execution profiles
 
 - `unit`: schemas, deterministic tests and verification; never fits a model.
-- `smoke`: reserved for the bounded restart-safe reconciliation smoke workflow; current training commands reject it.
+- `smoke`: bounded to at most 1,000 fictitious transaction rows, 20 synthetic images and one epoch; produces non-promotable JSON evidence only.
 - `full`: reportable fitting and packaging in Google Colab only.
 
 Both training commands now require `--profile full --acknowledge-full-training I_ACKNOWLEDGE_FULL_COLAB_TRAINING`. FULL is rejected in CI and outside a detected Colab runtime even when the acknowledgement is supplied. The acknowledgement is a safety rail, not a secret or an authorisation to use data.
@@ -42,6 +42,24 @@ $env:PYTHONPATH = "ml/src"
 ```
 
 Source entries remain disabled until their registry permission, licence and acquisition status passes the fail-closed policy. Controlled-real screenshots additionally require a pseudonymous participant hash and explicit consent scope; committed examples must remain fictitious and participant-free.
+
+## Logical PR12 Colab foundation
+
+The standard clean-session notebooks are under `ml/notebooks/colab/`. They use generic `/content` paths, an immutable checkout, exact repository locks, allowlisted runtime inventory, atomic checkpoint mirroring and a complete `colab-run-manifest-v1` record.
+
+Validate them locally without mounting Drive or running the smoke fit:
+
+```powershell
+$env:PYTHONPATH = "ml/src"
+.venv\Scripts\python.exe -m momo_fdvs_ml colab-lock-report `
+  --repository-root . `
+  --recorded-report ml/colab_lock_report.json
+.venv\Scripts\python.exe -m momo_fdvs_ml validate-notebooks `
+  --root ml/notebooks/colab `
+  --recorded-report ml/notebooks/colab/notebook_report.json
+```
+
+The smoke notebook uses only existing fictitious/controlled train and validation fixtures. It touches no locked test partition, downloads nothing and cannot promote its output. See [the runtime-loss recovery runbook](COLAB_RUNTIME_RECOVERY.md) before executing it in Colab.
 
 ## P12 pre-training commands
 

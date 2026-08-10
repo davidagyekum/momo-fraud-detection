@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/ml/contracts/colab-run-manifest-v1.json",
+  "title": "Restart-safe Colab run manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "foundation_version", "run_id", "profile", "status", "started_at", "completed_at", "git", "notebook", "runtime_inventory", "seed", "dependency_lock", "dataset_manifest_sha256", "split_manifest_sha256", "config_sha256", "feature_schema_versions", "artifacts", "checkpoints", "sessions", "limitations", "acquisition_executed", "full_training_executed", "promotable"],
+  "properties": {
+    "schema_version": {"const": "colab-run-manifest-v1"},
+    "foundation_version": {"const": "colab-foundation-v1"},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[a-z0-9][a-z0-9-]{1,31}_[a-f0-9]{8}_seed[0-9]+$"},
+    "profile": {"enum": ["unit", "smoke", "full"]},
+    "status": {"enum": ["created", "running", "completed", "failed", "cancelled"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "git": {"type": "object", "additionalProperties": false, "required": ["commit", "dirty"], "properties": {"commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "dirty": {"const": false}}},
+    "notebook": {"type": "string", "pattern": "^[^/].*\\.ipynb$"},
+    "runtime_inventory": {"type": "object"},
+    "seed": {"type": "integer", "minimum": 0},
+    "dependency_lock": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
+    "dataset_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "split_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "feature_schema_versions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "artifacts": {"type": "array"},
+    "checkpoints": {"type": "array"},
+    "sessions": {"type": "array"},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "acquisition_executed": {"type": "boolean"},
+    "full_training_executed": {"type": "boolean"},
+    "promotable": {"type": "boolean"}
+  }
+}

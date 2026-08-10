@@ -32,6 +32,18 @@ class ExecutionContext:
     is_colab: bool
 
 
+@dataclass(frozen=True)
+class SmokeLimits:
+    """Hard resource ceilings for non-reportable smoke fitting."""
+
+    max_transaction_rows: int = 1_000
+    max_images: int = 20
+    max_epochs: int = 1
+
+
+DEFAULT_SMOKE_LIMITS: Final = SmokeLimits()
+
+
 def detect_execution_context(environment: Mapping[str, str] | None = None) -> ExecutionContext:
     """Detect CI and Colab conservatively from well-known runtime variables."""
 
@@ -82,3 +94,33 @@ def assert_ci_profile_is_safe(environment: Mapping[str, str] | None = None) -> N
         raise ExecutionGuardError("unknown MOMO_FDVS_EXECUTION_PROFILE") from exc
     if context.is_ci and profile is ExecutionProfile.FULL:
         raise ExecutionGuardError("CI cannot select the full execution profile")
+
+
+def require_smoke_execution(
+    profile: ExecutionProfile,
+    *,
+    transaction_rows: int,
+    image_count: int,
+    epochs: int,
+    uses_locked_test: bool,
+    limits: SmokeLimits = DEFAULT_SMOKE_LIMITS,
+) -> None:
+    """Permit only bounded, fictitious, non-reportable smoke fitting."""
+
+    if profile is not ExecutionProfile.SMOKE:
+        raise ExecutionGuardError("tiny fitting requires the explicit smoke profile")
+    for value, name in (
+        (transaction_rows, "transaction row count"),
+        (image_count, "image count"),
+        (epochs, "epoch count"),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ExecutionGuardError(f"smoke {name} must be a positive integer")
+    if transaction_rows > limits.max_transaction_rows:
+        raise ExecutionGuardError("smoke transaction row cap exceeded")
+    if image_count > limits.max_images:
+        raise ExecutionGuardError("smoke image cap exceeded")
+    if epochs > limits.max_epochs:
+        raise ExecutionGuardError("smoke epoch cap exceeded")
+    if uses_locked_test:
+        raise ExecutionGuardError("smoke execution cannot access a locked test partition")

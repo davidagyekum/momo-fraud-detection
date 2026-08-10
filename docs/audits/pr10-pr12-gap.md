@@ -104,34 +104,34 @@ The blueprint's PR numbers are logical milestones. They do not match the actual 
 
 | Blueprint requirement | Status | Repository evidence and gap |
 |---|---|---|
-| Locked environments | `partial` | Runtime/dev/training lock files exist for current controlled workflows; one cross-notebook environment/profile contract is absent. |
-| `00_environment_preflight.ipynb` and notebook template | `partial` | P10/P11/P12 pinned notebooks exist, but the standard environment notebook/template does not. |
-| Drive paths without personal hard-coding | `partial` | Current notebooks avoid committing credentials/private data, but there is no reusable Drive path/config abstraction. |
-| Clone/update and commit recording | `partial` | P11/P12 notebooks pin immutable commits and verify checkout. A reusable clone/update library and dirty-checkout manifest field are absent. |
-| Runtime inventory and seeding | `partial` | Model reports record Python/framework versions and seeds. There is no standard run inventory schema across notebooks. |
-| Run IDs/manifests, atomic writer, checkpoints and resume | `absent` | Model reports and one Keras best checkpoint exist, but no restart-safe run manifest, atomic Drive sync, resume protocol or checkpoint ledger exists. |
-| SMOKE/FULL parameters | `absent` | No standard profile enum/config exists. |
-| Colab Secrets loading without printing | `absent` | Documentation prohibits embedded secrets; no reusable secret-loader implementation/test exists. |
-| Notebook lint/output checks | `partial` | P10 notebook structure is tested and secret scanning covers tracked notebooks. Generic output stripping/lint validation is absent. |
-| Tiny end-to-end smoke notebook | `absent` | Current notebooks are phase-specific; none performs the blueprint's full transaction/OCR/image/export/reload flow. |
-| Lost-runtime recovery runbook | `partial` | `ml/COLAB_TRAINING_HANDOFF.md` covers clean setup and boundaries, not checkpoint recovery/resume. |
-| CI cannot enter full mode | `absent` | CI does not currently run full training, but no fail-closed profile guard enforces that invariant. |
+| Locked environments | `complete` | Logical PR12 records exact runtime/training/dev lock hashes and validates every active requirement is exact or a local lock include. |
+| `00_environment_preflight.ipynb` and notebook template | `complete` | Clean-session preflight, thin template and restart-safe smoke notebooks live under `ml/notebooks/colab/`; stored outputs/counts are prohibited. |
+| Drive paths without personal hard-coding | `complete` | `ColabPaths` uses generic configurable Drive/VM roots, rejects relative/nested roots and creates the standard layout. |
+| Clone/update and commit recording | `complete` | Credential-free HTTPS checkout is argument-safe, detaches at a full SHA and records clean Git state without persisting the remote URL. |
+| Runtime inventory and seeding | `complete` | Allowlisted runtime/package/accelerator/RAM inventory and deterministic Python/NumPy seeds enter every manifest. |
+| Run IDs/manifests, atomic writer, checkpoints and resume | `complete locally` | `colab-run-manifest-v1`, atomic fsync/replace, immutable ledger entries, hash-before-resume, Drive mirroring and interrupted-session history are implemented and tested. |
+| SMOKE/FULL parameters | `complete` | UNIT, SMOKE and FULL are executable boundaries; smoke has hard row/image/epoch/test caps and all outputs are non-promotable. |
+| Colab Secrets loading without printing | `complete` | `SecretBundle` loads named Colab secrets in memory, redacts representation and exposes only names for safe logging. |
+| Notebook lint/output checks | `complete` | The registered notebook policy checks structure, outputs, counts, credentials, personal paths, ad-hoc installs, thin wrappers and stop boundaries. |
+| Tiny end-to-end smoke notebook | `prepared; Colab run pending` | The notebook covers fictitious transaction preprocessing/fit, lightweight OCR, one image surrogate epoch, export/reload/inference, checkpoints and manifest. A real fresh Colab run still needs owner authorization. |
+| Lost-runtime recovery runbook | `complete` | `ml/COLAB_RUNTIME_RECOVERY.md` documents same-run restore, corruption handling, evidence return and incident boundaries. |
+| CI cannot enter full mode | `complete` | CI pins UNIT and explicitly invokes `assert_ci_profile_is_safe`; code/tests reject CI FULL even with Colab markers. |
 
 ### Smoke flow and required tests
 
 | Blueprint requirement | Status | Evidence and gap |
 |---|---|---|
-| Complete smoke flow emits a run manifest | `absent` | No combined smoke notebook or run manifest exists. |
-| Deterministic fixture split/predictions | `partial` | Dataset/split hashes and controlled model preprocessing are deterministic; cross-runtime prediction tolerance contract is incomplete. |
-| Corrupt checkpoint rejected; valid checkpoint resumes | `absent` | Runtime artifact corruption is rejected before inference, but training checkpoint resume/corruption is not implemented. |
-| Secrets absent from notebooks/logs | `partial` | Secret scan passes; explicit log/output inspection tests are incomplete. |
-| Run manifest validates | `absent` | No run-manifest schema/validator exists. |
-| Restart-and-run-all | `absent` | No evidence exists. |
-| Full mode blocked locally/CI | `absent` | Policy is documented but not enforced by code. |
+| Complete smoke flow emits a run manifest | `complete locally` | Local integration tests execute the full tiny flow and validate a completed, non-promotable manifest with three checkpoints and two safe artifacts. |
+| Deterministic fixture split/predictions | `complete locally` | Two isolated runs produce the same prediction digest; transaction/image smoke excludes the committed test split and export/reload uses `1e-9` tolerance. |
+| Corrupt checkpoint rejected; valid checkpoint resumes | `complete locally` | Tests simulate runtime loss, restore a valid mirrored checkpoint into a fresh VM path and reject modified durable bytes. |
+| Secrets absent from notebooks/logs | `complete` | Notebook policy plus repository secret/artifact scanning rejects assigned credentials and retained output; secret values are redacted by construction. |
+| Run manifest validates | `complete` | Portable JSON Schema and strict runtime validation cover Git/runtime/locks/data/config/features/artifacts/checkpoints/session history and execution flags. |
+| Restart-and-run-all | `awaiting owner Colab evidence` | Notebook cells are output-free and ordered for a clean runtime; actual signed-in Colab execution is deliberately not claimed yet. |
+| Full mode blocked locally/CI | `complete` | Existing reportable CLIs require acknowledged non-CI Colab FULL; CI explicitly checks its UNIT selection and smoke cannot enter those CLIs. |
 
 ### Done assessment
 
-`not done`. Current notebooks prove immutable checkout and real Colab execution, but the reusable restart-safe foundation required before expensive public/private runs is missing.
+`implementation complete locally; owner-operated Colab smoke pending`. Registered ML verification passes the runtime, notebook, manifest, deterministic prediction, corruption and resume suite without acquisition or reportable training. Logical PR12 is not complete until a fresh signed-in Colab session runs the preflight and smoke notebooks top to bottom and returns the safe manifest/hash evidence.
 
 ## Preserved work and conflicts requiring migration
 

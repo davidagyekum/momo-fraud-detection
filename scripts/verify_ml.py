@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ML_ROOT = REPO_ROOT / "ml"
 CONTROLLED_ROOT = ML_ROOT / "data" / "controlled"
 GOVERNANCE_ROOT = REPO_ROOT / "data"
+COLAB_NOTEBOOK_ROOT = ML_ROOT / "notebooks" / "colab"
 sys.path.insert(0, str(ML_ROOT / "src"))
 
 from momo_fdvs_ml.execution import (  # noqa: E402
@@ -35,6 +36,32 @@ COMMANDS = [
             str(GOVERNANCE_ROOT),
             "--recorded-report",
             str(GOVERNANCE_ROOT / "governance_report.json"),
+        ],
+    ),
+    (
+        "Colab lock contract",
+        [
+            sys.executable,
+            "-m",
+            "momo_fdvs_ml",
+            "colab-lock-report",
+            "--repository-root",
+            str(REPO_ROOT),
+            "--recorded-report",
+            str(ML_ROOT / "colab_lock_report.json"),
+        ],
+    ),
+    (
+        "Colab notebook policy",
+        [
+            sys.executable,
+            "-m",
+            "momo_fdvs_ml",
+            "validate-notebooks",
+            "--root",
+            str(COLAB_NOTEBOOK_ROOT),
+            "--recorded-report",
+            str(COLAB_NOTEBOOK_ROOT / "notebook_report.json"),
         ],
     ),
     (

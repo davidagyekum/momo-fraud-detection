@@ -6,20 +6,20 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p11-data-governance-registry`
-- Base SHA: `4b0f63f1b34a3b3c57e3f6dc39936594f9f6a6a7`
+- Current work branch: `codex/p12-colab-foundation`
+- Base SHA: `438d2d007496a2d0163cfed75c76da48bbb215ca`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-10`
-- CI status: `Logical PR11 governance gate passes registered ML checks locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR12 registered ML gate passes locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR11 data governance and registry — Complete locally; historical P12 remains In Progress`
-- Next exact task: `After owner review, implement logical PR12 reproducible Google Colab foundation on a new branch: locked environment/profile contract, restart-safe checkpoints, standard run manifests and smoke workflow; stop before any dataset acquisition or full training.`
+- Current phase: `Logical PR12 reproducible Colab foundation — Prepared locally; fresh owner-operated signed-in Colab smoke pending; historical P12 remains In Progress`
+- Next exact task: `Open the pushed PR12 preflight and tiny smoke notebooks at their pinned code commit in signed-in Google Colab, run them in order, and return only the safe smoke summary/manifest hash; do not acquire data or execute FULL training.`
 
 ## PR10-PR12 reconciliation status
 
 - Blueprint: `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md` (2,446 lines; repository copy verified equal to the supplied source after newline normalisation).
 - Audit: `docs/audits/pr10-pr12-gap.md`.
-- Result: logical PR10, PR11 and PR12 are all `partial/not done`; correct historical work is preserved and missing foundations are ordered before acquisition.
+- Result: logical PR10 and PR11 foundations are complete locally; logical PR12 is prepared and remains incomplete until its fresh signed-in Colab smoke passes. Correct historical work is preserved and acquisition remains gated.
 - Compatibility boundary: current public risk/verification enums and Keras/scikit-learn stack remain effective until versioned migrations are implemented and tested.
 - Training boundary: no additional full run is allowed before the reconciliation foundations, governed dataset and newly frozen partitions pass.
 
@@ -43,6 +43,16 @@
 - Verification: registered ML gate passes 193 tests at 93.15% branch-aware coverage with Ruff, strict mypy and all existing controlled dataset reports. Backend regression evidence is recorded in the current PR11 handoff.
 - Boundary: no data was downloaded/scraped, no completed consent/private identifier was committed and no model was fit or registered.
 
+## Logical PR12 reproducible Colab foundation
+
+- Runtime contract: `colab-foundation-v1` enforces Python 3.12, SMOKE-only preflight, clean immutable Git checkout, exact dependency-lock hashes, generic Drive/VM roots and an allowlisted runtime inventory.
+- Run evidence: strict `colab-run-manifest-v1` records the run ID, timestamps, Git state, dependencies, dataset/split/config/feature hashes, artifacts, immutable checkpoints and interrupted/resumed sessions.
+- Recovery: same-directory atomic writes, verified Drive mirrors and hash-before-resume reject missing or corrupt checkpoints and preserve the original run ID across a lost runtime.
+- Bounded smoke: deterministic fictitious train/validation-only transaction, OCR and one-epoch image-surrogate stages stay within 1,000 rows, 20 images and one epoch; JSON export/reload is verified and locked tests are excluded.
+- Honesty boundary: every smoke bundle declares acquisition, full training and promotion false; it cannot be registered or cited as accuracy evidence and does not change the failed historical P12 artifact.
+- Verification: registered ML gate passes locally with Ruff, strict mypy, lock/notebook drift checks and the expanded branch-aware test suite. Fresh signed-in Colab execution is still required before logical PR12 can be complete.
+- Stop boundary: no dataset acquisition, private-data processing, locked-test access or FULL training was performed. Work stops after pushing the runnable notebooks so the owner can execute the fresh Colab smoke.
+
 ## Phase status
 
 | Phase | Name | Status | Branch/PR | Head SHA | Verification evidence | Blocker/notes |
@@ -59,7 +69,7 @@
 | P09 | Deterministic image-forensics and manipulation evidence | Complete | [PR #10](https://github.com/davidagyekum/momo-fraud-detection/pull/10) — merged | `5ed38ac84bda4b3948f7893d2647096d3d70a0ed` merge commit | Registered backend gate: 96 tests at 87.58% branch coverage, Ruff, strict mypy, OpenAPI and ER pass; clean and previous-revision migrations pass; mobile gate: 48 tests at 89.80% statement coverage and 23-route export | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs had zero steps and were prevented from starting by B-CI-001. Supporting/contextual evidence only; no model was trained. |
 | P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | [PR #11](https://github.com/davidagyekum/momo-fraud-detection/pull/11) — merged | `2e2c1fd53863e09b03c52ae1d5f53c1111deec81` merge commit | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | Merged on 2026-08-10 using passing local evidence; all eight hosted jobs had zero steps and were prevented from starting by B-CI-001. No model was fit, evaluated or exported. |
 | P11 | Structured-feature fraud classifier | Complete | [PR #13](https://github.com/davidagyekum/momo-fraud-detection/pull/13) — merged | `42a0ec69430f9a412211ada85a03d7c3171e4136` merge commit | ML gate: 71 tests at 91.03%; backend gate: 110 tests at 86.17%; signed-in Colab held-out macro F1/balanced accuracy 1.0 over three controlled samples; private artifact hash, registry lifecycle and real API inference pass | Merged on 2026-08-10 using passing local/Colab evidence. All eight hosted jobs had zero steps under B-CI-001. Controlled-only pipeline evidence; no provider-wide/production claim. |
-| P12 | CNN receipt-tampering classifier | In Progress | `codex/p12-cnn-tampering` | training code `02d8967136853c5c46eaa0babe44a7327c843a32` | Signed-in Colab run: Python 3.12.13/TensorFlow 2.21.0; held-out macro F1 `0.333333` over two controlled samples; artifact SHA-256 `3d074298...`; CPU median/p95 `110.137/171.081 ms`; P12-branch ML gate 99 tests at 91.83% | Acceptance failed: both held-out images were predicted `CONTROLLED_TAMPERED` at threshold `0.05`. The private artifact is preserved outside Git but must not be registered or activated. P12 remains incomplete pending representative authorised data and a new governed version. |
+| P12 | CNN receipt-tampering classifier | In Progress | historical `codex/p12-cnn-tampering`; foundation `codex/p12-colab-foundation` | historical training code `02d8967136853c5c46eaa0babe44a7327c843a32`; foundation head pending | Historical signed-in Colab held-out macro F1 `0.333333` failed acceptance; logical PR12 adds tested locks, manifests, checkpoints, recovery and bounded non-promotable smoke notebooks | Historical artifact remains inactive. Fresh foundation smoke is pending in signed-in Colab; representative authorised data and a newly governed version remain prerequisites for any later reportable training. |
 | P13 | End-to-end analysis orchestration, rules and risk aggregation | Not Started |  |  |  |  |
 | P14 | History, search, downloadable reports and notifications | Not Started |  |  |  |  |
 | P15 | Fraud reporting, investigation and governance administration | Not Started |  |  |  |  |
@@ -76,7 +86,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-10 — logical PR11 strengthens FR-ML-005/006 and NFR-DATA-001 with tested registry, portable run/schema, consent/withdrawal and fictitious-fixture enforcement; no acquisition/training occurred`
+- Traceability file last verified: `2026-08-10 — logical PR12 strengthens FR-ML-005/006 and NFR-AUD-001 with tested non-promotable smoke, exact run evidence and restart-safe checkpoints; fresh signed-in Colab smoke remains pending and no acquisition/FULL training occurred`
 
 ## Current blockers
 
@@ -99,15 +109,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-PR11-data-governance-registry-session.md`
-- Summary: `Added the fail-closed canonical source registry, portable schemas/fixtures and executable consent/withdrawal governance; scoped local gates pass and acquisition/training stays gated.`
+- Handoff file: `docs/handoffs/2026-08-10-PR12-colab-foundation-preflight-session.md`
+- Summary: `Prepared the exact-lock, restart-safe and non-promotable PR12 Colab smoke foundation locally; the fresh signed-in Colab acceptance run remains the next stop-gated action.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-PR11-data-governance-registry-session.md` and `docs/audits/pr10-pr12-gap.md`.
-4. Confirm branch `codex/p11-data-governance-registry` and its pushed head.
+3. Read `docs/handoffs/2026-08-10-PR12-colab-foundation-preflight-session.md`, `ml/COLAB_RUNTIME_RECOVERY.md` and `docs/audits/pr10-pr12-gap.md`.
+4. Confirm branch `codex/p12-colab-foundation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
-6. After owner review, create the next bounded logical PR12 branch for the reproducible Colab environment/profile, restart/checkpoint, standard run-manifest and smoke-workflow foundation.
-7. Do not download datasets, access locked tests or execute a full Colab training run until the documented prerequisites pass and the owner reviews the next stop boundary.
+6. In a fresh signed-in Google Colab runtime, run `ml/notebooks/colab/00_environment_preflight.ipynb` and then `ml/notebooks/colab/01_tiny_restart_safe_smoke.ipynb` from the pushed branch, using their pinned immutable code SHA.
+7. Return only the safe smoke summary, manifest path/hash and pass/fail state; never return secrets, raw private paths or private data.
+8. Stop after the smoke. Do not download datasets, access locked tests or execute a FULL training run until the owner reviews the evidence and authorises the next governed phase.
