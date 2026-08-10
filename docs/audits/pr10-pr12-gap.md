@@ -73,30 +73,30 @@ The blueprint's PR numbers are logical milestones. They do not match the actual 
 
 | Blueprint requirement | Status | Repository evidence and gap |
 |---|---|---|
-| `data/registry.yaml` for PaySim, MoMTSim v1/v2, STFD, optional FSTS and Ghana-private | `absent` | No canonical dataset registry exists. |
-| Dataset cards with source/version/licence/use/limits/distribution/citation | `partial` | Controlled dataset and model cards exist. Canonical PaySim/MoMTSim/STFD/FSTS cards are absent. Ghana protocol exists only on the separate Ghana branch. |
-| JSON schemas for transactions, screenshots, OCR truth, edits, splits and runs | `partial` | Typed Python manifest/feature schemas and Flask API schemas exist. Portable JSON Schema documents for all blueprint objects, especially run manifests, are absent. |
-| Data dictionary and tamper taxonomy | `partial` | P10 manifest schema, controlled operation provenance and feature schema exist. The blueprint-wide transaction/OCR/edit/tamper dictionary is incomplete. |
-| Participant information, consent, publication scope, withdrawal/deletion, de-identification, roles, retention and incident process | `partial` | Existing manifests require consent/licence references; source scope prohibits private training without consent/anonymisation. The separate Ghana branch adds a protocol and release gates, but repository-wide templates, withdrawal ledger and publication checklist are absent. |
-| Threat model and `DATA_ACCESS.md` | `absent` | Security specifications and private-storage rules exist, but the named data-access/threat-model artifacts do not. |
-| Ignore rules for data/checkpoints/models/secrets/consent | `complete` | `.gitignore` covers private/raw/authorised data, artifacts, checkpoints/model formats and secrets; `scripts/check_secrets.py` verifies policy. |
-| Large-file, secret and PII-filename validators | `partial` | Secret/prohibited-artifact and private-path checks exist with tests. A general size budget and PII-filename validator are not complete. |
-| Fictitious fixtures and provenance card | `complete` | P10 generic Ghana-style fixtures, deterministic provenance, manifest hashes and dataset report are committed and tested. |
+| `data/registry.yaml` for PaySim, MoMTSim v1/v2, STFD, optional FSTS and Ghana-private | `complete` | Logical PR11 registers exactly the six sources and leaves every entry disabled/not acquired; FSTS is optional and Ghana-private requires consent/internal-only handling. |
+| Dataset cards with source/version/licence/use/limits/distribution/citation | `complete` | `data/cards/` contains a card for every source. Unknown terms are recorded as unverified/blocked rather than inferred as permission. |
+| JSON schemas for transactions, screenshots, OCR truth, edits, splits and runs | `complete` | Six strict JSON Schema 2020-12 documents are aligned with executable validators and fictitious examples. |
+| Data dictionary and tamper taxonomy | `complete` | `data/DATA_DICTIONARY.md` defines portable fields and `data/tamper-taxonomy.json` records the canonical target/method plan. |
+| Participant information, consent, publication scope, withdrawal/deletion, de-identification, roles, retention and incident process | `complete` | `data/governance/` provides templates and procedures; the executable withdrawal ledger blocks pseudonymous participant hashes. No completed/private record is committed. |
+| Threat model and `DATA_ACCESS.md` | `complete` | Repository-root access rules and `docs/security/PR11_DATA_THREAT_MODEL.md` define boundaries, threats and mitigations. |
+| Ignore rules for data/checkpoints/models/secrets/consent | `complete` | `.gitignore` and the repository scanner cover raw/private/authorised data, consent/withdrawal records, checkpoints, models, secrets and credentials. |
+| Large-file, secret and PII-filename validators | `complete` | The scanner retains the 10 MiB budget and rejects Ghana-phone, email and person-labelled sensitive filenames, with negative tests. |
+| Fictitious fixtures and provenance card | `complete` | Six portable fixtures, a synthetic withdrawal ledger and `data/fixtures/PROVENANCE.md` are deterministic and contain explicit fictitious markers. |
 
 ### Required tests
 
 | Blueprint test | Status | Evidence and gap |
 |---|---|---|
-| Registry/schema validation | `partial` | Manifest/feature schema validation is extensive; registry and run-schema validation are absent. |
-| All fixtures validate | `complete` | Registered ML verification validates controlled image/structured fixtures and recorded reports. |
+| Registry/schema validation | `complete` | `momo_fdvs_ml.governance` validates exact source IDs, fail-closed enablement, card/schema links and strict portable-schema alignment. |
+| All fixtures validate | `complete` | Registered ML verification validates all six portable fixtures plus existing controlled image/structured reports. |
 | Raw paths ignored | `complete` | `.gitignore`, scanner and manifest path-containment tests cover raw/private/authorised paths. |
-| Secret/PII/large-file negative harness | `partial` | Secret and forbidden artifact regression tests exist; full filename/size matrix is missing. |
-| Consent scope required for private records | `partial` | Manifest validation requires `consent_or_licence_reference`; the Ghana branch adds release-right checks. Internal-versus-public scope and withdrawal enforcement are absent. |
-| Taxonomy percentages sum to 100% | `absent` | No canonical percentage-based tamper taxonomy artifact/test exists. |
+| Secret/PII/large-file negative harness | `complete` | Backend unit tests exercise credential, prohibited path/artifact, PII filename and oversized-file rejection. |
+| Consent scope required for private records | `complete` | Controlled-real screenshots require a participant hash and internal/release consent scope; synthetic fixtures prohibit participant linkage; withdrawals fail closed. |
+| Taxonomy percentages sum to 100% | `complete` | The registered governance gate verifies exact categories, non-negative integer percentages and total 100. |
 
 ### Done assessment
 
-`not done`. Existing P10 governance is useful and should be preserved, but canonical source registry, portable schemas and executable participant/withdrawal governance must land before acquisition.
+`complete locally on logical PR11`. The deterministic governance report records six disabled sources, six schemas, six fictitious fixtures, a 100% taxonomy total and explicit `acquisition_executed: false`/`training_executed: false`. Dataset acquisition remains a later owner-reviewed boundary.
 
 ## Logical PR12 — Reproducible Colab foundation
 

@@ -30,6 +30,19 @@ $env:PYTHONPATH = "ml/src"
 
 See [data/README.md](data/README.md) for governance rules and [COLAB_TRAINING_HANDOFF.md](COLAB_TRAINING_HANDOFF.md) for the boundary before training.
 
+## Logical PR11 governance validation
+
+The canonical registry and portable fixtures live under the repository-root `data/` directory. This validation performs no download, scraping, private-data access or model fitting:
+
+```powershell
+$env:PYTHONPATH = "ml/src"
+.venv\Scripts\python.exe -m momo_fdvs_ml validate-governance `
+  --root data `
+  --recorded-report data/governance_report.json
+```
+
+Source entries remain disabled until their registry permission, licence and acquisition status passes the fail-closed policy. Controlled-real screenshots additionally require a pseudonymous participant hash and explicit consent scope; committed examples must remain fictitious and participant-free.
+
 ## P12 pre-training commands
 
 Validate the frozen binary image task and exact 224×224 RGB preprocessing contract:

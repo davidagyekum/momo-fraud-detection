@@ -215,3 +215,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** Existing clients, records and failed P12 evidence remain unchanged. New dataset schemas must reject authenticity labels. Inconclusive cannot be projected into a fabricated legacy risk class. CI is pinned to UNIT and now registers the ML verification gate. A later migration must wire the new contract into orchestration/API/UI and implement the bounded restart-safe SMOKE workflow.
 - **Related requirements/phases:** Logical PR10-PR12, FR-ML-003, FR-ML-005, FR-ML-006, FR-RISK-004, FR-RISK-005, NFR-AUD-001, ADR-014, ADR-018, ADR-019.
 - **Supersedes:** None; this is an additive compatibility foundation.
+
+## ADR-021 — Keep canonical data sources disabled until evidence is verified
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Project owner and Codex within the repository security/data rules
+- **Context:** Logical PR11 must register public/simulator, external-image and owner-supplied Ghana-private sources before acquisition. A source name or public search result does not establish licence, redistribution rights, consent or suitability, and completed consent/private data cannot be committed.
+- **Options considered:** Enable named sources from assumed public availability; defer the entire registry until files arrive; register every source now with explicit fail-closed evidence states.
+- **Decision:** Register exactly PaySim, MoMTSim v1/v2, STFD, optional FSTS and Ghana-private, but keep all disabled and `not_acquired`. Enabling requires approved permission, verified/not-applicable-private-consent status and registered acquisition state. FSTS stays optional. Ghana-private requires consent and defaults to internal-only. Committed fixtures must be demonstrably fictitious and participant-free; controlled-real records require pseudonymous participant linkage, consent scope and withdrawal checks.
+- **Consequences:** Registry/schema/governance development and Colab foundations can proceed without inventing data rights or exposing personal data. Future acquisition must update the relevant card and evidence outside Git before enabling a source. Withdrawal and publication checks may require dataset/model rebuilds. This decision records no legal conclusion and grants no redistribution right.
+- **Related requirements/phases:** Logical PR11, PR12, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-014, ADR-019, ADR-020.
+- **Supersedes:** None.

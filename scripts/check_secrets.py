@@ -58,6 +58,26 @@ PLACEHOLDER_MARKERS = {
     "tbd",
     "test-only",
 }
+SENSITIVE_DATA_SUFFIXES = {
+    ".csv",
+    ".docx",
+    ".jpeg",
+    ".jpg",
+    ".pdf",
+    ".png",
+    ".webp",
+    ".xlsx",
+    ".zip",
+}
+FILENAME_PHONE_PATTERN = re.compile(r"(?<!\d)(?:233|0)[235]\d{8}(?!\d)")
+FILENAME_EMAIL_PATTERN = re.compile(
+    r"[A-Z0-9._%+-]+(?:@|%40)[A-Z0-9.-]+\.[A-Z]{2,}", re.I
+)
+FILENAME_PERSON_PATTERN = re.compile(
+    r"(?i)(?:recipient|sender|customer|person|participant|name)[-_]"
+    r"(?!demo(?:[-_]|$)|synthetic(?:[-_]|$)|fixture(?:[-_]|$)|redacted(?:[-_]|$))"
+    r"[a-z]{2,}(?:[-_][a-z]{2,})+"
+)
 
 
 @dataclass(frozen=True)
@@ -118,6 +138,16 @@ def inspect_file(path: Path) -> list[Finding]:
     relative = path.relative_to(REPO_ROOT).as_posix()
     lowered_parts = {part.lower() for part in path.relative_to(REPO_ROOT).parts}
     findings: list[Finding] = []
+
+    if FILENAME_PHONE_PATTERN.search(path.name):
+        findings.append(Finding(relative, "possible phone number in filename"))
+    if FILENAME_EMAIL_PATTERN.search(path.name):
+        findings.append(Finding(relative, "possible email address in filename"))
+    if (
+        path.suffix.lower() in SENSITIVE_DATA_SUFFIXES
+        and FILENAME_PERSON_PATTERN.search(path.stem)
+    ):
+        findings.append(Finding(relative, "possible personal name in filename"))
 
     if path.name.startswith(".env") and path.name not in ALLOWED_ENV_FILES:
         findings.append(Finding(relative, "environment file is prohibited"))

@@ -1,0 +1,16 @@
+{
+  "schema_version": "run-manifest-v1",
+  "run_id": "RUN_SYNTHETIC_SMOKE_0001",
+  "profile": "smoke",
+  "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "repo_dirty": false,
+  "python_version": "3.12.10",
+  "dependency_lock_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "dataset_manifest_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "split_manifest_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "seed": 20260810,
+  "started_at": "2026-08-10T12:00:00Z",
+  "completed_at": "2026-08-10T12:01:00Z",
+  "status": "completed",
+  "checkpoint_sha256s": []
+}

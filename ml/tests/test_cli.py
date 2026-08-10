@@ -39,6 +39,27 @@ def test_cli_reports_manifest_error(tmp_path: Path, capsys) -> None:  # type: ig
     assert "unable to read manifest" in capsys.readouterr().out
 
 
+def test_cli_validates_data_governance(capsys) -> None:  # type: ignore[no-untyped-def]
+    root = Path(__file__).resolve().parents[2] / "data"
+    assert (
+        main(
+            [
+                "validate-governance",
+                "--root",
+                str(root),
+                "--recorded-report",
+                str(root / "governance_report.json"),
+            ]
+        )
+        == 0
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert report["registry_entry_count"] == 6
+    assert report["enabled_dataset_count"] == 0
+    assert report["acquisition_executed"] is False
+    assert report["training_executed"] is False
+
+
 def test_cli_validates_recorded_image_report(capsys) -> None:  # type: ignore[no-untyped-def]
     root = Path(__file__).parents[1] / "data" / "controlled"
     assert (

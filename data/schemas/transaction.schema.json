@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/schemas/transaction-v1.json",
+  "title": "Harmonised structured transaction v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["step", "transaction_type", "amount", "initiator_id", "recipient_id", "old_balance_initiator", "new_balance_initiator", "old_balance_recipient", "new_balance_recipient", "label_is_fraud", "dataset_source", "source_row_id"],
+  "properties": {
+    "step": {"type": "integer", "minimum": 0},
+    "transaction_type": {"type": "string", "minLength": 1},
+    "amount": {"type": "number", "minimum": 0},
+    "initiator_id": {"type": "string", "pattern": "^ENTITY_[A-Z0-9_-]+$"},
+    "recipient_id": {"type": "string", "pattern": "^ENTITY_[A-Z0-9_-]+$"},
+    "old_balance_initiator": {"type": ["number", "null"]},
+    "new_balance_initiator": {"type": ["number", "null"]},
+    "old_balance_recipient": {"type": ["number", "null"]},
+    "new_balance_recipient": {"type": ["number", "null"]},
+    "label_is_fraud": {"type": "integer", "enum": [0, 1]},
+    "dataset_source": {"enum": ["paysim", "momtsim_v1", "momtsim_v2", "controlled_synthetic"]},
+    "source_row_id": {"type": "string", "minLength": 1}
+  }
+}

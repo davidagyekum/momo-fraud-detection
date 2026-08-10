@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p10-evidence-execution-foundation`
-- Base SHA: `080f8d750e16c0969d8f6ce5ff11fd406523d236`
+- Current work branch: `codex/p11-data-governance-registry`
+- Base SHA: `4b0f63f1b34a3b3c57e3f6dc39936594f9f6a6a7`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-10`
-- CI status: `Logical PR10 evidence/execution foundation passes registered ML and PostgreSQL-backed backend gates locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR11 governance gate passes registered ML checks locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR10 evidence and execution foundation — Complete locally; historical P12 remains In Progress`
-- Next exact task: `Implement logical PR11 canonical dataset registry, portable schemas, data-access/threat documentation and executable privacy/withdrawal validators on a new phase branch; do not acquire data or run training yet.`
+- Current phase: `Logical PR11 data governance and registry — Complete locally; historical P12 remains In Progress`
+- Next exact task: `After owner review, implement logical PR12 reproducible Google Colab foundation on a new branch: locked environment/profile contract, restart-safe checkpoints, standard run manifests and smoke workflow; stop before any dataset acquisition or full training.`
 
 ## PR10-PR12 reconciliation status
 
@@ -32,6 +32,16 @@
 - CI policy: workflow pins UNIT and registers the ML verification job.
 - Verification: 111 ML tests at 92.00% coverage; 140 PostgreSQL-backed backend tests at 86.01% coverage; OpenAPI, ER, migration-current/check and targeted negative guard checks pass.
 - Training/data boundary: no acquisition, private-data access, fitting, threshold selection or artifact registration occurred.
+
+## Logical PR11 data governance and registry
+
+- Canonical registry: six exact sources (PaySim, MoMTSim v1/v2, STFD, optional FSTS and Ghana-private), all disabled and `not_acquired`; unknown rights remain blocked.
+- Portable contracts: strict JSON Schema 2020-12 documents for transaction, screenshot, OCR truth, controlled edits, frozen splits and reproducible runs.
+- Privacy governance: participant/consent templates, internal-versus-release scope, withdrawal/deletion, de-identification, roles, retention, incidents, publication checklist, data-access rules and threat model.
+- Executable enforcement: registry/card/schema path and state checks; consent/provenance rules; withdrawal blocking; taxonomy total; fictitious fixture markers; PII filename, secret, prohibited artifact and 10 MiB file scans.
+- Deterministic evidence: registry hash `e740b80253e6…`, six schema hashes, six fixture hashes, withdrawal fixture hash `33ecc617080b…`, taxonomy hash `a4a2efb21911…`; recorded report declares acquisition/training false.
+- Verification: registered ML gate passes 193 tests at 93.15% branch-aware coverage with Ruff, strict mypy and all existing controlled dataset reports. Backend regression evidence is recorded in the current PR11 handoff.
+- Boundary: no data was downloaded/scraped, no completed consent/private identifier was committed and no model was fit or registered.
 
 ## Phase status
 
@@ -66,7 +76,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-10 — logical PR10 adds tested evidence-mode/nullability/reason compatibility foundations for FR-RISK-004/005 and NFR-AUD-001; production orchestration remains incomplete`
+- Traceability file last verified: `2026-08-10 — logical PR11 strengthens FR-ML-005/006 and NFR-DATA-001 with tested registry, portable run/schema, consent/withdrawal and fictitious-fixture enforcement; no acquisition/training occurred`
 
 ## Current blockers
 
@@ -89,15 +99,15 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-PR10-evidence-execution-foundation-session.md`
-- Summary: `Added versioned evidence-mode and compatibility contracts plus fail-closed Colab execution profiles; all local scoped gates pass and acquisition/training stays gated.`
+- Handoff file: `docs/handoffs/2026-08-10-PR11-data-governance-registry-session.md`
+- Summary: `Added the fail-closed canonical source registry, portable schemas/fixtures and executable consent/withdrawal governance; scoped local gates pass and acquisition/training stays gated.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-PR10-evidence-execution-foundation-session.md` and `docs/audits/pr10-pr12-gap.md`.
-4. Confirm branch `codex/p10-evidence-execution-foundation` and its pushed head.
+3. Read `docs/handoffs/2026-08-10-PR11-data-governance-registry-session.md` and `docs/audits/pr10-pr12-gap.md`.
+4. Confirm branch `codex/p11-data-governance-registry` and its pushed head.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
-6. Create the next bounded logical PR11 reconciliation branch for registry/schema/privacy-governance foundations.
-7. Do not download datasets, access locked tests or execute a Colab training run until the documented prerequisites pass and the owner reviews the next stop boundary.
+6. After owner review, create the next bounded logical PR12 branch for the reproducible Colab environment/profile, restart/checkpoint, standard run-manifest and smoke-workflow foundation.
+7. Do not download datasets, access locked tests or execute a full Colab training run until the documented prerequisites pass and the owner reviews the next stop boundary.

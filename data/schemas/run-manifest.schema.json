@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/schemas/run-manifest-v1.json",
+  "title": "Reproducible ML run manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "profile", "git_commit", "repo_dirty", "python_version", "dependency_lock_sha256", "dataset_manifest_sha256", "split_manifest_sha256", "seed", "started_at", "completed_at", "status", "checkpoint_sha256s"],
+  "properties": {
+    "schema_version": {"const": "run-manifest-v1"},
+    "run_id": {"type": "string", "pattern": "^RUN_[A-Z0-9_-]+$"},
+    "profile": {"enum": ["unit", "smoke", "full"]},
+    "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "repo_dirty": {"const": false},
+    "python_version": {"type": "string", "pattern": "^3\\.12\\."},
+    "dependency_lock_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "dataset_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "split_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "seed": {"type": "integer", "minimum": 0},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "status": {"enum": ["created", "running", "completed", "failed", "cancelled"]},
+    "checkpoint_sha256s": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "uniqueItems": true}
+  }
+}

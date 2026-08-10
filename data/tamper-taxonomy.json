@@ -1,0 +1,18 @@
+{
+  "taxonomy_version": "tamper-taxonomy-v1",
+  "image_classes": ["unaltered", "tampered"],
+  "targets": ["none", "amount", "recipient", "reference", "datetime", "status", "header", "multi"],
+  "methods": ["none", "replacement", "splicing", "removal_insertion", "copy_move", "inpainting", "composite"],
+  "benign_transforms": ["none", "jpeg", "webp", "resize", "crop", "blur", "screen_photo", "other"],
+  "planned_tampered_target_distribution_percent": {
+    "amount": 25,
+    "recipient": 20,
+    "reference": 20,
+    "datetime": 10,
+    "status": 10,
+    "header": 5,
+    "multi": 10
+  },
+  "total_percent": 100,
+  "limitations": "Planning targets only; they are not observed prevalence or a licence to manufacture data."
+}

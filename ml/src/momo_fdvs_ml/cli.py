@@ -13,6 +13,7 @@ from momo_fdvs_ml.execution import (
     ExecutionProfile,
     require_training_execution,
 )
+from momo_fdvs_ml.governance import GovernanceError, governance_report
 from momo_fdvs_ml.image_model import (
     ImageModelError,
     load_and_verify_image_artifact,
@@ -64,6 +65,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also compare dataset_report.json to canonical hashes",
     )
+
+    validate_governance = subparsers.add_parser(
+        "validate-governance",
+        help="validate registry, schemas, fixtures, taxonomy and withdrawal controls",
+    )
+    validate_governance.add_argument("--root", type=Path, required=True)
+    validate_governance.add_argument("--recorded-report", type=Path)
 
     structured_data = subparsers.add_parser(
         "generate-structured",
@@ -163,6 +171,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload["recorded_report_errors"] = list(recorded_errors)
             print(json.dumps(payload, indent=2, sort_keys=True))
             return 0 if validation.is_valid and not recorded_errors else 1
+
+        if args.command == "validate-governance":
+            report = governance_report(args.root)
+            if args.recorded_report is not None:
+                recorded = json.loads(args.recorded_report.read_text(encoding="utf-8"))
+                if recorded != report:
+                    raise GovernanceError(
+                        "recorded governance report does not match canonical data"
+                    )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
 
         if args.command == "generate-structured":
             dataset = write_structured_dataset(
@@ -297,6 +316,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     except (
         ExecutionGuardError,
+        GovernanceError,
         ImageDatasetError,
         ImageModelError,
         ManifestError,

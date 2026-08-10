@@ -11,6 +11,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ML_ROOT = REPO_ROOT / "ml"
 CONTROLLED_ROOT = ML_ROOT / "data" / "controlled"
+GOVERNANCE_ROOT = REPO_ROOT / "data"
 sys.path.insert(0, str(ML_ROOT / "src"))
 
 from momo_fdvs_ml.execution import (  # noqa: E402
@@ -23,6 +24,19 @@ COMMANDS = [
     ("lint", [sys.executable, "-m", "ruff", "check", "."]),
     ("type", [sys.executable, "-m", "mypy", "src"]),
     ("tests", [sys.executable, "-m", "pytest"]),
+    (
+        "data governance",
+        [
+            sys.executable,
+            "-m",
+            "momo_fdvs_ml",
+            "validate-governance",
+            "--root",
+            str(GOVERNANCE_ROOT),
+            "--recorded-report",
+            str(GOVERNANCE_ROOT / "governance_report.json"),
+        ],
+    ),
     (
         "controlled dataset",
         [

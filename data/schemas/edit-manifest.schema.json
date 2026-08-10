@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/schemas/edit-manifest-v1.json",
+  "title": "Controlled screenshot edit manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["edit_id", "source_image_id", "derived_image_id", "seed", "operations"],
+  "properties": {
+    "edit_id": {"type": "string", "pattern": "^EDIT_[A-Z0-9_-]+$"},
+    "source_image_id": {"type": "string", "pattern": "^FIXTURE_[A-Z0-9_-]+$"},
+    "derived_image_id": {"type": "string", "pattern": "^FIXTURE_[A-Z0-9_-]+$"},
+    "seed": {"type": "integer", "minimum": 0},
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "method", "bbox", "old_value", "new_value"],
+        "properties": {
+          "target": {"enum": ["amount", "recipient", "reference", "datetime", "status", "header"]},
+          "method": {"enum": ["replacement", "splicing", "removal_insertion", "copy_move", "inpainting", "composite"]},
+          "bbox": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}], "minItems": 4, "maxItems": 4},
+          "old_value": {"type": "string"},
+          "new_value": {"type": "string"}
+        }
+      }
+    }
+  }
+}

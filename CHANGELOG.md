@@ -6,6 +6,10 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ### Added
 
+- Logical PR11 canonical fail-closed registry for PaySim, MoMTSim v1/v2, STFD, optional FSTS and Ghana-private; all sources remain disabled and unacquired pending verified permission/licence/consent evidence.
+- Portable strict JSON schemas and fictitious fixtures for transactions, screenshots, OCR truth, edit manifests, frozen split manifests and reproducible run manifests, plus a versioned tamper taxonomy whose targets sum to 100%.
+- Participant information/consent templates, withdrawal/deletion controls, de-identification rules, access roles, retention, incident response, publication checks, data-access rules and a data threat model.
+- Executable registry/schema/fixture/taxonomy/withdrawal validation with deterministic recorded hashes, PII-filename/large-file negative scanning and expanded private data/model/consent ignore policy.
 - Logical PR10 `evidence-result-v1` portable/runtime contracts with explicit screenshot-only, transaction-only, combined and inconclusive modes, canonical manipulation labels, risk bands, nullable unavailable signals and tested legacy projections.
 - Fail-closed UNIT/SMOKE/FULL ML execution profiles; existing fitting commands now require acknowledged Google Colab FULL mode and reject CI/local execution, while CI pins UNIT and runs the registered ML gate.
 - Initial implementation package, scope, requirements, architecture, database, API, UI, analytical, security, test, GitHub, deployment and inspection specifications.

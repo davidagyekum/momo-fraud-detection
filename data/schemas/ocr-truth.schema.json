@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/schemas/ocr-truth-v1.json",
+  "title": "OCR field ground truth v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["image_id", "amount", "recipient_name", "recipient_wallet", "reference", "timestamp", "status", "full_transcript"],
+  "properties": {
+    "image_id": {"type": "string", "pattern": "^FIXTURE_[A-Z0-9_-]+$"},
+    "amount": {"$ref": "#/$defs/field"},
+    "recipient_name": {"$ref": "#/$defs/field"},
+    "recipient_wallet": {"$ref": "#/$defs/field"},
+    "reference": {"$ref": "#/$defs/field"},
+    "timestamp": {"$ref": "#/$defs/field"},
+    "status": {"$ref": "#/$defs/field"},
+    "full_transcript": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw", "normalized", "bbox"],
+      "properties": {
+        "raw": {"type": "string"},
+        "normalized": {"type": ["string", "number", "null"]},
+        "bbox": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 0}], "minItems": 4, "maxItems": 4}
+      }
+    }
+  }
+}
