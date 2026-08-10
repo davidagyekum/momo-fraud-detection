@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p05-admin-shell`
-- Base SHA: `9e7594bb79ecd5805f3417d617fcef4c011669dd`
-- Functional implementation SHA: `63c62a1` (full SHA recorded in the P05 handoff)
+- Current work branch: `codex/p06-receipt-upload`
+- Base SHA: `1d7891fd2087a8f5412d864a66dafc939b967a60`
+- Head SHA: `P06 work in progress; exact pushed head will be recorded at handoff`
 - Last updated: `2026-08-10`
 - CI status: `P05 admin-quality job configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P05 admin and backend gates pass locally`
 - Deployment status: `Not deployed`
-- Current phase: `P05 — In Review`
-- Next exact task: `Push the P05 documentation follow-up, create and merge the P05 pull request in the authenticated repository session, then branch codex/p06-private-upload from the merged main head.`
+- Current phase: `P06 — In Review`
+- Next exact task: `Run the registered P06 backend/mobile verification gates, inspect the final diff, commit, push and open the phase pull request.`
 
 ## Phase status
 
@@ -24,8 +24,8 @@
 | P02 | Relational schema, migrations, seeds and private storage abstraction | Complete | [PR #3](https://github.com/davidagyekum/momo-fraud-detection/pull/3) — merged | `0fa8d463eb74ef0f93597fb7cb13647a94ce83fa` merge commit | 30 tables; clean and previous-revision migration; downgrade/upgrade; 28 tests at 88.12% coverage; strict mypy/Ruff; ER drift; idempotent seed; Docker build/readiness pass | Merged to `main` on 2026-08-09 using passing local evidence; B-CI-001 remains external. |
 | P03 | Authentication, session security, ownership and RBAC | Complete | [PR #4](https://github.com/davidagyekum/momo-fraud-detection/pull/4) — merged | `3a4f4ea50df3aacdedf6094e3108c453fca092cc` merge commit | 41 tests pass at 92.44% coverage; Ruff format/lint and strict mypy pass; OpenAPI and ER checks pass; secret scan passes; clean API image build and live Docker admin login/`/me` smoke pass | Merged on 2026-08-09; B-CI-001 remains an external hosted-runner blocker. |
 | P04 | Mobile application shell, design system and authentication experience | Complete | [PR #5](https://github.com/davidagyekum/momo-fraud-detection/pull/5) — merged | `9e7594bb79ecd5805f3417d617fcef4c011669dd` merge commit | Mobile verification passes: format/lint/type; 25 Jest tests; security-critical coverage 89.77% statements/80% branches; token policy; static export; 45 backend regressions at 92.44%; real local API registration/login/profile/logout smoke; 360/390 viewport evidence | Merged on 2026-08-09 using passing local evidence. B-CI-001 and upstream dependency waiver B-SEC-002 remain external. |
-| P05 | Administrator and investigator web portal shell | In Review | `codex/p05-admin-shell` | Functional implementation `63c62a1` | Admin verification passes: security policy, format/lint/strict type, 34 Vitest tests at 90.95% statement coverage, 3 Playwright smoke tests, production build; 47 backend tests at 92.45%; live ADMIN/INVESTIGATOR browser flow and 1440/768/390 evidence | Awaiting push/PR/merge; B-CI-001 remains external. |
-| P06 | Receipt capture, hostile-file validation and private upload | Not Started |  |  |  |  |
+| P05 | Administrator and investigator web portal shell | Complete | [PR #6](https://github.com/davidagyekum/momo-fraud-detection/pull/6) — merged | `1d7891fd2087a8f5412d864a66dafc939b967a60` merge commit | Admin verification passes: security policy, format/lint/strict type, 34 Vitest tests at 90.95% statement coverage, 3 Playwright smoke tests, production build; 47 backend tests at 92.45%; live ADMIN/INVESTIGATOR browser flow and 1440/768/390 evidence | Merged on 2026-08-10 using passing local evidence; B-CI-001 remains external. |
+| P06 | Receipt capture, hostile-file validation and private upload | In Review | `codex/p06-receipt-upload` | Base `1d7891fd2087a8f5412d864a66dafc939b967a60` | 65 backend tests at 90.16%; 37 mobile tests above configured coverage; strict lint/type; OpenAPI; web export; 17 hostile/private upload tests; live upload/private-read probe; Chrome DOM/console flow | Final diff, commit, push and PR remain. Chrome screenshot capture timed out; no screenshot is claimed. P07 OCR remains out of scope. |
 | P07 | OCR preprocessing, extraction, confidence and correction workflow | Not Started |  |  |  |  |
 | P08 | Reference-record import and transaction verification | Not Started |  |  |  |  |
 | P09 | Deterministic image-forensics and manipulation evidence | Not Started |  |  |  |  |
@@ -45,10 +45,10 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Requirements summary
 
-- MUST requirements complete: `10 / 87`
-- SHOULD requirements complete: `0 / 11`
+- MUST requirements complete: `17 / 87`
+- SHOULD requirements complete: `1 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-10 — P05 adds the staff shell and role/accessibility/compatibility evidence while keeping FR-ADM-001/005/006/007 In Progress until their P15/P16 workflows exist`
+- Traceability file last verified: `2026-08-10 — P06 completes FR-UPL-001 through FR-UPL-007 and NFR-SEC-003 with API/mobile/storage/security evidence`
 
 ## Current blockers
 

@@ -1,6 +1,6 @@
 import { fetch } from "expo/fetch";
 
-import { apiRequest } from "@/lib/api";
+import { apiRequest, apiResponse } from "@/lib/api";
 
 jest.mock("expo/fetch", () => ({ fetch: jest.fn() }));
 
@@ -46,4 +46,32 @@ test("converts transport failures into an explicit network state", async () => {
     status: 0,
     code: "NETWORK",
   });
+});
+
+test("lets the runtime set a multipart boundary", async () => {
+  mockedFetch.mockResolvedValue({
+    ok: true,
+    status: 201,
+    json: async () => ({ data: { ok: true } }),
+  } as never);
+  const form = new FormData();
+  form.append("source", "GALLERY");
+
+  await apiRequest("/api/v1/transactions", { method: "POST", body: form });
+  const headers = new Headers(mockedFetch.mock.calls[0]?.[1]?.headers);
+  expect(headers.get("Content-Type")).toBeNull();
+});
+
+test("returns a successful binary response without consuming it", async () => {
+  const response = {
+    ok: true,
+    status: 200,
+    headers: new Headers({ "Content-Type": "image/jpeg" }),
+  } as never;
+  mockedFetch.mockResolvedValue(response);
+  await expect(
+    apiResponse("/api/v1/transactions/id/receipt", {
+      headers: { Accept: "image/jpeg" },
+    }),
+  ).resolves.toBe(response);
 });

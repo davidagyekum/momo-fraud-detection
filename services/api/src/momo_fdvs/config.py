@@ -111,6 +111,10 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
             str(Path(__file__).resolve().parents[2] / "migrations"),
         )
     ).resolve()
+    upload_max_bytes = _integer("UPLOAD_MAX_BYTES", 10_485_760)
+    upload_request_max_bytes = _integer("UPLOAD_REQUEST_MAX_BYTES", 11_534_336)
+    if upload_request_max_bytes <= upload_max_bytes:
+        raise ConfigurationError("UPLOAD_REQUEST_MAX_BYTES must exceed UPLOAD_MAX_BYTES")
 
     return {
         "ENVIRONMENT": environment,
@@ -149,6 +153,18 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "RATE_LIMIT_REFRESH": _rate_limit("RATE_LIMIT_REFRESH", "10 per minute"),
         "RATE_LIMIT_PASSWORD_RESET": _rate_limit("RATE_LIMIT_PASSWORD_RESET", "5 per hour"),
         "RATE_LIMIT_REGISTRATION": _rate_limit("RATE_LIMIT_REGISTRATION", "5 per hour"),
+        "RATE_LIMIT_UPLOAD": _rate_limit("RATE_LIMIT_UPLOAD", "30 per hour"),
+        "RATE_LIMIT_RECEIPT_READ": _rate_limit("RATE_LIMIT_RECEIPT_READ", "60 per minute"),
+        "UPLOAD_MAX_BYTES": upload_max_bytes,
+        "UPLOAD_REQUEST_MAX_BYTES": upload_request_max_bytes,
+        "MAX_CONTENT_LENGTH": upload_request_max_bytes,
+        "UPLOAD_MAX_PIXEL_COUNT": _integer("UPLOAD_MAX_PIXEL_COUNT", 30_000_000),
+        "UPLOAD_MAX_DIMENSION_PX": _integer("UPLOAD_MAX_DIMENSION_PX", 12_000),
+        "UPLOAD_MIN_WIDTH_PX": _integer("UPLOAD_MIN_WIDTH_PX", 320),
+        "UPLOAD_MIN_HEIGHT_PX": _integer("UPLOAD_MIN_HEIGHT_PX", 320),
+        "UPLOAD_CLIENT_METADATA_MAX_BYTES": _integer("UPLOAD_CLIENT_METADATA_MAX_BYTES", 4_096),
+        "UPLOAD_IDEMPOTENCY_TTL_HOURS": _integer("UPLOAD_IDEMPOTENCY_TTL_HOURS", 24),
+        "UPLOAD_NEAR_DUPLICATE_DISTANCE": _integer("UPLOAD_NEAR_DUPLICATE_DISTANCE", 5, minimum=0),
         "LOCAL_PRIVATE_STORAGE_ROOT": storage_root,
         "STORAGE_ADAPTER": storage_adapter,
         "S3_ENDPOINT_URL": os.getenv("S3_ENDPOINT_URL") or None,

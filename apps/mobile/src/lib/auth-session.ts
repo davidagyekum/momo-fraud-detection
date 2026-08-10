@@ -1,4 +1,4 @@
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest, apiResponse, ApiError } from "@/lib/api";
 import {
   clearRefreshToken,
   readRefreshToken,
@@ -85,6 +85,21 @@ export class AuthSessionManager {
       const user = await this.restore();
       if (!user || !this.accessToken) throw error;
       return apiRequest<T>(path, init, this.accessToken);
+    }
+  }
+
+  async authorizedResponse(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<Response> {
+    if (!this.accessToken) await this.restore();
+    try {
+      return await apiResponse(path, init, this.accessToken ?? undefined);
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 401) throw error;
+      const user = await this.restore();
+      if (!user || !this.accessToken) throw error;
+      return apiResponse(path, init, this.accessToken);
     }
   }
 

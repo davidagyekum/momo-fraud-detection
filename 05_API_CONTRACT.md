@@ -220,25 +220,44 @@ Requires current password and revokes other refresh sessions.
       "size_bytes": 481223,
       "width_px": 1080,
       "height_px": 1920,
-      "quality_warnings": []
+      "quality_warnings": [],
+      "dimensions": {"width_px": 1080, "height_px": 1920},
+      "quality": {"score": 0.94, "warnings": []},
+      "duplicate_warning": {
+        "exact_match_found": false,
+        "near_match_found": false
+      },
+      "media": {
+        "thumbnail_url": "/api/v1/transactions/uuid/receipt?variant=thumbnail",
+        "original_url": "/api/v1/transactions/uuid/receipt?variant=original"
+      }
     },
     "next_action": {
       "type": "RUN_OCR",
       "endpoint": "/api/v1/transactions/uuid/ocr"
-    }
+    },
+    "replayed": false
   },
   "meta": {"request_id": "..."}
 }
 ```
 
 The response never exposes the private object key or another user's duplicate details.
+An identical retry with the same key returns the same resource with `200` and
+`replayed: true`; reuse of the key for different content returns `409`. Image
+quality warnings and duplicate warnings remain separate from fraud risk and
+transaction verification.
 
 **Errors:** 400 invalid image, 413 too large, 415 unsupported media, 409 idempotency conflict, 503 storage unavailable.
 
 ### `GET /transactions/{transaction_id}/receipt`
 
 **Auth:** owner, authorised ADMIN/INVESTIGATOR  
-Streams or redirects through a short-lived private URL after policy check. Optional query `variant=thumbnail|original|ela|noise_map|heatmap`. Staff-only variants are permission checked.
+Streams or redirects through a short-lived private URL after policy check. P06
+supports `variant=thumbnail|original`; later staff-only forensic variants are
+added by the image-forensics phase and remain permission checked. Streamed
+responses use validated content types, generated filenames, `nosniff`, and
+private no-store caching.
 
 ### `DELETE /transactions/{transaction_id}`
 

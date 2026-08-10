@@ -43,6 +43,9 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - No-access, not-found, global-error, session-expired, loading, empty, filtered-empty, degraded and retry-ready portal states.
 - Portal security/quality verification covering browser token persistence, unsafe HTML injection, formatting, linting, strict typing, 34 Vitest tests, coverage thresholds, 3 Playwright smoke flows and the production bundle.
 - P05 GitHub Actions admin-quality job and safe desktop/tablet/narrow Chapter Four screenshot evidence linked to functional implementation SHA `63c62a1`.
+- P06 Expo camera/gallery receipt selection with runtime permissions, preview replacement/removal, upload/retry feedback, quality and duplicate notices, and authenticated private-preview reopening.
+- P06 multipart transaction creation with required idempotency, strict JPEG/PNG/WebP validation, immutable originals, EXIF-normalised thumbnails, SHA-256/dHash evidence, atomic rollback and private owner/staff streaming.
+- P06 hostile-upload and privacy regressions for corrupt/disguised/polyglot/oversized/multi-frame inputs, path traversal, replay/conflict, duplicate privacy, cross-owner denial and cleanup.
 
 ### Changed
 
@@ -54,6 +57,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - JavaScript work now uses Node.js 24.14.0 because Expo SDK 57 / React Native 0.86 does not support the workstation's older Node.js 22.11.0 runtime.
 - The browser-readable CSRF cookie uses the application root path while the HTTP-only refresh cookie remains restricted to `/api/v1/auth`, enabling the staff SPA to echo the cryptographically bound CSRF value after reload.
 - Repository verification now executes the complete P05 administrator portal suite for `--admin`.
+- The generated OpenAPI contract now documents receipt multipart fields, `Idempotency-Key`, private media variants and upload error states.
 
 ### Fixed
 
@@ -70,6 +74,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Extended secret-scanner syntax handling and added regression tests for TypeScript declarations versus hard-coded tokens.
 - Added an administrator browser-security policy that rejects local/session/IndexedDB token persistence and `dangerouslySetInnerHTML`; access tokens remain memory-only and refresh credentials remain HTTP-only.
 - Verified the P05 production dependency graph with `npm audit --omit=dev`: zero known vulnerabilities at the recorded run.
+- P06 originals remain byte-identical private evidence; only derived thumbnails receive EXIF orientation and metadata stripping. Protected streams enforce owner/staff policy, generated filenames, `nosniff` and private no-store caching.
 
 ### Known limitations
 
