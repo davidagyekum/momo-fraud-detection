@@ -8,6 +8,7 @@ import math
 import re
 import time
 from collections.abc import Mapping
+from numbers import Real
 from pathlib import Path
 from typing import Any, Final, cast
 from urllib.parse import urlparse
@@ -192,7 +193,7 @@ def _validate_feature_row(
             categories = spec.get("categories")
             if (
                 not isinstance(value, str)
-                or not isinstance(categories, list)
+                or not isinstance(categories, (list, tuple))
                 or value not in categories
             ):
                 raise StructuredModelFailure(
@@ -200,7 +201,7 @@ def _validate_feature_row(
                 )
             normalised[name] = value
             continue
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
+        if isinstance(value, bool) or not isinstance(value, Real):
             raise StructuredModelFailure("STRUCTURED_FEATURE_INVALID", f"{name} must be numeric.")
         numeric = float(value)
         minimum = spec.get("minimum")

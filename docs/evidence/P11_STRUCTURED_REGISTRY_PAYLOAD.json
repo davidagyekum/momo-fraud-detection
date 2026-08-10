@@ -1,0 +1,33 @@
+{
+  "artifact_sha256": "cc2137f85ac522bd5a4d58592779b2667a6b1ae2755015a8c1bd7977fa5c190b",
+  "artifact_uri": "private://structured/structured-rf-controlled-v1.joblib",
+  "dataset_manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "framework_versions": {
+    "implementation": "CPython",
+    "joblib": "1.5.3",
+    "numpy": "2.5.2",
+    "pandas": "3.0.3",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0"
+  },
+  "input_schema_hash": "5ce66b8b860b24c95f2a6933bb396128c1f083fe088171654404d4d066295699",
+  "metrics": {
+    "acceptance_passed": true,
+    "balanced_accuracy": 1.0,
+    "macro_f1": 1.0,
+    "scope": "controlled_synthetic_only",
+    "thresholds": {
+      "fraudulent": 0.55,
+      "suspicious": 0.05,
+      "validation_fraudulent_recall": 1.0,
+      "validation_macro_f1": 1.0
+    }
+  },
+  "model_card_key": "docs/models/STRUCTURED_MODEL_CARD_CONTROLLED_V1.md",
+  "model_type": "STRUCTURED",
+  "name": "momo-fdvs-structured-risk",
+  "preprocessing_version": "structured-column-transformer-v1",
+  "split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "training_commit_sha": "a914f065070558b5b601e6f49cf1691ff7bf9d42",
+  "version": "structured-rf-controlled-v1"
+}

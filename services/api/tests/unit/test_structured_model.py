@@ -6,6 +6,7 @@ import uuid
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 import pytest
 from flask import Flask
@@ -113,6 +114,34 @@ def test_verified_active_artifact_produces_complete_prediction(app: Flask, tmp_p
     assert sum(result["probabilities"].values()) == pytest.approx(1.0)  # type: ignore[union-attr]
     assert result["feature_schema_hash"] == model.input_schema_hash
     assert result["inference_ms"] >= 0  # type: ignore[operator]
+
+
+def test_numpy_numeric_features_from_engineered_dataframe_are_accepted(
+    app: Flask, tmp_path: Path
+) -> None:
+    with app.app_context():
+        model, _ = _model_and_artifact(app, tmp_path)
+        result = predict_structured(model, {"signal": np.float64(0.95)})
+    assert result["status"] == "SUCCESS"
+
+
+def test_joblib_tuple_categories_are_accepted() -> None:
+    bundle = {
+        "feature_schema": {
+            "ordered_features": [
+                {
+                    "name": "channel",
+                    "kind": "categorical",
+                    "nullable": False,
+                    "categories": ("APP", "USSD"),
+                }
+            ],
+            "forbidden_features": [],
+        }
+    }
+    normalised, names = structured_model._validate_feature_row(bundle, {"channel": "APP"})
+    assert normalised == {"channel": "APP"}
+    assert names == ["channel"]
 
 
 def test_hash_mismatch_is_rejected_before_deserialisation(

@@ -167,3 +167,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** Contributors must activate Node.js 24.14.0 before mobile commands. This supersedes only the Node.js portion of ADR-011; Python 3.12 remains unchanged. No product scope or selected technology changes.
 - **Related requirements/phases:** P04, P05, NFR-MNT-001, NFR-COMP-001.
 - **Supersedes:** ADR-011 Node.js 22 direction.
+
+## ADR-016 — Controlled P11 model is pipeline evidence, not production evidence
+
+- **Status:** Accepted
+- **Date:** 2026-08-10
+- **Decision owners:** Codex within ADR-010/ADR-014 and the approved P11 scope
+- **Context:** No authorised representative real fraud dataset is available. The governed P10 corpus has six isolated source groups, so P11 can support an honest controlled pipeline run but cannot estimate provider-wide generalisation or fit a defensible probability calibrator.
+- **Options considered:** Invent or scrape real labels; postpone every P11 integration; train the deterministic controlled baseline and preserve its limitations.
+- **Decision:** Train the P11 Random Forest only in signed-in Google Colab on deterministic controlled scenarios. Fit preprocessing/model state on four training groups, select thresholds on one validation group, touch the one-group/three-sample held-out test once, and publish all per-class metrics plus calibration diagnostics. Do not fit a calibrator. A passing controlled acceptance gate permits prototype `READY` registration but never a production-readiness or provider-accuracy claim.
+- **Consequences:** The measured macro F1 and balanced accuracy of 1.0 demonstrate pipeline correctness only. The model card must retain the one-group/three-sample limitation, human review remains required, and future authorised data requires a new version and evaluation. The private joblib artifact remains outside Git and is SHA-256 verified before every trusted load.
+- **Related requirements/phases:** P11, FR-ML-001, FR-ML-002, FR-ML-004, FR-ML-005, FR-ML-006, FR-ML-007, NFR-ACC-002, ADR-010, ADR-014.
+- **Supersedes:** None.
