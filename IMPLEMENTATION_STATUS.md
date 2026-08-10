@@ -8,12 +8,12 @@
 - Default branch: `main`
 - Current work branch: `codex/p10-dataset-governance`
 - Base SHA: `5ed38ac84bda4b3948f7893d2647096d3d70a0ed`
-- Head SHA: `24bd42ee27aa74c13b69e45bc4a713d2b3a732ea` (P10 functional implementation; handoff commit follows)
+- Head SHA: `2ed35827083fab0cf0fc49a1a6635a7d10e42ff3` (pushed P10 review head; merged by `2e2c1fd53863e09b03c52ae1d5f53c1111deec81`)
 - Last updated: `2026-08-10`
 - CI status: `GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P10 ML/backend gates pass locally`
 - Deployment status: `Not deployed`
-- Current phase: `P10 — Complete locally; publication pending`
-- Next exact task: `Publish and merge P10, then stop before P11 training and hand control to the project owner for Google Colab.`
+- Current phase: `P10 — Complete and merged; stopped at the Google Colab boundary`
+- Next exact task: `Wait for the project owner to open the P10 Colab preflight and confirm whether P11 will use authorised real data or the controlled-only dataset.`
 
 ## Phase status
 
@@ -29,7 +29,7 @@
 | P07 | OCR preprocessing, extraction, confidence and correction workflow | Complete | [PR #8](https://github.com/davidagyekum/momo-fraud-detection/pull/8) — merged | `19b38a04da7d4d977aaace85e80efc7612bbd88f` merge commit | 79 backend tests at 89.04% coverage; 46 mobile tests; strict lint/type and OpenAPI/export gates; real Tesseract controlled evaluation matched 20/20 required fields across five fixtures | Merged on 2026-08-10 using passing local evidence; all hosted jobs were prevented from starting by B-CI-001. Controlled OCR accuracy is not production/provider-wide evidence. |
 | P08 | Reference-record import and transaction verification | Complete | [PR #9](https://github.com/davidagyekum/momo-fraud-detection/pull/9) — merged | `36d39e0d59b4b36672890e51e22233a8ca01604e` merge commit | 90 backend tests at 90.40% coverage; 36 admin tests at 91.58% statement coverage; 3 Playwright tests and production build; 48 mobile tests at 89.80% statement coverage and 23-route static export; Chrome upload/validate/confirm/commit flow with no console warnings or errors | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs were prevented from starting by B-CI-001. Stored/imported references only, never live MNO verification. |
 | P09 | Deterministic image-forensics and manipulation evidence | Complete | [PR #10](https://github.com/davidagyekum/momo-fraud-detection/pull/10) — merged | `5ed38ac84bda4b3948f7893d2647096d3d70a0ed` merge commit | Registered backend gate: 96 tests at 87.58% branch coverage, Ruff, strict mypy, OpenAPI and ER pass; clean and previous-revision migrations pass; mobile gate: 48 tests at 89.80% statement coverage and 23-route export | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs had zero steps and were prevented from starting by B-CI-001. Supporting/contextual evidence only; no model was trained. |
-| P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | `codex/p10-dataset-governance` — publication pending | `24bd42ee27aa74c13b69e45bc4a713d2b3a732ea` | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | No model was fit, evaluated or exported. FR-ML-005/006 remain In Progress until actual P11/P12 Colab runs record metrics and training provenance. |
+| P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | [PR #11](https://github.com/davidagyekum/momo-fraud-detection/pull/11) — merged | `2e2c1fd53863e09b03c52ae1d5f53c1111deec81` merge commit | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | Merged on 2026-08-10 using passing local evidence; all eight hosted jobs had zero steps and were prevented from starting by B-CI-001. No model was fit, evaluated or exported. |
 | P11 | Structured-feature fraud classifier | Not Started |  |  |  |  |
 | P12 | CNN receipt-tampering classifier | Not Started |  |  |  |  |
 | P13 | End-to-end analysis orchestration, rules and risk aggregation | Not Started |  |  |  |  |
@@ -68,14 +68,14 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-P09-session.md`
-- Summary: `P09 deterministic image evidence passed backend/mobile/database gates, then merged as PR #10.`
+- Handoff file: `docs/handoffs/2026-08-10-P10-session.md`
+- Summary: `P10 governed dataset tooling passed ML/backend/privacy/leakage gates, then merged as PR #11 and stopped before P11 training.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
 3. Read `docs/handoffs/2026-08-10-P09-session.md`.
-4. Publish and merge `codex/p10-dataset-governance` if not already merged.
-5. Stop at ADR-014 before creating P11 training results; open `ml/notebooks/P10_COLAB_DATA_PREFLIGHT.ipynb` in Google Colab with the exact P10 merge SHA.
-6. After project-owner confirmation, begin P11 by implementing the structured-feature schema/training notebook and execute training only in Colab.
+4. Open `ml/notebooks/P10_COLAB_DATA_PREFLIGHT.ipynb` in Google Colab using an exact final `main` SHA supplied in the handoff message.
+5. Run only the data preflight, then confirm whether authorised real data is available or controlled-only evaluation is approved.
+6. After that project-owner confirmation, begin P11 by implementing the structured-feature schema/training notebook and execute training only in Colab.
