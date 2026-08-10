@@ -8,12 +8,12 @@
 - Default branch: `main`
 - Current work branch: `codex/p12-cnn-tampering`
 - Base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
-- Head SHA: `P12 implementation in progress`
+- Head SHA: training code `02d8967136853c5c46eaa0babe44a7327c843a32`; notebook/handoff commit pending
 - Last updated: `2026-08-10`
-- CI status: `P11 local and signed-in Colab gates pass; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `P12 no-training local gates pass; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
 - Current phase: `P12 — In Progress`
-- Next exact task: `Implement and verify the image preprocessing, MobileNetV3Small pipeline, unavailable adapter and pinned Colab notebook; stop before the first reportable CNN training cell.`
+- Next exact task: `Stop for owner review. After approval, open the pinned P12 notebook in signed-in Google Colab, run checkout/preflight only, report the output, and obtain approval before the training cell.`
 
 ## Phase status
 
@@ -31,7 +31,7 @@
 | P09 | Deterministic image-forensics and manipulation evidence | Complete | [PR #10](https://github.com/davidagyekum/momo-fraud-detection/pull/10) — merged | `5ed38ac84bda4b3948f7893d2647096d3d70a0ed` merge commit | Registered backend gate: 96 tests at 87.58% branch coverage, Ruff, strict mypy, OpenAPI and ER pass; clean and previous-revision migrations pass; mobile gate: 48 tests at 89.80% statement coverage and 23-route export | Merged on 2026-08-10 using passing local evidence. All eight hosted jobs had zero steps and were prevented from starting by B-CI-001. Supporting/contextual evidence only; no model was trained. |
 | P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | [PR #11](https://github.com/davidagyekum/momo-fraud-detection/pull/11) — merged | `2e2c1fd53863e09b03c52ae1d5f53c1111deec81` merge commit | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | Merged on 2026-08-10 using passing local evidence; all eight hosted jobs had zero steps and were prevented from starting by B-CI-001. No model was fit, evaluated or exported. |
 | P11 | Structured-feature fraud classifier | Complete | [PR #13](https://github.com/davidagyekum/momo-fraud-detection/pull/13) — merged | `42a0ec69430f9a412211ada85a03d7c3171e4136` merge commit | ML gate: 71 tests at 91.03%; backend gate: 110 tests at 86.17%; signed-in Colab held-out macro F1/balanced accuracy 1.0 over three controlled samples; private artifact hash, registry lifecycle and real API inference pass | Merged on 2026-08-10 using passing local/Colab evidence. All eight hosted jobs had zero steps under B-CI-001. Controlled-only pipeline evidence; no provider-wide/production claim. |
-| P12 | CNN receipt-tampering classifier | In Progress | `codex/p12-cnn-tampering` |  | Preflight started from published P11 main; no CNN training or metric has run | Controlled-only scope; reportable training must run in Google Colab after owner notification. |
+| P12 | CNN receipt-tampering classifier | In Progress | `codex/p12-cnn-tampering` | training code `02d8967136853c5c46eaa0babe44a7327c843a32` | No-training gates: 99 ML tests at 91.83%; 129 backend tests at 86.13%; preprocessing parity, group isolation, private artifact guards and unavailable adapter pass | STOP boundary reached. No CNN training, metric, `.keras` artifact, heatmap or CPU measurement exists; controlled Colab run requires owner approval. |
 | P13 | End-to-end analysis orchestration, rules and risk aggregation | Not Started |  |  |  |  |
 | P14 | History, search, downloadable reports and notifications | Not Started |  |  |  |  |
 | P15 | Fraud reporting, investigation and governance administration | Not Started |  |  |  |  |
@@ -56,6 +56,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 |---|---|---|---|---|---|---|
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
+| P12-TRAIN | P12 | The pinned Google Colab notebook has reached its explicit pre-training stop cell and requires project-owner approval. | No P12 metric, `.keras` artifact, activation, CPU latency or heatmap evidence can be produced yet. | Keep image inference explicitly unavailable with a null tamper probability. | Project owner reviews the P12 pre-training handoff and authorises the controlled-only run. | Run only checkout/preflight first, report the output, then obtain approval before `p12-train`. |
 
 ## Active known limitations
 
@@ -66,17 +67,18 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - The unqualified Windows `python` command resolves to 3.11.7; use `py -3.12` for the selected Python 3.12 runtime. The unqualified Node.js is 22.11.0; activate pinned Node.js 24.14.0 for Expo work.
 - Actual P11 training ran in signed-in Google Colab at immutable code SHA `a914f065070558b5b601e6f49cf1691ff7bf9d42`; P12 and future reportable training runs must also use Google Colab. Local execution remains limited to tests, packaging and inference verification.
 - P11's held-out result contains only one controlled source group and three rows. It is pipeline-correctness evidence, not provider-wide accuracy, calibration or production readiness.
+- P12 has only six controlled source groups/twelve images. Training has not run; the canonical report records `training_executed: false` and `model_metrics: null`.
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-P11-session.md`
-- Summary: `P11 implemented the governed structured model lifecycle, completed the controlled-only signed-in Colab run, verified the private artifact through the API and merged as PR #13.`
+- Handoff file: `docs/handoffs/2026-08-10-P12-pretraining-session.md`
+- Summary: `P12 preprocessing, governed MobileNetV3Small pipeline and safe unavailable adapter pass locally; the branch is stopped before the pinned Google Colab training cell.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-P11-session.md`.
-4. Confirm the P11 PR/merge and exact main SHA recorded in the publication update.
-5. Start P12 from that main SHA on `codex/p12-cnn-tampering`.
-6. Keep actual P12 training in Google Colab and preserve the controlled-only evidence boundary unless authorised representative data is supplied.
+3. Read `docs/handoffs/2026-08-10-P12-pretraining-session.md`.
+4. Confirm branch `codex/p12-cnn-tampering` and training-code SHA `02d8967136853c5c46eaa0babe44a7327c843a32`.
+5. Do not run `p12-train` without explicit owner approval; run and report Colab checkout/preflight first.
+6. Keep all P12 outputs controlled-only and the private `.keras` artifact outside Git.
