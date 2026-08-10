@@ -576,11 +576,15 @@ def store_receipt(
         ) from exc
 
 
-def receipt_derivative(receipt: Receipt, kind: str) -> ReceiptDerivative | None:
+def receipt_derivative(
+    receipt: Receipt, kind: str, *, version: str | None = None
+) -> ReceiptDerivative | None:
+    query = select(ReceiptDerivative).where(
+        ReceiptDerivative.receipt_id == receipt.id,
+        ReceiptDerivative.kind == kind,
+    )
+    if version is not None:
+        query = query.where(ReceiptDerivative.version == version)
     return db.session.scalar(
-        select(ReceiptDerivative).where(
-            ReceiptDerivative.receipt_id == receipt.id,
-            ReceiptDerivative.kind == kind,
-            ReceiptDerivative.version == THUMBNAIL_VERSION,
-        )
+        query.order_by(ReceiptDerivative.created_at.desc(), ReceiptDerivative.id.desc())
     )

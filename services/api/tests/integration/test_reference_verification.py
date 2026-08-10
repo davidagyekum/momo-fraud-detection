@@ -193,7 +193,13 @@ def test_admin_import_lifecycle_invalid_report_and_staff_lookup(app: Flask) -> N
     assert denied.status_code == 403
 
 
-def _ready_transaction(app: Flask, user_id: uuid.UUID, *, amount: str = "125.00") -> uuid.UUID:
+def _ready_transaction(
+    app: Flask,
+    user_id: uuid.UUID,
+    *,
+    amount: str = "125.00",
+    reference: str = "ABC123456",
+) -> uuid.UUID:
     now = datetime.now(UTC)
     with app.app_context():
         transaction = Transaction(user_id=user_id, status="READY")
@@ -234,7 +240,7 @@ def _ready_transaction(app: Flask, user_id: uuid.UUID, *, amount: str = "125.00"
                 transaction_id=transaction.id,
                 confirmed_fields={
                     "provider_code": "MTN_MOMO",
-                    "transaction_reference": "ABC123456",
+                    "transaction_reference": reference,
                     "amount": amount,
                     "currency": "GHS",
                     "sender_name": "Demo Sender",
@@ -271,7 +277,8 @@ def _ready_transaction(app: Flask, user_id: uuid.UUID, *, amount: str = "125.00"
 def test_analysis_persists_verification_separately_from_unavailable_risk(app: Flask) -> None:
     client = app.test_client()
     admin = _login(client, _staff(app, "ADMIN"))
-    batch_id = _import(client, admin)
+    reference = f"P08{uuid.uuid4().hex[:12].upper()}"
+    batch_id = _import(client, admin, reference=reference)
     assert (
         client.post(
             f"/api/v1/admin/reference-imports/{batch_id}/validate", headers=_headers(admin)
@@ -287,7 +294,7 @@ def test_analysis_persists_verification_separately_from_unavailable_risk(app: Fl
     )
     owner = _register(client)
     owner_id = uuid.UUID(owner["user"]["id"])
-    transaction_id = _ready_transaction(app, owner_id)
+    transaction_id = _ready_transaction(app, owner_id, reference=reference)
     key = f"analysis-{uuid.uuid4()}"
 
     response = client.post(
@@ -326,7 +333,9 @@ def test_analysis_persists_verification_separately_from_unavailable_risk(app: Fl
         assert result is not None and result.status == "VERIFIED"
         assert result.verifier_version == "stored-reference-verifier-v1"
 
-    mismatch_transaction_id = _ready_transaction(app, owner_id, amount="999.00")
+    mismatch_transaction_id = _ready_transaction(
+        app, owner_id, amount="999.00", reference=reference
+    )
     mismatch = client.post(
         f"/api/v1/transactions/{mismatch_transaction_id}/analyses",
         headers=_headers(owner, f"analysis-{uuid.uuid4()}"),

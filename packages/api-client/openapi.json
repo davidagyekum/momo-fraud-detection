@@ -256,6 +256,81 @@
         ],
         "type": "object"
       },
+      "AnalysisEvidenceData": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "automated_evidence_immutable": {
+            "type": "boolean"
+          },
+          "configuration_versions": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "current_stage": {
+            "nullable": true,
+            "type": "string"
+          },
+          "image_evidence": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "risk": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "stages": {
+            "items": {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "verification": {
+            "additionalProperties": {},
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": [
+          "analysis_run_id",
+          "automated_evidence_immutable",
+          "configuration_versions",
+          "image_evidence",
+          "risk",
+          "stages",
+          "status",
+          "transaction_id",
+          "verification"
+        ],
+        "type": "object"
+      },
+      "AnalysisEvidenceEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnalysisEvidenceData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "ChangePassword": {
         "additionalProperties": false,
         "properties": {
@@ -729,6 +804,13 @@
           "current_stage": {
             "type": "string"
           },
+          "evidence_url": {
+            "type": "string"
+          },
+          "image_evidence": {
+            "additionalProperties": {},
+            "type": "object"
+          },
           "replayed": {
             "type": "boolean"
           },
@@ -758,6 +840,8 @@
           "analysis_id",
           "analysis_run_id",
           "current_stage",
+          "evidence_url",
+          "image_evidence",
           "replayed",
           "risk",
           "status",
@@ -2197,6 +2281,46 @@
         ]
       }
     },
+    "/api/v1/analyses/{analysis_run_id}/evidence": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisEvidenceEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "404": {
+            "description": "Analysis evidence is not visible to the caller."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return owner-safe evidence and staff-only diagnostic links.",
+        "tags": [
+          "analyses-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "analysis_run_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/auth/forgot-password": {
       "post": {
         "requestBody": {
@@ -2911,7 +3035,9 @@
               "default": "thumbnail",
               "enum": [
                 "thumbnail",
-                "original"
+                "original",
+                "ela",
+                "noise-map"
               ],
               "type": "string"
             }
@@ -2931,7 +3057,7 @@
             "$ref": "#/components/responses/DEFAULT_ERROR"
           }
         },
-        "summary": "Stream an owner-authorised original or derived thumbnail.",
+        "summary": "Stream an authorised original, thumbnail or staff-only diagnostic.",
         "tags": [
           "transactions-v1"
         ]
@@ -2988,6 +3114,10 @@
     {
       "description": "Administrator user management",
       "name": "admin-users-v1"
+    },
+    {
+      "description": "Immutable automated analysis evidence",
+      "name": "analyses-v1"
     },
     {
       "description": "Private transaction receipt evidence",

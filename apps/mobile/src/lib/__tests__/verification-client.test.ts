@@ -21,6 +21,17 @@ test("stored-reference request preserves the server endpoint and idempotency key
       transaction_id: "transaction-id",
       status: "PARTIAL",
       verification: { status: "VERIFIED" },
+      image_evidence: {
+        status: "COMPLETED",
+        classification: null,
+        tamper_probability: null,
+        summary: "Supporting evidence recorded.",
+        policy: {
+          supporting_evidence_only: true,
+          single_weak_signal_can_classify_fraud: false,
+        },
+      },
+      evidence_url: "/api/v1/analyses/analysis-id/evidence",
       risk: { status: "UNAVAILABLE" },
       unavailable_stages: [],
       replayed: false,
@@ -41,5 +52,7 @@ test("stored-reference request preserves the server endpoint and idempotency key
   );
   expect(result.status).toBe("PARTIAL");
   expect(result.verification.status).toBe("VERIFIED");
+  expect(result.image_evidence.classification).toBeNull();
+  expect(result.image_evidence.policy.supporting_evidence_only).toBe(true);
   expect(result.risk.status).toBe("UNAVAILABLE");
 });

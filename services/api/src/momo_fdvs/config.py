@@ -25,7 +25,7 @@ def _boolean(name: str, default: bool) -> bool:
     raise ConfigurationError(f"{name} must be a boolean value")
 
 
-def _integer(name: str, default: int, minimum: int = 1) -> int:
+def _integer(name: str, default: int, minimum: int = 1, maximum: int | None = None) -> int:
     raw = os.getenv(name, str(default))
     try:
         value = int(raw)
@@ -33,6 +33,8 @@ def _integer(name: str, default: int, minimum: int = 1) -> int:
         raise ConfigurationError(f"{name} must be an integer") from exc
     if value < minimum:
         raise ConfigurationError(f"{name} must be at least {minimum}")
+    if maximum is not None and value > maximum:
+        raise ConfigurationError(f"{name} must be at most {maximum}")
     return value
 
 
@@ -126,6 +128,12 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
     upload_request_max_bytes = _integer("UPLOAD_REQUEST_MAX_BYTES", 11_534_336)
     if upload_request_max_bytes <= upload_max_bytes:
         raise ConfigurationError("UPLOAD_REQUEST_MAX_BYTES must exceed UPLOAD_MAX_BYTES")
+    forensics_min_aspect = _float("IMAGE_FORENSICS_MIN_ASPECT_RATIO", 0.25, maximum=10.0)
+    forensics_max_aspect = _float("IMAGE_FORENSICS_MAX_ASPECT_RATIO", 2.0, maximum=10.0)
+    if forensics_min_aspect >= forensics_max_aspect:
+        raise ConfigurationError(
+            "IMAGE_FORENSICS_MIN_ASPECT_RATIO must be below IMAGE_FORENSICS_MAX_ASPECT_RATIO"
+        )
 
     return {
         "ENVIRONMENT": environment,
@@ -207,6 +215,29 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "REFERENCE_IMPORT_MAX_ROWS": _integer("REFERENCE_IMPORT_MAX_ROWS", 100_000),
         "REFERENCE_IMPORT_PREVIEW_ERRORS": _integer("REFERENCE_IMPORT_PREVIEW_ERRORS", 100),
         "VERIFIER_VERSION": os.getenv("VERIFIER_VERSION", "stored-reference-verifier-v1").strip(),
+        "IMAGE_FORENSICS_VERSION": os.getenv(
+            "IMAGE_FORENSICS_VERSION", "deterministic-image-forensics-v1"
+        ).strip(),
+        "IMAGE_FORENSICS_MIN_DIMENSION_PX": _integer("IMAGE_FORENSICS_MIN_DIMENSION_PX", 128),
+        "IMAGE_FORENSICS_JPEG_QUALITY": _integer("IMAGE_FORENSICS_JPEG_QUALITY", 90, maximum=100),
+        "IMAGE_FORENSICS_ELA_REGIONAL_CV_THRESHOLD": _float(
+            "IMAGE_FORENSICS_ELA_REGIONAL_CV_THRESHOLD", 0.80, maximum=10.0
+        ),
+        "IMAGE_FORENSICS_NOISE_REGIONAL_CV_THRESHOLD": _float(
+            "IMAGE_FORENSICS_NOISE_REGIONAL_CV_THRESHOLD", 0.65, maximum=10.0
+        ),
+        "IMAGE_FORENSICS_MIN_QUALITY_SCORE": _float("IMAGE_FORENSICS_MIN_QUALITY_SCORE", 0.15),
+        "IMAGE_FORENSICS_BASELINE_THRESHOLD": _float(
+            "IMAGE_FORENSICS_BASELINE_THRESHOLD", 0.18, maximum=10.0
+        ),
+        "IMAGE_FORENSICS_HEIGHT_CV_THRESHOLD": _float(
+            "IMAGE_FORENSICS_HEIGHT_CV_THRESHOLD", 0.45, maximum=10.0
+        ),
+        "IMAGE_FORENSICS_EDGE_MARGIN_THRESHOLD": _float(
+            "IMAGE_FORENSICS_EDGE_MARGIN_THRESHOLD", 0.01
+        ),
+        "IMAGE_FORENSICS_MIN_ASPECT_RATIO": forensics_min_aspect,
+        "IMAGE_FORENSICS_MAX_ASPECT_RATIO": forensics_max_aspect,
         "CORS_ALLOWED_ORIGINS": origins,
         "CORS_ALLOW_CREDENTIALS": credentials,
         "API_TITLE": "MoMo-FDVS API",

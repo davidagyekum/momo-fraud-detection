@@ -207,7 +207,7 @@ class TransactionReceiptResource(MethodView):
                 "required": False,
                 "schema": {
                     "type": "string",
-                    "enum": ["thumbnail", "original"],
+                    "enum": ["thumbnail", "original", "ela", "noise-map"],
                     "default": "thumbnail",
                 },
             }
@@ -219,9 +219,9 @@ class TransactionReceiptResource(MethodView):
         },
     )
     def get(self, transaction_id: uuid.UUID) -> Response | tuple[Response, int]:
-        """Stream an owner-authorised original or derived thumbnail."""
+        """Stream an authorised original, thumbnail or staff-only diagnostic."""
         variant = request.args.get("variant", "thumbnail").lower()
-        if variant not in {"thumbnail", "original"}:
+        if variant not in {"thumbnail", "original", "ela", "noise-map"}:
             audit_event(
                 "receipt.access_denied",
                 "DENIED",
@@ -233,7 +233,9 @@ class TransactionReceiptResource(MethodView):
             )
             db.session.commit()
             return error_response(
-                "RECEIPT_VARIANT_INVALID", "Variant must be thumbnail or original.", 400
+                "RECEIPT_VARIANT_INVALID",
+                "Variant must be thumbnail, original, ela or noise-map.",
+                400,
             )
 
         transaction = db.session.get(Transaction, transaction_id)
@@ -255,17 +257,42 @@ class TransactionReceiptResource(MethodView):
             return error_response("RECEIPT_NOT_FOUND", "Receipt not found.", 404)
 
         receipt = transaction.receipt
+        if variant in {"ela", "noise-map"} and not staff_access:
+            audit_event(
+                "forensics.diagnostic_access_denied",
+                "DENIED",
+                actor_id=g.current_user.id,
+                roles=set(g.current_roles),
+                target_type="transaction",
+                target_id=transaction_id,
+                metadata={"variant": variant, "reason_code": "STAFF_ROLE_REQUIRED"},
+            )
+            db.session.commit()
+            return error_response(
+                "FORENSIC_DIAGNOSTIC_FORBIDDEN",
+                "Forensic diagnostic images require an authorised staff role.",
+                403,
+            )
         if variant == "thumbnail":
-            derivative = receipt_derivative(receipt, "THUMBNAIL")
+            derivative = receipt_derivative(receipt, "THUMBNAIL", version="thumbnail-v1")
             if derivative is None:
                 return error_response("RECEIPT_NOT_FOUND", "Receipt not found.", 404)
             object_key = derivative.object_key
             media_type = "image/jpeg"
             extension = "jpg"
-        else:
+        elif variant == "original":
             object_key = receipt.object_key
             media_type = receipt.media_type
             extension = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[media_type]
+        else:
+            derivative = receipt_derivative(receipt, "ELA" if variant == "ela" else "NOISE_MAP")
+            if derivative is None:
+                return error_response(
+                    "FORENSIC_DIAGNOSTIC_NOT_FOUND", "Forensic diagnostic not found.", 404
+                )
+            object_key = derivative.object_key
+            media_type = "image/png"
+            extension = "png"
 
         try:
             content = _storage().read_bytes(object_key)
@@ -292,7 +319,7 @@ class TransactionReceiptResource(MethodView):
             )
 
         audit_event(
-            "receipt.viewed",
+            "forensics.diagnostic_viewed" if variant in {"ela", "noise-map"} else "receipt.viewed",
             "SUCCESS",
             actor_id=g.current_user.id,
             roles=set(g.current_roles),

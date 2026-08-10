@@ -24,6 +24,7 @@ from momo_fdvs.models import (
     AnalysisStageRun,
     FraudRuleSet,
     IdempotencyRecord,
+    ImageAnalysis,
     OCRConfirmation,
     Receipt,
     ReferenceImportBatch,
@@ -33,6 +34,10 @@ from momo_fdvs.models import (
     VerificationResult,
 )
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.image_forensics import (
+    ImageForensicsFailure,
+    run_image_forensics,
+)
 from momo_fdvs.services.ocr import (
     normalize_amount,
     normalize_name,
@@ -119,6 +124,8 @@ class VerificationOutcome:
 class PartialAnalysisResult:
     run: AnalysisRun
     verification: VerificationResult
+    image_analysis: ImageAnalysis | None
+    image_error_code: str | None
     replayed: bool
 
 
@@ -889,6 +896,7 @@ def run_partial_verification_analysis(
     user: User,
     roles: set[str],
     idempotency_key: str,
+    storage: ObjectStorage,
 ) -> PartialAnalysisResult:
     rule_set = db.session.scalar(
         select(FraudRuleSet)
@@ -921,11 +929,33 @@ def run_partial_verification_analysis(
             if run is not None
             else None
         )
+        replay_image_analysis = (
+            db.session.scalar(select(ImageAnalysis).where(ImageAnalysis.analysis_run_id == run.id))
+            if run is not None
+            else None
+        )
+        image_stage = (
+            db.session.scalar(
+                select(AnalysisStageRun).where(
+                    AnalysisStageRun.analysis_run_id == run.id,
+                    AnalysisStageRun.stage == "IMAGE_ANALYSIS",
+                    AnalysisStageRun.attempt == 1,
+                )
+            )
+            if run is not None
+            else None
+        )
         if run is None or verification is None or run.transaction_id != transaction.id:
             raise VerificationFailure(
                 "IDEMPOTENCY_RESOURCE_UNAVAILABLE", "The original analysis is unavailable.", 409
             )
-        return PartialAnalysisResult(run, verification, True)
+        return PartialAnalysisResult(
+            run,
+            verification,
+            replay_image_analysis,
+            image_stage.error_code if image_stage is not None else "IMAGE_ANALYSIS_UNAVAILABLE",
+            True,
+        )
     now = datetime.now(UTC)
     outcome = evaluate_verification(confirmation.confirmed_fields)
     warnings = list(
@@ -935,7 +965,7 @@ def run_partial_verification_analysis(
         transaction_id=transaction.id,
         ocr_confirmation_id=confirmation.id,
         status="PARTIAL",
-        current_stage="VERIFICATION_COMPLETE",
+        current_stage="DETERMINISTIC_EVIDENCE_PROCESSING",
         rule_set_id=rule_set.id,
         idempotency_key_hash=record.key_hash,
         request_fingerprint=request_hash,
@@ -943,7 +973,10 @@ def run_partial_verification_analysis(
         queued_at=now,
         started_at=now,
         completed_at=now,
-        component_scores={"verification_status": outcome.status},
+        component_scores={
+            "verification_status": outcome.status,
+            "image_evidence_status": "PROCESSING",
+        },
         top_reasons=[],
         configuration_snapshot={
             "verifier_version": outcome.verifier_version,
@@ -955,11 +988,22 @@ def run_partial_verification_analysis(
             "reference_name_similarity_threshold": current_app.config[
                 "REFERENCE_NAME_SIMILARITY_THRESHOLD"
             ],
+            "image_forensics_version": current_app.config["IMAGE_FORENSICS_VERSION"],
+            "image_feature_schema_version": "deterministic-image-features-v1",
+            "image_evidence_thresholds": {
+                "ela_regional_cv": current_app.config["IMAGE_FORENSICS_ELA_REGIONAL_CV_THRESHOLD"],
+                "noise_regional_cv": current_app.config[
+                    "IMAGE_FORENSICS_NOISE_REGIONAL_CV_THRESHOLD"
+                ],
+                "baseline_deviation": current_app.config["IMAGE_FORENSICS_BASELINE_THRESHOLD"],
+                "box_height_cv": current_app.config["IMAGE_FORENSICS_HEIGHT_CV_THRESHOLD"],
+                "edge_margin": current_app.config["IMAGE_FORENSICS_EDGE_MARGIN_THRESHOLD"],
+            },
         },
         error_code="ANALYSIS_COMPONENTS_UNAVAILABLE",
         error_message_safe=(
-            "Stored/imported reference verification completed. Image, model and risk stages "
-            "are not available yet."
+            "Stored/imported reference verification completed. Model and risk stages are not "
+            "available yet."
         ),
     )
     db.session.add(run)
@@ -976,9 +1020,46 @@ def run_partial_verification_analysis(
         warnings=warnings,
     )
     db.session.add(verification)
+    image_analysis: ImageAnalysis | None = None
+    image_error_code: str | None = None
+    written_keys: tuple[str, ...] = ()
+    try:
+        with db.session.begin_nested():
+            image_outcome = run_image_forensics(
+                run=run,
+                transaction=transaction,
+                ocr_result=confirmation.ocr_result,
+                storage=storage,
+            )
+            image_analysis = image_outcome.image_analysis
+            written_keys = image_outcome.written_keys
+    except ImageForensicsFailure as failure:
+        image_error_code = failure.code
+        current_app.logger.warning(
+            "image_forensics_unavailable",
+            extra={"transaction_id": str(transaction.id), "reason_code": failure.code},
+        )
+    run.current_stage = (
+        "DETERMINISTIC_EVIDENCE_COMPLETE" if image_analysis is not None else "VERIFICATION_COMPLETE"
+    )
+    run.component_scores = {
+        "verification_status": outcome.status,
+        "image_evidence_status": "COMPLETED" if image_analysis is not None else "UNAVAILABLE",
+    }
+    run.error_message_safe = (
+        "Stored/imported verification and deterministic supporting image evidence completed. "
+        "Model and risk stages are not available yet."
+        if image_analysis is not None
+        else "Stored/imported verification completed. Deterministic image evidence was "
+        "unavailable; model and risk stages are also unavailable."
+    )
     stages = (
         ("REFERENCE_VERIFICATION", "COMPLETED", None),
-        ("IMAGE_ANALYSIS", "SKIPPED", "P09_NOT_IMPLEMENTED"),
+        (
+            "IMAGE_ANALYSIS",
+            "COMPLETED" if image_analysis is not None else "FAILED",
+            image_error_code,
+        ),
         ("STRUCTURED_MODEL", "SKIPPED", "MODEL_NOT_TRAINED"),
         ("IMAGE_MODEL", "SKIPPED", "MODEL_NOT_TRAINED"),
         ("RISK_AGGREGATION", "SKIPPED", "P13_NOT_IMPLEMENTED"),
@@ -996,6 +1077,12 @@ def run_partial_verification_analysis(
                 error_code=error_code,
                 details={"verification_status": outcome.status}
                 if stage == "REFERENCE_VERIFICATION"
+                else {
+                    "algorithm_version": current_app.config["IMAGE_FORENSICS_VERSION"],
+                    "supporting_evidence_only": True,
+                    "final_classification_emitted": False,
+                }
+                if stage == "IMAGE_ANALYSIS"
                 else {},
             )
         )
@@ -1017,10 +1104,26 @@ def run_partial_verification_analysis(
             "candidate_method": outcome.candidate_method,
             "verifier_version": outcome.verifier_version,
             "warning_codes": warnings,
+            "image_evidence_status": "COMPLETED" if image_analysis is not None else "UNAVAILABLE",
+            "image_forensics_version": current_app.config["IMAGE_FORENSICS_VERSION"],
         },
     )
-    db.session.commit()
-    return PartialAnalysisResult(run, verification, False)
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        for key in reversed(written_keys):
+            try:
+                storage.delete(key)
+            except Exception:
+                current_app.logger.exception("image_forensics_commit_cleanup_failed")
+        current_app.logger.exception("analysis_persistence_failed", exc_info=exc)
+        raise VerificationFailure(
+            "ANALYSIS_PERSISTENCE_UNAVAILABLE",
+            "The analysis evidence could not be stored safely. Retry with the same key.",
+            503,
+        ) from exc
+    return PartialAnalysisResult(run, verification, image_analysis, image_error_code, False)
 
 
 def verification_projection(result: VerificationResult) -> dict[str, Any]:

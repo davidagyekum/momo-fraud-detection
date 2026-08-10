@@ -27,6 +27,7 @@ def test_openapi_documents_system_routes_and_error_responses(app: Flask) -> None
         "/api/v1/transactions/{transaction_id}/ocr-review",
         "/api/v1/transactions/{transaction_id}/ocr-confirmations",
         "/api/v1/transactions/{transaction_id}/analyses",
+        "/api/v1/analyses/{analysis_run_id}/evidence",
     }
     assert "503" in paths["/api/v1/ready"]["get"]["responses"]
     upload = paths["/api/v1/transactions"]["post"]
@@ -42,3 +43,10 @@ def test_openapi_documents_system_routes_and_error_responses(app: Flask) -> None
         for parameter in ocr["parameters"]
     )
     assert {"400", "404", "409", "429", "503"} <= set(ocr["responses"])
+    evidence = paths["/api/v1/analyses/{analysis_run_id}/evidence"]["get"]
+    assert {"401", "404"} <= set(evidence["responses"])
+    receipt = paths["/api/v1/transactions/{transaction_id}/receipt"]["get"]
+    variant = next(
+        parameter for parameter in receipt["parameters"] if parameter["name"] == "variant"
+    )
+    assert {"thumbnail", "original", "ela", "noise-map"} == set(variant["schema"]["enum"])

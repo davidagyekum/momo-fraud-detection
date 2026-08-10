@@ -357,13 +357,16 @@ Server validates that the referenced OCR result belongs to the transaction/user 
 
 **Response:** `202`
 
-During the phase-gated P08 build, stored/imported-record verification may complete before the
-image, model and risk components exist. In that state the endpoint persists an immutable
-`PARTIAL` analysis, returns both `analysis_run_id` and the transitional `analysis_id` alias,
-sets `risk.status` to `UNAVAILABLE` with null class/score, returns the available
-`verification` object, and lists the unavailable stages. It must not return a simulated queued
-or completed risk result. P13 replaces this transitional response with the queued full-pipeline
-response below while retaining idempotency and the separate verification object.
+During the phase-gated P09 build, stored/imported-record verification and deterministic image
+evidence may complete before the model and risk components exist. The endpoint persists an
+immutable `PARTIAL` analysis, returns both `analysis_run_id` and the transitional `analysis_id`
+alias, sets `risk.status` to `UNAVAILABLE` with null class/score, returns separate `verification`
+and `image_evidence` objects, and lists only genuinely unavailable stages. The image block has
+null classification/probability and states that deterministic signals are supporting evidence,
+not proof of fraud. If the private image is unavailable, that block returns an explicit reason
+code without inventing values while completed verification evidence is retained. P13 replaces
+this transitional response with the queued full-pipeline response below while retaining
+idempotency and the separate verification/image/risk objects.
 
 ```json
 {
@@ -465,6 +468,13 @@ Returns sections:
 - reference field comparisons;
 - stage timing;
 - human review status when present.
+
+P09 implements the immutable owner/staff projection for the evidence available so far:
+verification comparisons, deterministic metadata/duplicate/recompression/noise/layout/quality
+signals, stage status and version snapshots. Owner projections omit diagnostic-media links.
+ADMIN/INVESTIGATOR projections may include protected `ela` and `noise-map` URLs. No projection
+contains a storage object key, another user's identity, an image tamper probability or a final
+fraud class before the corresponding later phases exist.
 
 ### `POST /transactions/{transaction_id}/reanalyses`
 
