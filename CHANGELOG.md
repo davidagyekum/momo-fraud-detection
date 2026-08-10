@@ -46,6 +46,11 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - P06 Expo camera/gallery receipt selection with runtime permissions, preview replacement/removal, upload/retry feedback, quality and duplicate notices, and authenticated private-preview reopening.
 - P06 multipart transaction creation with required idempotency, strict JPEG/PNG/WebP validation, immutable originals, EXIF-normalised thumbnails, SHA-256/dHash evidence, atomic rollback and private owner/staff streaming.
 - P06 hostile-upload and privacy regressions for corrupt/disguised/polyglot/oversized/multi-frame inputs, path traversal, replay/conflict, duplicate privacy, cross-owner denial and cleanup.
+- P07 versioned OpenCV preprocessing and bounded Tesseract recognition with raw text, token boxes/confidence, candidate summaries, quality evidence and immutable private derivatives.
+- P07 provider-aware field parsing and canonical Ghanaian phone, currency, reference and UTC date/time normalization with explicit generic-template and degraded-engine behavior.
+- P07 owner-only OCR run/review/confirmation APIs with idempotent replay, correction reasons, immutable confirmation evidence, audit events and analysis-readiness enforcement.
+- P07 Expo OCR review experience with a private zoomable receipt, editable fields, understandable confidence guidance and complete loading/offline/error/partial/confirmation states.
+- Deterministic controlled OCR evaluation covering clean, rotated, low-contrast, noisy and cropped receipts; all 20 declared required-field checks passed without claiming production generalisation.
 
 ### Changed
 
@@ -58,6 +63,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - The browser-readable CSRF cookie uses the application root path while the HTTP-only refresh cookie remains restricted to `/api/v1/auth`, enabling the staff SPA to echo the cryptographically bound CSRF value after reload.
 - Repository verification now executes the complete P05 administrator portal suite for `--admin`.
 - The generated OpenAPI contract now documents receipt multipart fields, `Idempotency-Key`, private media variants and upload error states.
+- The generated OpenAPI contract now documents the P07 OCR run, review, immutable confirmation and analysis-readiness lifecycle.
 
 ### Fixed
 
@@ -75,6 +81,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Added an administrator browser-security policy that rejects local/session/IndexedDB token persistence and `dangerouslySetInnerHTML`; access tokens remain memory-only and refresh credentials remain HTTP-only.
 - Verified the P05 production dependency graph with `npm audit --omit=dev`: zero known vulnerabilities at the recorded run.
 - P06 originals remain byte-identical private evidence; only derived thumbnails receive EXIF orientation and metadata stripping. Protected streams enforce owner/staff policy, generated filenames, `nosniff` and private no-store caching.
+- P07 verifies the original receipt hash before deriving OCR candidates; automated OCR rows remain immutable while owner corrections are stored separately with old/new values and reasons.
 
 ### Known limitations
 

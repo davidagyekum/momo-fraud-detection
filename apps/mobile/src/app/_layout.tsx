@@ -30,6 +30,7 @@ function AppNavigator() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="receipt/[transactionId]" />
+        <Stack.Screen name="ocr/[transactionId]" />
       </Stack>
     </>
   );

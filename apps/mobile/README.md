@@ -1,6 +1,6 @@
 # MoMo-FDVS mobile application
 
-Expo SDK 57, React Native and TypeScript client for end users. P04 implements the secure authentication lifecycle, profile management, accessible UI states and five-tab shell. P06 adds private receipt capture, preview, upload and protected-preview reopening. History, OCR and notifications remain inactive until their owning phases.
+Expo SDK 57, React Native and TypeScript client for end users. P04 implements the secure authentication lifecycle, profile management, accessible UI states and five-tab shell. P06 adds private receipt capture, preview, upload and protected-preview reopening. P07 adds the OCR review and correction workflow. History and notifications remain inactive until their owning phases.
 
 ## Runtime and configuration
 
@@ -33,3 +33,11 @@ The API must return a refresh token for a mobile session. If it does not, the cl
 - Multipart boundaries are set by the native/web runtime. Every retry reuses the selection's idempotency key.
 - Protected thumbnails are fetched with the in-memory access token and represented only as an in-memory preview URI. Raw object keys and other users' duplicate details are never exposed.
 - Image-quality and duplicate notices are not fraud results and are not transaction-verification results.
+
+## OCR review
+
+- A successful upload opens an owner-only OCR review route. The client first reuses an existing OCR result and otherwise starts one request with a stable idempotency key.
+- The private receipt preview can be enlarged. Extracted fields remain editable and show plain-language confidence and validation guidance.
+- Every changed field requires a reason before confirmation. The server preserves the original OCR result and creates a separate immutable confirmation record.
+- Offline, loading, retry, partial-OCR, permission-denied and confirmation states are explicit.
+- OCR extracts receipt text only. It does not prove authenticity, query a mobile-network operator, determine transaction verification or assign fraud risk.

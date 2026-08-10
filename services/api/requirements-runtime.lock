@@ -27,6 +27,8 @@ Mako==1.4.1
 MarkupSafe==3.0.3
 mdurl==0.1.2
 marshmallow==4.3.1
+numpy==2.5.2
+opencv-python-headless==4.14.0.94
 packaging==26.3
 ordered-set==4.1.0
 Pillow==12.3.0
@@ -34,6 +36,7 @@ psycopg==3.3.4
 psycopg-binary==3.3.4
 pycparser==3.0
 PyJWT==2.10.1
+pytesseract==0.3.13
 python-dateutil==2.9.0.post0
 s3transfer==0.13.1
 six==1.17.0

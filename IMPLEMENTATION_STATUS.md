@@ -6,14 +6,14 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p06-receipt-upload`
-- Base SHA: `1d7891fd2087a8f5412d864a66dafc939b967a60`
-- Head SHA: `P06 work in progress; exact pushed head will be recorded at handoff`
+- Current work branch: `codex/p07-ocr-review`
+- Base SHA: `62f411aee2bd39a7d2feb8e49073ca4bdcf04922`
+- Head SHA: `P07 work in progress; exact pushed head will be recorded at handoff`
 - Last updated: `2026-08-10`
-- CI status: `P05 admin-quality job configured; GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P05 admin and backend gates pass locally`
+- CI status: `GitHub-hosted jobs cannot start because the repository owner's Actions account is locked by a billing issue; equivalent P07 backend/mobile gates pass locally`
 - Deployment status: `Not deployed`
-- Current phase: `P06 — In Review`
-- Next exact task: `Run the registered P06 backend/mobile verification gates, inspect the final diff, commit, push and open the phase pull request.`
+- Current phase: `P07 — In Review`
+- Next exact task: `Publish and review P07 with its measured controlled OCR evidence, then begin P08 reference-record verification without starting model training.`
 
 ## Phase status
 
@@ -25,8 +25,8 @@
 | P03 | Authentication, session security, ownership and RBAC | Complete | [PR #4](https://github.com/davidagyekum/momo-fraud-detection/pull/4) — merged | `3a4f4ea50df3aacdedf6094e3108c453fca092cc` merge commit | 41 tests pass at 92.44% coverage; Ruff format/lint and strict mypy pass; OpenAPI and ER checks pass; secret scan passes; clean API image build and live Docker admin login/`/me` smoke pass | Merged on 2026-08-09; B-CI-001 remains an external hosted-runner blocker. |
 | P04 | Mobile application shell, design system and authentication experience | Complete | [PR #5](https://github.com/davidagyekum/momo-fraud-detection/pull/5) — merged | `9e7594bb79ecd5805f3417d617fcef4c011669dd` merge commit | Mobile verification passes: format/lint/type; 25 Jest tests; security-critical coverage 89.77% statements/80% branches; token policy; static export; 45 backend regressions at 92.44%; real local API registration/login/profile/logout smoke; 360/390 viewport evidence | Merged on 2026-08-09 using passing local evidence. B-CI-001 and upstream dependency waiver B-SEC-002 remain external. |
 | P05 | Administrator and investigator web portal shell | Complete | [PR #6](https://github.com/davidagyekum/momo-fraud-detection/pull/6) — merged | `1d7891fd2087a8f5412d864a66dafc939b967a60` merge commit | Admin verification passes: security policy, format/lint/strict type, 34 Vitest tests at 90.95% statement coverage, 3 Playwright smoke tests, production build; 47 backend tests at 92.45%; live ADMIN/INVESTIGATOR browser flow and 1440/768/390 evidence | Merged on 2026-08-10 using passing local evidence; B-CI-001 remains external. |
-| P06 | Receipt capture, hostile-file validation and private upload | In Review | `codex/p06-receipt-upload` | Base `1d7891fd2087a8f5412d864a66dafc939b967a60` | 65 backend tests at 90.16%; 37 mobile tests above configured coverage; strict lint/type; OpenAPI; web export; 17 hostile/private upload tests; live upload/private-read probe; Chrome DOM/console flow | Final diff, commit, push and PR remain. Chrome screenshot capture timed out; no screenshot is claimed. P07 OCR remains out of scope. |
-| P07 | OCR preprocessing, extraction, confidence and correction workflow | Not Started |  |  |  |  |
+| P06 | Receipt capture, hostile-file validation and private upload | Complete | [PR #7](https://github.com/davidagyekum/momo-fraud-detection/pull/7) — merged | `62f411aee2bd39a7d2feb8e49073ca4bdcf04922` merge commit | 65 backend tests at 90.16%; 37 mobile tests above configured coverage; strict lint/type; OpenAPI; web export; 17 hostile/private upload tests; live upload/private-read probe; Chrome DOM/console flow | Merged on 2026-08-10 using passing local evidence; hosted checks remain blocked by B-CI-001. Chrome screenshot capture timed out and no screenshot is claimed. |
+| P07 | OCR preprocessing, extraction, confidence and correction workflow | In Review | `codex/p07-ocr-review` | Base `62f411aee2bd39a7d2feb8e49073ca4bdcf04922`; exact pushed head pending | 79 backend tests at 89.04% coverage; 46 mobile tests; strict lint/type and OpenAPI/export gates; real Tesseract controlled evaluation matched 20/20 required fields across five fixtures | P07-T001 through P07-T011 implemented. The 100% extraction result is controlled synthetic evidence only; no production generalisation or ML metric is claimed. |
 | P08 | Reference-record import and transaction verification | Not Started |  |  |  |  |
 | P09 | Deterministic image-forensics and manipulation evidence | Not Started |  |  |  |  |
 | P10 | Dataset governance, controlled sample generation and reproducible splits | Not Started |  |  |  |  |
@@ -45,10 +45,10 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Requirements summary
 
-- MUST requirements complete: `17 / 87`
-- SHOULD requirements complete: `1 / 11`
+- MUST requirements complete: `25 / 87`
+- SHOULD requirements complete: `2 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-10 — P06 completes FR-UPL-001 through FR-UPL-007 and NFR-SEC-003 with API/mobile/storage/security evidence`
+- Traceability file last verified: `2026-08-10 — P07 completes FR-OCR-001 through FR-OCR-008 and NFR-ACC-001 with API/mobile/audit and controlled Tesseract evidence`
 
 ## Current blockers
 
@@ -68,13 +68,13 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-P05-session.md`
-- Summary: `P05 secure role-aware staff portal shell, reusable accessible components, deterministic Playwright smoke tests, live local API role checks, responsive evidence and all registered local gates pass; PR/merge remains the next action.`
+- Handoff file: `docs/handoffs/2026-08-10-P06-session.md`
+- Summary: `P06 secure receipt capture, hostile-file validation, immutable/private storage and authenticated preview passed the registered backend/mobile gates and merged as PR #7.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-P05-session.md`.
-4. Confirm the pushed P05 branch and functional implementation SHA, create/merge its pull request, then branch `codex/p06-private-upload` from the merged `main` head.
+3. Read `docs/handoffs/2026-08-10-P06-session.md`.
+4. Complete P07 publication from `codex/p07-ocr-review`, then start P08 reference-record import and deterministic verification.
 5. Preserve ADR-014: proceed through P10, then stop before the first P11 model-training run for the Google Colab handoff.

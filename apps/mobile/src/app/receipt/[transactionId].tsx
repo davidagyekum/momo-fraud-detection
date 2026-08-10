@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Redirect, router, useLocalSearchParams } from "expo-router";
+import { type Href, Redirect, router, useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
 
 import {
@@ -75,6 +75,16 @@ export default function PrivateReceiptScreen() {
           />
         </AppCard>
       )}
+      <AppButton
+        label="Review extracted details"
+        onPress={() =>
+          router.push({
+            pathname: "/ocr/[transactionId]",
+            params: { transactionId },
+          } as unknown as Href)
+        }
+        disabled={!validId}
+      />
       <AppButton
         label="Back to upload"
         onPress={() => router.back()}
