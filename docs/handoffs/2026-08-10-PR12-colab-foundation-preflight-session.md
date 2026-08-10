@@ -8,7 +8,7 @@
 - Base branch: `codex/p11-data-governance-registry`
 - Base SHA: `438d2d007496a2d0163cfed75c76da48bbb215ca`
 - Work branch: `codex/p12-colab-foundation`
-- Immutable notebook code SHA: produced by the first conventional commit, then pinned by the documentation commit
+- Immutable notebook code SHA: `cc3c59df047f10905392217d892f452bbd456771`
 - Final head SHA: produced by the final notebook-pin commit
 - Pull request: not created in this session
 - Push status: pending final commits/push at handoff authoring time
@@ -77,6 +77,7 @@
 |---|---|---|---|
 | `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff, strict mypy, 280 tests, 93.12% branch-aware coverage, governance/lock/notebook drift and existing deterministic reports | 83.3 s |
 | `.venv\Scripts\python.exe scripts\verify.py --ml` | EXPECTED WRAPPER FAIL / ML PASS | Doctor reports host Node 22.11 instead of pinned 24.14 plus missing host Tesseract/PostgreSQL CLI; secret scan and complete ML gate pass | 93.6 s |
+| `pytest tests/test_notebooks.py -q --no-cov` plus recorded notebook validation after SHA pin | PASS | 17 tests; all 3 output-free notebooks match their recorded hashes and pin `cc3c59df047f10905392217d892f452bbd456771` | under 9 s |
 | `.venv\Scripts\python.exe scripts\check_secrets.py` | PASS | 448 candidate files; no secret/prohibited artifact/PII filename/oversized-file finding | 2.9 s |
 | PowerShell CSV/JSON/notebook integrity checks | PASS | 98 traceability rows with 12 columns; contract and notebook JSON parse | 1.6 s |
 | `git diff --check` | PASS | no whitespace errors | 1.8 s |
