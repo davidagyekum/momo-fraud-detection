@@ -6,14 +6,14 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 
 | Source | Evidence required before bytes may be acquired or opened |
 |---|---|
-| PaySim | Rights review passed for the author-owned Kaggle listing, Version 2, CC BY-SA 4.0 and internal personal non-commercial academic use. Use only the official signed-in Download action; exact downloaded hash/byte size and private storage location remain required for registration. |
+| PaySim | Rights review passed for the author-owned Kaggle listing, Version 2, CC BY-SA 4.0 and internal personal non-commercial academic use. The official archive identity is recorded; the first validator quarantine and 743-step reconciliation are preserved pending a corrected registration rerun. |
 | MoMTSim v1 | Authoritative Mendeley v1 citation/licence; exact v1 archive identity; approved raw-field mapping for transaction, actor, balance and label roles. |
 | MoMTSim v2 | Authoritative Mendeley v2 citation/licence; exact v2 archive identity; approved raw-field mapping kept separate from v1. |
 | STFD | Written academic access approval, licence/restrictions, exact archive/version identity, and authoritative image/mask/grouping layout. |
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |
 
-Until those conditions are recorded, the matching registry entry stays disabled and `not_acquired`. PaySim is now `acquired_pending_registration`: the official archive is hash-verified in private Drive storage, but row/schema/class validation must pass before it can become registered. Project-owner permission does not by itself establish third-party licence or redistribution rights.
+Until those conditions are recorded, the matching registry entry stays disabled and `not_acquired`. PaySim is now `acquired_pending_registration`: the official archive is hash-verified in private Drive storage, and the first validator run passed all substantive checks but quarantined on the now-reconciled 744-versus-743 unique-step expectation. A corrected immutable rerun must still produce `registered` before its state changes. Project-owner permission does not by itself establish third-party licence or redistribution rights.
 
 ## Safe readiness check
 
@@ -57,4 +57,8 @@ The example paths are placeholders. Do not copy them into a real request without
 
 ## Colab boundary
 
-`ml/notebooks/colab/02_dataset_acquisition_validation.ipynb` is currently pinned to `readiness_only`. Run it only to reproduce the blocker report. Do not change it to registration/acquisition mode until the source-specific evidence above has been reviewed and the phase branch records that decision.
+`ml/notebooks/colab/02_dataset_acquisition_validation.ipynb` is pinned to a
+PaySim registration-only operation after source-specific rights and identity
+review. It does not download bytes, create splits, read locked tests, train or
+promote. Run the exact published pin and preserve both registered and quarantined
+manifests as audit evidence.
