@@ -35,7 +35,7 @@ The no-network registration and validation foundation is implemented and locally
 
 ## Verification evidence
 
-`.venv\Scripts\python.exe scripts\verify_ml.py` passed format, lint, strict mypy, 334 tests at 90.11% branch-aware coverage, governance/readiness/report/notebook drift checks and all controlled dataset checks. The secret/prohibited-artifact scan passed over 498 candidates. Raw packages, official/derived CSVs and private requests remain ignored; only aggregate manifests/profiles and content hashes are committed.
+`.venv\Scripts\python.exe scripts\verify_ml.py` passed format, lint, strict mypy, 334 tests at 90.11% branch-aware coverage, governance/readiness/report/notebook drift checks and all controlled dataset checks. The final secret/prohibited-artifact scan passed over 499 candidates after adding the handoff. Raw packages, official/derived CSVs and private requests remain ignored; only aggregate manifests/profiles and content hashes are committed.
 
 ## Stop decision
 

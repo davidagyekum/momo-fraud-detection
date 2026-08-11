@@ -19,6 +19,7 @@
 - PR13 MoMTSim v2 deterministic derivative implementation SHA: `58f7955fb7cc9e60f859cf1eb21a93ebd538c3e1`
 - PR13 STFD metadata/access review implementation SHA: `7b12b9f6a7572bbf569c707ac057ec541ed92b10`
 - PR13 STFD acquisition evidence SHA: `17b60cbe7bab10dfd1ffd4fba1c77f93ebc09aa9`
+- PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 334 tests at 90.11% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -42,7 +43,7 @@
 - Evidence boundary: PaySim's corrected owner-operated Colab run registered 6,362,620 rows. Official Mendeley browser acquisition established exact v1/v2 identities: v1 registered at 1,720,181 rows; official v2 matched 4,225,958 rows but remains quarantined for 20 exact duplicates. ADR-028's derivative contains 4,225,938 rows, retains all 2,233,118 positives and registered with zero duplicates. STFD revision `9edebed2…` is registered from private inventory `1087bbc4…` after all 3,932 pairs passed decode/pair/dimension/exact-duplicate checks; ADR-030 freezes three soft masks/12,860 soft pixels and one external-pretraining train-only group. FSTS is optional/deferred and Ghana-private belongs to PR16 consent-aware collection.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and registration-only; it cannot download, create splits, train, inspect locked tests or promote an artifact.
 - Honesty boundary: the first PaySim quarantine and official MoMTSim v2 duplicate-row quarantine remain preserved. All three registered structured candidates are disabled/non-promotable; no split, training, locked-test, metric or promotion claim is made.
-- Verification: the registered ML gate passes format, lint, strict mypy, 334 tests at 90.11% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 498 candidates.
+- Verification: the registered ML gate passes format, lint, strict mypy, 334 tests at 90.11% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 499 candidates.
 - Current registry hash after STFD registration: `5c0df60dcde83a38c92a2c5f3dde325d3b7dc7e2a58338b291317d92ce1bb208`.
 
 ## Logical PR10 evidence/execution foundation
@@ -132,15 +133,15 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-stfd-acquisition-session.md`
-- Summary: `Recorded owner-attested STFD permission, acquired the exact pinned encrypted archive into restricted storage, verified its size/SHA-256 and aggregate pairing layout, and retained decoded-validation/grouping/training gates.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-stfd-registration-session.md`
+- Summary: `Privately extracted and exhaustively validated the exact STFD archive, preserved the initial fail-closed quarantine, registered 3,932 image/mask pairs under a one-corpus train-only rule, and closed logical PR13 without splitting or training.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/evidence/PR13_STFD_SOURCE_ACCESS_REVIEW.md`, ADR-029 and `data/ACQUISITION_REGISTRATION_RUNBOOK.md` before any STFD action.
-4. Confirm branch `codex/p13-dataset-acquisition-validation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
+3. Read `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-030 and `docs/evidence/PR13_STFD_REGISTRATION.json` before implementing frozen partitions.
+4. Confirm the pushed PR13 head, then create or resume `codex/p14-frozen-splits` from that exact head.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve PaySim as registered but disabled/non-promotable and preserve both the first quarantine and corrected registration artifacts; do not create splits, access locked tests or execute FULL training yet.
