@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ML_ROOT = REPO_ROOT / "ml"
 CONTROLLED_ROOT = ML_ROOT / "data" / "controlled"
 GOVERNANCE_ROOT = REPO_ROOT / "data"
+ACQUISITION_READINESS_REPORT = GOVERNANCE_ROOT / "acquisition_readiness_report.json"
 COLAB_NOTEBOOK_ROOT = ML_ROOT / "notebooks" / "colab"
 sys.path.insert(0, str(ML_ROOT / "src"))
 
@@ -36,6 +37,19 @@ COMMANDS = [
             str(GOVERNANCE_ROOT),
             "--recorded-report",
             str(GOVERNANCE_ROOT / "governance_report.json"),
+        ],
+    ),
+    (
+        "dataset acquisition readiness",
+        [
+            sys.executable,
+            "-m",
+            "momo_fdvs_ml",
+            "acquisition-readiness",
+            "--data-root",
+            str(GOVERNANCE_ROOT),
+            "--recorded-report",
+            str(ACQUISITION_READINESS_REPORT),
         ],
     ),
     (

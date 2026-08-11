@@ -239,3 +239,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** Laptop/CI tests can prove deterministic orchestration and recovery without claiming model quality. The owner must still execute one fresh signed-in Colab smoke before logical PR12 completes. Smoke metrics/artifacts cannot be registered, cited as accuracy evidence or used to rehabilitate the failed P12 image artifact. Future reportable workflows reuse the manifest/checkpoint semantics but require governed data and separate acceptance evidence.
 - **Related requirements/phases:** Logical PR12, FR-ML-005, FR-ML-006, NFR-AUD-001, NFR-DATA-001, ADR-014, ADR-018, ADR-020, ADR-021.
 - **Supersedes:** None.
+
+## ADR-023 — Require local-only registration after source-rights approval
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Project owner and Codex within ADR-014/ADR-019/ADR-021
+- **Context:** Logical PR13 requires source acquisition and validation, but all six canonical registry entries remain disabled and `not_acquired`. Project-owner permission to automate collection does not establish third-party licence, access, redistribution, consent or authoritative version/schema evidence.
+- **Options considered:** Add an automated network downloader now; open named sources based on assumed public availability; implement fail-closed local registration and wait for accountable source-specific approval.
+- **Decision:** PR13 contains no network acquisition client. It first emits a metadata-only readiness report. Registration may inspect only an independently obtained local/private source under an explicitly approved root and only after the registry, permission/licence/consent state, canonical version and validation specification are ready. The caller must supply opaque reviewer/evidence references plus independently obtained expected hash and size. Any identity or validation failure produces a redacted quarantine manifest without mutating source bytes. All PR13 manifests remain non-promotable.
+- **Consequences:** The registration and validation foundation can be tested without acquiring private or uncertain-rights data. Logical PR13 remains incomplete until at least the required sources are approved and their real bytes validate in owner-operated Colab. Registry approval is a separate reviewed change; a valid hash does not prove legality, representativeness or label quality.
+- **Related requirements/phases:** Logical PR13, FR-ML-005, FR-ML-006, NFR-AUD-001, NFR-DATA-001, ADR-014, ADR-019, ADR-021, ADR-022.
+- **Supersedes:** None.

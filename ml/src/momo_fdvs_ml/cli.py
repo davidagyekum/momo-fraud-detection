@@ -7,6 +7,11 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from momo_fdvs_ml.acquisition import (
+    AcquisitionError,
+    acquisition_readiness_report,
+    register_local_source,
+)
 from momo_fdvs_ml.colab import (
     ColabFoundationError,
     ColabPaths,
@@ -84,6 +89,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_governance.add_argument("--root", type=Path, required=True)
     validate_governance.add_argument("--recorded-report", type=Path)
+
+    acquisition_readiness = subparsers.add_parser(
+        "acquisition-readiness",
+        help="report source-specific governance blockers without opening source bytes",
+    )
+    acquisition_readiness.add_argument("--data-root", type=Path, required=True)
+    acquisition_readiness.add_argument("--recorded-report", type=Path)
+
+    register_dataset = subparsers.add_parser(
+        "register-dataset",
+        help="validate and register pre-authorized local bytes without network access",
+    )
+    register_dataset.add_argument("--data-root", type=Path, required=True)
+    register_dataset.add_argument("--request", type=Path, required=True)
+    register_dataset.add_argument("--allowed-source-root", type=Path, required=True)
+    register_dataset.add_argument("--manifest-output", type=Path, required=True)
+    register_dataset.add_argument("--profile-output", type=Path, required=True)
 
     validate_notebooks = subparsers.add_parser(
         "validate-notebooks",
@@ -229,6 +251,42 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
             print(json.dumps(report, indent=2, sort_keys=True))
             return 0
+
+        if args.command == "acquisition-readiness":
+            report = acquisition_readiness_report(args.data_root)
+            if args.recorded_report is not None:
+                recorded = json.loads(args.recorded_report.read_text(encoding="utf-8"))
+                if recorded != report:
+                    raise AcquisitionError(
+                        "recorded acquisition readiness does not match canonical governance"
+                    )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "register-dataset":
+            registration_outputs = register_local_source(
+                data_root=args.data_root,
+                request_path=args.request,
+                allowed_source_root=args.allowed_source_root,
+                manifest_path=args.manifest_output,
+                profile_path=args.profile_output,
+            )
+            print(
+                json.dumps(
+                    {
+                        "dataset_id": registration_outputs.manifest["dataset_id"],
+                        "status": registration_outputs.manifest["status"],
+                        "manifest_path": str(registration_outputs.manifest_path),
+                        "profile_path": str(registration_outputs.profile_path),
+                        "source_sha256": registration_outputs.manifest["source_sha256"],
+                        "network_acquisition_executed": False,
+                        "promotable_for_training": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0 if registration_outputs.manifest["status"] == "registered" else 2
 
         if args.command == "validate-notebooks":
             report = require_clean_notebooks(args.root)
@@ -422,6 +480,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     except (
+        AcquisitionError,
         ColabFoundationError,
         ExecutionGuardError,
         GovernanceError,

@@ -1,0 +1,9 @@
+{
+  "schema_version": "dataset-validation-spec-v1",
+  "dataset_id": "stfd",
+  "status": "pending_written_access_and_layout",
+  "dataset_kind": "image_collection",
+  "allowed_image_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+  "requires_masks": true,
+  "limitations": ["Authoritative image/mask naming and grouping rules must be recorded after written access approval; no archive or sample may enter Git."]
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": "dataset-validation-spec-v1",
+  "dataset_id": "momtsim-v2",
+  "status": "pending_authoritative_schema",
+  "dataset_kind": "transaction_csv",
+  "reference_row_count": 4230000,
+  "reference_positive_count": 2233118,
+  "required_semantic_roles": ["transaction_type", "amount", "initiator", "recipient", "initiator_balance", "recipient_balance", "fraud_label"],
+  "limitations": ["Raw field names and exact archive layout must be verified from authorised version-2 bytes/documentation before registration can pass."]
+}

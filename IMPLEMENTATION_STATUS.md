@@ -6,22 +6,32 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p12-colab-foundation`
-- Base SHA: `438d2d007496a2d0163cfed75c76da48bbb215ca`
+- Current work branch: `codex/p13-dataset-acquisition-validation`
+- Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
-- Last updated: `2026-08-10`
+- Last updated: `2026-08-11`
 - CI status: `Logical PR12 registered ML gate passes locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR12 reproducible Colab foundation — Complete; historical P12 model remains In Progress and inactive`
-- Next exact task: `Review the completed PR12 smoke evidence, then plan logical PR13 source-by-source rights/consent verification and acquisition validation on a new branch; do not download data or execute FULL training until each registry source is explicitly eligible.`
+- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; no-network registration foundation complete locally, all six real-source gates unresolved`
+- Next exact task: `Obtain accountable authoritative permission/licence/consent, exact version identity and source schema/layout evidence for one canonical source; update its registry/spec in review, then run owner-operated Colab registration against an approved private path. Do not download or open source bytes before that gate passes.`
 
-## PR10-PR12 reconciliation status
+## PR10-PR13 reconciliation status
 
 - Blueprint: `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md` (2,446 lines; repository copy verified equal to the supplied source after newline normalisation).
 - Audit: `docs/audits/pr10-pr12-gap.md`.
 - Result: logical PR10, PR11 and PR12 foundations are complete with local and owner-operated Colab evidence. Correct historical work is preserved; the failed historical P12 image artifact remains inactive and PR13 acquisition remains separately gated.
 - Compatibility boundary: current public risk/verification enums and Keras/scikit-learn stack remain effective until versioned migrations are implemented and tested.
 - Training boundary: no additional full run is allowed before the reconciliation foundations, governed dataset and newly frozen partitions pass.
+
+## Logical PR13 dataset acquisition and validation
+
+- Readiness: deterministic metadata-only inventory reports zero of six canonical sources eligible; all remain disabled and `not_acquired`.
+- Registration: strict request/manifest contracts, approved-root confinement, content-addressed file/directory/ZIP inventory, transaction/image validators, redacted safe profiles and non-mutating quarantine are implemented without a network client.
+- Hostile-input controls: path traversal, symlink substitution, duplicate normalised ZIP members, archive expansion, malformed/oversized images, schema/count/class drift, mask pairing and identity mismatches fail closed.
+- Evidence boundary: PaySim is structurally specified from the reconciled blueprint but remains blocked on accountable terms/version approval. MoMTSim v1/v2, STFD, FSTS and Ghana-private also require the source-specific evidence recorded in the runbook.
+- Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and `readiness_only`; it cannot download, register, train, inspect locked tests or promote an artifact.
+- Honesty boundary: no source bytes were downloaded, opened, registered or validated; no acquisition, split, training, metric or promotion claim is made.
+- Verification: the registered ML gate passes format, lint, strict mypy, 307 tests at 90.50% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the secret/prohibited-artifact scan passes 468 candidates.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -86,7 +96,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-10 — logical PR12 owner-operated signed-in Colab smoke completed at b2e6b24a with exact locks, prediction digest and owner-reported manifest hash; no acquisition/FULL training occurred`
+- Traceability file last verified: `2026-08-11 — logical PR13 no-network acquisition foundation mapped to NFR-DATA-001 and NFR-AUD-001; all six sources remain disabled/unacquired and no source bytes or training were accessed`
 
 ## Current blockers
 
@@ -95,6 +105,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
+| PR13-DATA-RIGHTS | Logical PR13 | All six canonical sources lack at least one accountable permission/licence/consent, exact-version or authoritative schema/layout prerequisite. | Real acquisition and validation cannot execute; PR13 cannot complete and PR14 splits cannot start. | Keep the no-network readiness report, disabled registry entries and fictitious validator tests; do not open uncertain-rights bytes. | Project owner/data steward supplies source-specific authoritative evidence listed in `data/ACQUISITION_REGISTRATION_RUNBOOK.md`. | Review and approve one source at a time, update its registry/spec separately, then run local/private registration in owner-operated Colab. |
 
 ## Active known limitations
 
@@ -109,16 +120,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-10-PR12-colab-foundation-preflight-session.md`
-- Summary: `Completed the exact-lock, restart-safe and non-promotable logical PR12 foundation, including owner-operated signed-in Colab smoke evidence; acquisition and FULL training remain gated.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-dataset-acquisition-foundation-session.md`
+- Summary: `Implemented and verified the logical PR13 no-network registration/validation foundation; all six real sources remain disabled and unacquired pending accountable source-rights and schema evidence.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-10-PR12-colab-foundation-preflight-session.md`, `ml/COLAB_RUNTIME_RECOVERY.md` and `docs/audits/pr10-pr12-gap.md`.
-4. Confirm branch `codex/p12-colab-foundation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
+3. Read `docs/handoffs/2026-08-11-PR13-dataset-acquisition-foundation-session.md`, `data/ACQUISITION_REGISTRATION_RUNBOOK.md` and `docs/security/PR13_ACQUISITION_THREAT_MODEL.md`.
+4. Confirm branch `codex/p13-dataset-acquisition-validation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
-7. Plan logical PR13 on a new bounded branch: review permission/licence/consent evidence source by source before enabling acquisition; keep unknown-rights sources disabled.
-8. Do not download datasets, access locked tests or execute a FULL training run until the relevant governance prerequisites pass and the owner authorises that separate phase.
+7. Review the six-source readiness report. Keep every source disabled until an accountable reviewer supplies all source-specific permission/licence/consent, version and schema/layout evidence.
+8. After one source becomes eligible through a separate reviewed registry/spec update, run only its owner-operated Colab registration from an approved private root. Do not access locked tests or execute FULL training.

@@ -15,10 +15,14 @@ private-storage/
 datasets/
 data/private/
 data/raw/
+data/staging/
+data/quarantine/
+data/acquisition-requests/
 data/consent-records/
 data/withdrawal-records/
 ml/data/private/
 ml/data/raw/
+ml/data/staging/
 ml/data/authorised/
 ml/data/authorized/
 artifacts/

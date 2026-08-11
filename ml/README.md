@@ -61,6 +61,19 @@ $env:PYTHONPATH = "ml/src"
 
 The smoke notebook uses only existing fictitious/controlled train and validation fixtures. It touches no locked test partition, downloads nothing and cannot promote its output. See [the runtime-loss recovery runbook](COLAB_RUNTIME_RECOVERY.md) before executing it in Colab.
 
+## Logical PR13 acquisition readiness
+
+The PR13 tooling intentionally contains no network downloader. It reports governance blockers without opening source bytes and can later register only already-authorised local/private bytes from an approved root:
+
+```powershell
+$env:PYTHONPATH = "ml/src"
+.venv\Scripts\python.exe -m momo_fdvs_ml acquisition-readiness `
+  --data-root data `
+  --recorded-report data/acquisition_readiness_report.json
+```
+
+The current result is zero eligible sources. Do not invoke `register-dataset` until the relevant licence/permission/consent, exact version, independent hash/size and validation layout have been reviewed. Registration never downloads or mutates source bytes, quarantines mismatches and emits only non-promotable content-addressed manifests plus redacted profiles. See [the acquisition runbook](../data/ACQUISITION_REGISTRATION_RUNBOOK.md).
+
 ## P12 pre-training commands
 
 Validate the frozen binary image task and exact 224×224 RGB preprocessing contract:

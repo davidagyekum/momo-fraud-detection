@@ -32,6 +32,8 @@ Access grants must have owner, purpose, dataset/version, role, start, review/exp
 3. Register archive bytes, size and SHA-256 in private metadata; never overwrite a version with different bytes.
 4. Validate schema and quarantine mismatches.
 5. For participant data, record internal/release consent scope and pseudonymous withdrawal key before collection.
+
+Logical PR13 adds a no-network registration boundary. Acquisition requests and source bytes stay in ignored/restricted storage. The repository may retain only content-addressed manifests and aggregate safe profiles after validation; these artifacts never change an entry's permission state automatically. A quarantined result preserves the source in place and requires human resolution rather than deletion or silent substitution.
 6. Assign source groups before preprocessing, edits or splits.
 7. Run governance, secret/PII/large-file and manifest checks.
 8. Obtain owner/data-steward approval before enabling the registry entry.

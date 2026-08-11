@@ -1,0 +1,14 @@
+{
+  "schema_version": "dataset-validation-spec-v1",
+  "dataset_id": "paysim",
+  "status": "ready_after_governance_approval",
+  "dataset_kind": "transaction_csv",
+  "required_columns": ["step", "type", "amount", "nameOrig", "oldbalanceOrg", "newbalanceOrig", "nameDest", "oldbalanceDest", "newbalanceDest", "isFraud", "isFlaggedFraud"],
+  "label_column": "isFraud",
+  "positive_values": ["1"],
+  "step_column": "step",
+  "expected_row_count": 6362620,
+  "expected_positive_count": 8213,
+  "expected_step_count": 744,
+  "forbidden_primary_benchmark_columns": ["isFlaggedFraud", "oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest"]
+}

@@ -10,6 +10,9 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ### Added
 
+- Logical PR13 no-network dataset registration foundation with source eligibility gates, strict request/manifest contracts, approved-root confinement, content-addressed inventories, quarantine semantics and redacted safe profiles.
+- PaySim structural/count validation, configurable transaction adapters, disk-backed exact duplicate detection, image decode/size/dimension/mask checks, deterministic subset IDs and hostile ZIP/path protections covered by fake-archive tests.
+- Recorded six-source acquisition-readiness inventory, source-specific validation specifications, output-free Colab readiness notebook, acquisition runbook and threat model; every source remains disabled and unacquired.
 - Owner-operated signed-in Colab evidence for the completed logical PR12 smoke at code commit `b2e6b24a337c3cc1777c162cf64861d7e55d29f8`, including exact locks, runtime inventory, deterministic prediction digest and owner-reported manifest SHA-256; acquisition, FULL training and promotion remain false.
 - Logical PR12 clean-session Colab preflight, reusable thin notebook template and tiny restart-safe smoke notebook with stripped outputs, generic Drive/VM paths and immutable checkout recording.
 - `colab-run-manifest-v1` with allowlisted runtime inventory, lock/data/split/config hashes, artifacts, immutable checkpoint ledger, interrupted/resumed session history and explicit non-acquisition/non-promotable smoke flags.
