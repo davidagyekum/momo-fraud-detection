@@ -26,7 +26,7 @@
 - CI status: `Logical PR14 foundation gate passes locally with 376 tests at 91.04% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
 - Current phase: `Logical PR14 transaction ETL, causal features and frozen partitions — In Progress`
-- Next exact task: `Implement and test canonical source mapping, chronological 70/10/10/10 split planning, causal-history invariance, sealed locked-test outputs and STFD's one-corpus train-only manifest; do not train.`
+- Next exact task: `After explicit owner approval for the exact Drive transfer, upload the hash-verified MoMTSim v1 and v2-derivative CSVs to the owner's existing momo-fraud/datasets folder, verify metadata, then run pinned PR14 preprocessing separately for PaySim/v1/v2; do not train.`
 
 ## PR10-PR13 reconciliation status
 
@@ -54,7 +54,7 @@
 - Artifact boundary: feature, label and opaque provenance Parquet shards are separate and content-hashed; preprocessing neutral values/vocabularies fit train only; tuning/calibration reuse the frozen artifact; the loader rejects locked-test access before PR20.
 - Image boundary: STFD inventory `1087bbc4…` is frozen as exactly one 3,932-pair external-pretraining train-only group with no internal validation/test partition or metric.
 - Colab boundary: `03_build_transaction_features.ipynb` is output-free and performs preprocessing only. Full PaySim/MoMTSim manifests are not yet claimed; each source must run at the eventual pinned PR14 implementation SHA and return only the safe aggregate summary.
-- Verification: Ruff, strict mypy, 376 tests at 91.04% branch-aware coverage and deterministic governance/lock/notebook/data gates pass; the latest secret/prohibited-artifact scan passes 506 candidates. No model training occurred.
+- Verification: Ruff, strict mypy, 376 tests at 91.04% branch-aware coverage and deterministic governance/lock/notebook/data gates pass; the latest secret/prohibited-artifact scan passes 507 candidates. No model training occurred.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -128,6 +128,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
+| PR14-COLAB-SOURCES | Logical PR14 | The connector rejected uploading the two private MoMTSim CSVs because this transcript does not explicitly authorize those exact payloads to the specific Drive folder. | Full PR14 Colab preprocessing cannot start for MoMTSim; no bytes were uploaded. | Keep both exact hash-verified files in local restricted storage and keep PR14 in progress. | Project owner explicitly authorizes uploading the named v1 and v2-derivative CSVs to their existing private `momo-fraud/datasets` Drive folder. | On approval, upload, verify Drive metadata, run each pinned preprocessing job and review only safe summaries. |
 | PR16-GHANA-PRIVATE | Logical PR16 | Owner transaction/screenshots are not yet imported and require the private consent/index pipeline. | Ghana fine-tuning cannot start until private intake, review, deduplication and withdrawal controls pass. | Keep Ghana-private disabled/not acquired; use no raw private data in Git. | Project owner supplies the export at the PR16 intake checkpoint; Codex builds and validates the private pipeline. | Complete PR14/PR15, then ingest the owner export and governed online fraud-image candidates in PR16. |
 
 ## Active known limitations
@@ -143,8 +144,8 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-stfd-registration-session.md`
-- Summary: `Privately extracted and exhaustively validated the exact STFD archive, preserved the initial fail-closed quarantine, registered 3,932 image/mask pairs under a one-corpus train-only rule, and closed logical PR13 without splitting or training.`
+- Handoff file: `docs/handoffs/2026-08-11-PR14-preprocessing-foundation-session.md`
+- Summary: `Implemented, verified and pushed the PR14 temporal split/causal-feature/Parquet foundation and pinned preprocessing notebook; the exact MoMTSim Drive upload was rejected before transfer pending explicit payload-and-destination authorization.`
 
 ## Next session startup
 
