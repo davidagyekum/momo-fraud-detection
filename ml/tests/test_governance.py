@@ -69,7 +69,7 @@ def test_registry_has_exact_sources_cards_schemas_and_explicit_restrictions() ->
     }
     assert states["paysim"] == "registered"
     assert states["momtsim-v1"] == "registered"
-    assert states["momtsim-v2"] == "quarantined"
+    assert states["momtsim-v2"] == "registered"
     assert all(
         states[dataset_id] == "not_acquired" for dataset_id in ("stfd", "fsts", "ghana-private")
     )
@@ -84,9 +84,7 @@ def test_registry_rejects_unapproved_enablement(tmp_path: Path) -> None:
     entries = registry["datasets"]
     assert isinstance(entries, list) and isinstance(entries[0], dict)
     blocked_entry = next(
-        entry
-        for entry in entries
-        if isinstance(entry, dict) and entry["dataset_id"] == "momtsim-v2"
+        entry for entry in entries if isinstance(entry, dict) and entry["dataset_id"] == "stfd"
     )
     entries.remove(blocked_entry)
     entries.insert(0, blocked_entry)

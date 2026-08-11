@@ -19,6 +19,10 @@ from momo_fdvs_ml.colab import (
     install_lock_contract,
     repository_state,
 )
+from momo_fdvs_ml.derivation import (
+    DerivationError,
+    derive_deduplicated_transactions,
+)
 from momo_fdvs_ml.execution import (
     FULL_TRAINING_ACKNOWLEDGEMENT,
     ExecutionGuardError,
@@ -106,6 +110,16 @@ def build_parser() -> argparse.ArgumentParser:
     register_dataset.add_argument("--allowed-source-root", type=Path, required=True)
     register_dataset.add_argument("--manifest-output", type=Path, required=True)
     register_dataset.add_argument("--profile-output", type=Path, required=True)
+
+    derive_transactions = subparsers.add_parser(
+        "derive-deduplicated-transactions",
+        help="create a private first-occurrence exact-row derivative without splitting",
+    )
+    derive_transactions.add_argument("--request", type=Path, required=True)
+    derive_transactions.add_argument("--allowed-source-root", type=Path, required=True)
+    derive_transactions.add_argument("--allowed-output-root", type=Path, required=True)
+    derive_transactions.add_argument("--output", type=Path, required=True)
+    derive_transactions.add_argument("--manifest-output", type=Path, required=True)
 
     validate_notebooks = subparsers.add_parser(
         "validate-notebooks",
@@ -287,6 +301,38 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
             return 0 if registration_outputs.manifest["status"] == "registered" else 2
+
+        if args.command == "derive-deduplicated-transactions":
+            derivation_outputs = derive_deduplicated_transactions(
+                request_path=args.request,
+                allowed_source_root=args.allowed_source_root,
+                allowed_output_root=args.allowed_output_root,
+                output_path=args.output,
+                manifest_path=args.manifest_output,
+            )
+            print(
+                json.dumps(
+                    {
+                        "dataset_id": derivation_outputs.manifest["dataset_id"],
+                        "derived_dataset_version": derivation_outputs.manifest[
+                            "derived_dataset_version"
+                        ],
+                        "manifest_path": str(derivation_outputs.manifest_path),
+                        "output_sha256": derivation_outputs.manifest["output_sha256"],
+                        "output_row_count": derivation_outputs.manifest["output_row_count"],
+                        "removed_duplicate_row_count": derivation_outputs.manifest[
+                            "removed_duplicate_row_count"
+                        ],
+                        "source_bytes_modified": False,
+                        "splits_created": False,
+                        "training_executed": False,
+                        "promotable_for_training": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
 
         if args.command == "validate-notebooks":
             report = require_clean_notebooks(args.root)
@@ -482,6 +528,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (
         AcquisitionError,
         ColabFoundationError,
+        DerivationError,
         ExecutionGuardError,
         GovernanceError,
         ImageDatasetError,

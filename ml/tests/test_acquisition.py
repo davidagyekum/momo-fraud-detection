@@ -178,8 +178,8 @@ def test_committed_readiness_matches_recorded_report_without_opening_bytes() -> 
     )
     assert report == recorded
     assert report["source_count"] == 6
-    assert report["eligible_source_count"] == 2
-    assert report["blocked_source_count"] == 4
+    assert report["eligible_source_count"] == 3
+    assert report["blocked_source_count"] == 3
     assert report["network_acquisition_executed"] is False
     assert report["source_bytes_opened"] is False
     assert report["training_executed"] is False
@@ -216,16 +216,15 @@ def test_momtsim_specs_freeze_official_identity_and_observed_profiles() -> None:
     assert v2["approved_source"]["file_sha256"] == (
         "99fd07c3a9d3c4bd6d3462240058ca19d0d9e9284683f78bf77542ff7fcc05e7"
     )
+    assert v2["expected_row_count"] == 4225938
+    assert v2["derived_candidate"]["output_sha256"] == (
+        "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd"
+    )
 
 
-@pytest.mark.parametrize(
-    ("dataset_id", "expected_status", "expected_duplicates"),
-    [("momtsim-v1", "registered", 0), ("momtsim-v2", "quarantined", 20)],
-)
-def test_committed_momtsim_evidence_is_safe_and_matches_registry(
-    dataset_id: str, expected_status: str, expected_duplicates: int
-) -> None:
-    manifest = load_registration_manifest(DATA_ROOT / "manifests" / f"{dataset_id}.manifest.json")
+def test_committed_momtsim_v1_evidence_is_safe_and_matches_registry() -> None:
+    dataset_id = "momtsim-v1"
+    manifest = load_registration_manifest(DATA_ROOT / "manifests/momtsim-v1.manifest.json")
     profile = json.loads(
         (
             REPOSITORY_ROOT
@@ -236,10 +235,30 @@ def test_committed_momtsim_evidence_is_safe_and_matches_registry(
     registry = json.loads((DATA_ROOT / "registry.yaml").read_text(encoding="utf-8"))
     entry = next(item for item in registry["datasets"] if item["dataset_id"] == dataset_id)
     assert manifest["status"] == profile["status"] == entry["acquisition_status"]
-    assert manifest["status"] == expected_status
-    assert manifest["validation_summary"]["duplicate_row_count"] == expected_duplicates
+    assert manifest["status"] == "registered"
+    assert manifest["validation_summary"]["duplicate_row_count"] == 0
     assert profile["contains_source_paths"] is False
     assert profile["contains_member_names"] is False
+    assert profile["promotable_for_training"] is False
+
+
+def test_committed_momtsim_v2_preserves_quarantine_and_registers_derivative() -> None:
+    official = load_registration_manifest(DATA_ROOT / "manifests/momtsim-v2.manifest.json")
+    derived = load_registration_manifest(DATA_ROOT / "manifests/momtsim-v2-dedup-v1.manifest.json")
+    profile = json.loads(
+        (
+            REPOSITORY_ROOT
+            / "reports/generated/dataset_profiles/momtsim-v2-dedup-v1-safe-summary.json"
+        ).read_text(encoding="utf-8")
+    )
+    registry = json.loads((DATA_ROOT / "registry.yaml").read_text(encoding="utf-8"))
+    entry = next(item for item in registry["datasets"] if item["dataset_id"] == "momtsim-v2")
+    assert official["status"] == "quarantined"
+    assert official["validation_summary"]["duplicate_row_count"] == 20
+    assert derived["status"] == profile["status"] == entry["acquisition_status"] == "registered"
+    assert derived["dataset_version"] == entry["version"] == "2-derived-exact-dedup-v1"
+    assert derived["validation_summary"]["duplicate_row_count"] == 0
+    assert profile["contains_source_paths"] is False
     assert profile["promotable_for_training"] is False
 
 
@@ -262,7 +281,7 @@ def test_readiness_names_each_source_specific_blocker() -> None:
     assert sources["paysim"]["blockers"] == []
     assert sources["paysim"]["eligible_for_local_registration"] is True
     assert sources["momtsim-v1"]["blockers"] == []
-    assert sources["momtsim-v2"]["blockers"] == ["acquisition_status:quarantined"]
+    assert sources["momtsim-v2"]["blockers"] == []
     assert "written_access_approval_missing" in sources["stfd"]["blockers"]
     assert "participant_consent_evidence_missing" in sources["ghana-private"]["blockers"]
     assert sources["fsts"]["required"] is False
@@ -624,7 +643,7 @@ def test_cli_readiness_and_fail_closed_registration(tmp_path: Path, capsys) -> N
         )
         == 0
     )
-    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 2
+    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 3
 
     request_path = tmp_path / "invalid-request.json"
     request_path.write_text("{}", encoding="utf-8")

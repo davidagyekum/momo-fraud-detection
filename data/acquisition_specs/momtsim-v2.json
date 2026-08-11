@@ -19,16 +19,32 @@
     "encoding": "UTF-8 without BOM",
     "retained_v1_file_sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7"
   },
+  "derived_candidate": {
+    "dataset_version": "2-derived-exact-dedup-v1",
+    "transformation_version": "exact-row-first-occurrence-v1",
+    "preserved_row_policy": "first_occurrence_in_source_order",
+    "source_sha256": "99fd07c3a9d3c4bd6d3462240058ca19d0d9e9284683f78bf77542ff7fcc05e7",
+    "source_row_count": 4225958,
+    "output_sha256": "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd",
+    "output_size_bytes": 366396355,
+    "output_row_count": 4225938,
+    "removed_duplicate_row_count": 20,
+    "duplicate_group_count": 20,
+    "max_duplicate_group_size": 2,
+    "removed_positive_count": 0,
+    "derivation_manifest": "data/manifests/momtsim-v2-dedup-v1.derivation.json",
+    "derivation_manifest_sha256": "64c3924fcec35be44fb27e0b0ff356aac349d22c3d981db599790b1af9f305c2"
+  },
   "required_columns": ["step", "transactionType", "amount", "initiator", "oldBalInitiator", "newBalInitiator", "recipient", "oldBalRecipient", "newBalRecipient", "isFraud"],
   "label_column": "isFraud",
   "positive_values": ["1"],
   "step_column": "step",
   "amount_column": "amount",
-  "expected_row_count": 4225958,
+  "expected_row_count": 4225938,
   "expected_positive_count": 2233118,
   "expected_step_count": 193,
   "published_simulation_step_parameter": 720,
   "forbidden_primary_benchmark_columns": ["oldBalInitiator", "newBalInitiator", "oldBalRecipient", "newBalRecipient"],
   "required_semantic_roles": ["transaction_type", "amount", "initiator", "recipient", "initiator_balance", "recipient_balance", "fraud_label"],
-  "limitations": ["The exact official version-2 registration file identity and bounded aggregate profile were measured on 2026-08-11. The second file retained in the version-2 package is byte-identical to the registered v1 candidate and is not a separate v2 training population."]
+  "limitations": ["The immutable official version-2 CSV remains quarantined for 20 exact duplicate rows. This separately versioned candidate deterministically preserves the first occurrence of each exact row, removes no fraud-positive rows and remains non-promotable pending full registration and later governed splits."]
 }

@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-08-11T08:10:00Z",
+  "dataset_id": "momtsim-v2",
+  "dataset_version": "2-derived-exact-dedup-v1",
+  "file_count": 1,
+  "inventory_sha256": "4831802a6e60b57f6512f99f65c4fe19c96f6f6ede044ddf3b13b07232a8afa0",
+  "network_acquisition_executed": false,
+  "promotable_for_training": false,
+  "quarantine_reasons": [],
+  "request_sha256": "f1ac3966e312884dc027d218b8518aa446b67b267d04a9ad1b85b66b38dab17f",
+  "schema_version": "dataset-registration-manifest-v1",
+  "source_bytes_committed": false,
+  "source_kind": "file",
+  "source_sha256": "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd",
+  "source_size_bytes": 366396355,
+  "status": "registered",
+  "validation_spec_sha256": "0d21b3803fc0a15a7e98b7078b272afc829b9ffe7c4c8b34b232cc9e26172d35",
+  "validation_summary": {
+    "dataset_kind": "transaction_csv",
+    "duplicate_row_count": 0,
+    "forbidden_primary_benchmark_columns": [
+      "oldBalInitiator",
+      "newBalInitiator",
+      "oldBalRecipient",
+      "newBalRecipient"
+    ],
+    "invalid_amount_count": 0,
+    "invalid_label_count": 0,
+    "null_cell_count": 0,
+    "positive_count": 2233118,
+    "row_count": 4225938,
+    "step_count": 193
+  }
+}

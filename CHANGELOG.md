@@ -7,6 +7,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 - Verified the canonical PaySim author listing, CC BY-SA 4.0 licence and Kaggle Version 2/platform conditions, then acquired the official signed-in archive into private Drive storage with exact source/member identity.
 - Registered PaySim in owner-operated Colab after exact identity, schema, row, class, step, duplicate, null, label and amount validation; recorded content-addressed manifest/profile evidence while keeping the dataset disabled and non-promotable. No raw bytes entered Git and no training occurred.
 - Acquired the official Mendeley DOI v1/v2 packages through Chrome into private storage, established exact package/file hashes and version mapping, registered v1 after complete validation, and preserved v2's fail-closed quarantine after the validator found 20 exact duplicate rows. Both remain disabled/non-promotable; no split or training occurred.
+- Added a strict local-only exact-row derivation contract and command, created a separately versioned first-occurrence MoMTSim v2 derivative, removed 20 negative duplicate occurrences across 20 two-row groups, and registered the fully revalidated 4,225,938-row result while preserving the official v2 quarantine. No raw/derived bytes entered Git and no split or training occurred.
 
 ### Fixed
 

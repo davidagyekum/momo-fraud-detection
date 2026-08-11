@@ -299,3 +299,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** MoMTSim v1 may proceed to later governed split design, but v2 cannot be used for splitting, fitting, evaluation or promotion. The 20 duplicate rows are a data-quality finding, not permission to bypass the acquisition gate. No raw duplicate values or identifiers are committed.
 - **Related requirements/phases:** Logical PR13-PR14, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-023, ADR-026.
 - **Supersedes:** None.
+
+## ADR-028 — Register a separately versioned deterministic MoMTSim v2 derivative
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Codex within ADR-023/ADR-026/ADR-027 and the measured derivation/registration evidence
+- **Context:** The immutable official MoMTSim v2 CSV is quarantined because it contains 20 exact duplicate rows. Aggregate-only analysis found 20 duplicate groups, each of size two; all 20 removable duplicate occurrences were negative-label rows. The official file otherwise matched its approved identity and validation specification.
+- **Options considered:** Weaken the duplicate validator; modify the official source in place; exclude v2 permanently; create a separately versioned, content-addressed first-occurrence derivative and validate it independently.
+- **Decision:** Preserve the official source and quarantine unchanged. Create version `2-derived-exact-dedup-v1` by retaining the first byte-identical row occurrence in original source order and omitting later exact occurrences. Require an immutable transformation manifest containing source/output hashes and sizes, row/class deltas, duplicate-group counts, policy/version, code/contract hashes and explicit false flags for network acquisition, splitting, training and promotion. Register the derivative only through the existing full validator under its own expected identity.
+- **Consequences:** The derivative contains 4,225,938 rows, retains all 2,233,118 positives, has zero exact duplicates and is registered under output SHA-256 `642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd`. It remains disabled and non-promotable. Registration does not authorize PR14 splits or FULL training, and future source-group-first split design must treat the source and derivative as the same lineage. Raw source/derived bytes and private requests remain outside Git.
+- **Related requirements/phases:** Logical PR13-PR14, NFR-AUD-001, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-023, ADR-026, ADR-027.
+- **Supersedes:** None; implements the separately reviewed derivation path required by ADR-027.

@@ -18,10 +18,10 @@
 - PR13 MoMTSim acquisition/registration evidence SHA: `91da9dd3841cca880974c5cbfc76bd82acddf07d`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
-- CI status: `Logical PR13 registered ML gate passes locally with 311 tests at 90.53% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR13 registered ML gate passes locally with 330 tests at 91.06% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; PaySim and MoMTSim v1 registered, MoMTSim v2 quarantined for 20 exact duplicate rows, and three image sources retain separate gates`
-- Next exact task: `Review and implement a content-addressed deterministic MoMTSim v2 derived-dataset policy before any deduplication/re-registration, while keeping v2 disabled and preserving the immutable quarantine evidence.`
+- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; PaySim, MoMTSim v1 and a separately versioned MoMTSim v2 derivative are registered, the official v2 quarantine is preserved, and three image sources retain separate gates`
+- Next exact task: `Review STFD's authoritative access terms, exact version and image/mask/group layout before any acquisition; keep FSTS optional and Ghana-private behind consent/private-index gates.`
 
 ## PR10-PR13 reconciliation status
 
@@ -33,14 +33,14 @@
 
 ## Logical PR13 dataset acquisition and validation
 
-- Readiness: deterministic metadata-only inventory reports PaySim and MoMTSim v1 `registered`, MoMTSim v2 `quarantined`, and STFD/FSTS/Ghana-private `not_acquired`; all six sources remain disabled.
+- Readiness: deterministic metadata-only inventory reports PaySim, MoMTSim v1 and the separately versioned MoMTSim v2 derivative `registered`, with STFD/FSTS/Ghana-private `not_acquired`; all six sources remain disabled and the official v2 quarantine remains preserved outside the registry candidate.
 - Registration: strict request/manifest contracts, approved-root confinement, content-addressed file/directory/ZIP inventory, transaction/image validators, redacted safe profiles and non-mutating quarantine are implemented without a network client.
 - Hostile-input controls: path traversal, symlink substitution, duplicate normalised ZIP members, archive expansion, malformed/oversized images, schema/count/class drift, mask pairing and identity mismatches fail closed.
-- Evidence boundary: PaySim's corrected owner-operated Colab run registered 6,362,620 rows. Official Mendeley browser acquisition then established exact v1/v2 package/file hashes and schemas: v1 registered at 1,720,181 rows with zero duplicates; v2 matched 4,225,958 rows but quarantined for 20 exact duplicates. Safe evidence is in `docs/evidence/PR13_MOMTSIM_ACQUISITION_REGISTRATION.json`; STFD, FSTS and Ghana-private retain separate access/terms/consent gates.
+- Evidence boundary: PaySim's corrected owner-operated Colab run registered 6,362,620 rows. Official Mendeley browser acquisition established exact v1/v2 identities: v1 registered at 1,720,181 rows; official v2 matched 4,225,958 rows but remains quarantined for 20 exact duplicates. ADR-028's separate first-occurrence derivative contains 4,225,938 rows, retains all 2,233,118 positives and passed independent registration with zero duplicates. Safe evidence is in `docs/evidence/PR13_MOMTSIM_ACQUISITION_REGISTRATION.json` and `docs/evidence/PR13_MOMTSIM_V2_DEDUP_REGISTRATION.json`; STFD, FSTS and Ghana-private retain separate gates.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and registration-only; it cannot download, create splits, train, inspect locked tests or promote an artifact.
-- Honesty boundary: the first PaySim quarantine and MoMTSim v2 duplicate-row quarantine remain preserved. PaySim and MoMTSim v1 are registered but disabled/non-promotable; no split, training, locked-test, metric or promotion claim is made.
-- Verification: the registered ML gate passes format, lint, strict mypy, 311 tests at 90.53% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 484 candidates.
-- Current registry hash after MoMTSim acquisition/validation: `fee3a28144f43ffc0627fef3cac6197cdcda1d9a852dbd4d62b5395450982e43`.
+- Honesty boundary: the first PaySim quarantine and official MoMTSim v2 duplicate-row quarantine remain preserved. All three registered structured candidates are disabled/non-promotable; no split, training, locked-test, metric or promotion claim is made.
+- Verification: the registered ML gate passes format, lint, strict mypy, 330 tests at 91.06% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 493 candidates.
+- Current registry hash after the separately versioned MoMTSim v2 derivative registration: `5dc39d01d81ddc702b3c4a653f73924b7c355aa4d9d62bf8adc191a20d8e6960`.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -105,7 +105,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-11 — PaySim and MoMTSim v1 registered; MoMTSim v2 exact identity preserved under duplicate-row quarantine; all sources disabled and no training occurred`
+- Traceability file last verified: `2026-08-11 — PaySim, MoMTSim v1 and the separately versioned v2 derivative registered; official v2 quarantine preserved; all sources disabled and no training occurred`
 
 ## Current blockers
 
@@ -114,7 +114,6 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
-| PR13-MOMTSIM-V2-DUPLICATES | Logical PR13 | The exact official v2 CSV contains 20 exact duplicate rows and is quarantined. | v2 cannot enter splits, fitting, evaluation or promotion. | Preserve official bytes and quarantine evidence; use only registered PaySim/MoMTSim v1 for later governed design. | Codex/data steward reviews a content-addressed derived-dataset policy. | Define deterministic deduplication provenance and revalidation without mutating the source. |
 | PR13-DATA-RIGHTS | Logical PR13 | STFD, FSTS and Ghana-private retain access/terms/consent and layout prerequisites. | PR13 cannot complete and PR14 frozen splits cannot start. | Keep all three entries disabled/not acquired. | Project owner/data steward follows `data/ACQUISITION_REGISTRATION_RUNBOOK.md`. | Review each remaining image source separately before acquisition. |
 
 ## Active known limitations

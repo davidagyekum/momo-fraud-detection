@@ -1,6 +1,6 @@
 {
-  "blocked_source_count": 4,
-  "eligible_source_count": 2,
+  "blocked_source_count": 3,
+  "eligible_source_count": 3,
   "foundation_version": "dataset-acquisition-foundation-v1",
   "network_acquisition_executed": false,
   "schema_version": "dataset-acquisition-readiness-v1",
@@ -43,12 +43,10 @@
       "validation_spec_status": "ready"
     },
     {
-      "acquisition_status": "quarantined",
-      "blockers": [
-        "acquisition_status:quarantined"
-      ],
+      "acquisition_status": "registered",
+      "blockers": [],
       "dataset_id": "momtsim-v2",
-      "eligible_for_local_registration": false,
+      "eligible_for_local_registration": true,
       "enabled": false,
       "required": true,
       "validation_spec_status": "ready"

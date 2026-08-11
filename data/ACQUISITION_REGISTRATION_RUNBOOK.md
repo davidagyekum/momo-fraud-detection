@@ -8,12 +8,12 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 |---|---|
 | PaySim | Registered from the author-owned Kaggle Version 2 archive after CC BY-SA 4.0/platform review. Exact source, inventory, registration-manifest and safe-profile hashes are recorded; the first quarantine remains preserved. The source stays disabled/non-promotable pending PR14 frozen splits. |
 | MoMTSim v1 | Registered from the official DOI version-1 package after exact filename, byte size, SHA-256, UTF-8 header and aggregate validation. It remains disabled/non-promotable pending PR14 frozen splits. |
-| MoMTSim v2 | Exact official identity and aggregates are established, but the immutable source is quarantined because the validator found 20 exact duplicate rows. A reviewed deterministic derived-dataset policy is required before any clean candidate may register. |
+| MoMTSim v2 | The immutable official source remains quarantined for 20 exact duplicate rows. ADR-028 records a separate content-addressed first-occurrence derivative that removed 20 negative duplicate occurrences and passed full registration with zero duplicates; it remains disabled/non-promotable pending PR14 splits. |
 | STFD | Written academic access approval, licence/restrictions, exact archive/version identity, and authoritative image/mask/grouping layout. |
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |
 
-Until those conditions are recorded, the matching registry entry stays disabled. PaySim and MoMTSim v1 are registered but non-promotable. MoMTSim v2 is quarantined, and STFD, FSTS and Ghana-private remain `not_acquired` behind their separate prerequisites. Project-owner permission does not by itself establish third-party licence or redistribution rights.
+Until those conditions are recorded, the matching registry entry stays disabled. PaySim, MoMTSim v1 and the separately versioned MoMTSim v2 derivative are registered but non-promotable. The official v2 quarantine remains preserved, and STFD, FSTS and Ghana-private remain `not_acquired` behind their separate prerequisites. Project-owner permission does not by itself establish third-party licence or redistribution rights.
 
 ## Safe readiness check
 
