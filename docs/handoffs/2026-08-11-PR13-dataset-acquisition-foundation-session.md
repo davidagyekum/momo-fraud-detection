@@ -8,10 +8,11 @@
 - Base branch: prior pushed logical PR12 branch head
 - Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
 - Work branch: `codex/p13-dataset-acquisition-validation`
-- Final head SHA: `PENDING_FINAL_PIN_COMMIT`
+- Immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
+- Final head SHA: recorded by the final push report because a commit cannot contain its own SHA
 - Pull request: not created
-- Push status: pending final verification commit
-- Worktree status: pending final verification commit
+- Push status: final push follows the evidence-pin commit; exact output is reported to the owner
+- Worktree status: clean after the final evidence-pin commit is required
 
 ## Scope completed
 
@@ -102,9 +103,9 @@ Skipped/blocked checks and reason: no real-source registration, Colab byte valid
 ## Git evidence
 
 ```text
-git status --short: pending final clean-state verification
-git log --oneline 000bc65983d242cac8a8806a0cb116373bbcb4c2..HEAD: pending
-push output: pending
+git status --short: must be empty after the final evidence-pin commit
+git log --oneline 000bc65983d242cac8a8806a0cb116373bbcb4c2..HEAD: includes aad3f01 feat(data): add governed acquisition validation, followed by the evidence-pin commit
+push output: reported separately after the final push
 ```
 
 ## Next exact task

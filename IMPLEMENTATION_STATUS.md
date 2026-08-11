@@ -8,9 +8,10 @@
 - Default branch: `main`
 - Current work branch: `codex/p13-dataset-acquisition-validation`
 - Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
+- PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
-- CI status: `Logical PR12 registered ML gate passes locally; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR13 registered ML gate passes locally with 307 tests at 90.50% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
 - Current phase: `Logical PR13 dataset acquisition and validation — In Progress; no-network registration foundation complete locally, all six real-source gates unresolved`
 - Next exact task: `Obtain accountable authoritative permission/licence/consent, exact version identity and source schema/layout evidence for one canonical source; update its registry/spec in review, then run owner-operated Colab registration against an approved private path. Do not download or open source bytes before that gate passes.`
