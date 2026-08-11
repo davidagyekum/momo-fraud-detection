@@ -189,6 +189,22 @@ def test_committed_readiness_matches_recorded_report_without_opening_bytes() -> 
     ) == readiness_markdown(report)
 
 
+def test_paysim_spec_matches_observed_canonical_archive_profile() -> None:
+    spec = json.loads((DATA_ROOT / "acquisition_specs/paysim.json").read_text(encoding="utf-8"))
+    assert spec["approved_source"] == {
+        "canonical_locator": "kaggle:ealaxi/paysim1",
+        "kaggle_dataset_version": 2,
+        "archive_filename": "paysim-ealaxi-v2-f7eef9ffad5c.zip",
+        "archive_sha256": ("f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d"),
+        "archive_size_bytes": 186385561,
+        "entrypoint": "PS_20174392719_1491204439457_log.csv",
+        "entrypoint_size_bytes": 493534783,
+    }
+    assert spec["expected_row_count"] == 6362620
+    assert spec["expected_positive_count"] == 8213
+    assert spec["expected_step_count"] == 743
+
+
 def test_acquisition_contracts_are_strict_json_schema_2020_12() -> None:
     contract_root = REPOSITORY_ROOT / "ml/contracts"
     for name in (

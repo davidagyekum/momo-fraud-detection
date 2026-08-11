@@ -263,3 +263,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** PaySim becomes the sole source eligible for local registration. It remains disabled, `not_acquired` and non-promotable until official bytes are obtained, hash-verified and validated. The other five source gates are unchanged. The review is an engineering governance determination, not legal advice.
 - **Related requirements/phases:** Logical PR13, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-021, ADR-023.
 - **Supersedes:** None.
+
+## ADR-025 — Reconcile PaySim to 743 observed unique steps
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Codex within ADR-023/ADR-024 and the measured fail-closed registration evidence
+- **Context:** The first owner-operated Colab registration of the exact approved PaySim Version 2 archive matched its SHA-256, byte size, member identity, 6,362,620 rows, 8,213 positives, schema, labels, amounts, null count and duplicate count, but quarantined because the blueprint-derived validation specification expected 744 unique steps. The validator measured 743. An independent aggregate-only pass over the same hash-verified local archive measured the complete contiguous range 1 through 743 with no missing values.
+- **Options considered:** Accept the quarantined archive despite the mismatch; seek a different archive or mirror; correct the non-authoritative count assumption and rerun the same fail-closed registration.
+- **Decision:** Keep the archive identity fixed and change only `expected_step_count` from 744 to 743. Preserve the first quarantine manifest as audit evidence and require a fresh owner-operated Colab registration at a new immutable code commit. Do not weaken any other identity, schema, count, class, duplicate, null or invalid-value check.
+- **Consequences:** This is a metadata correction, not dataset substitution or a bypass. PaySim remains disabled and non-promotable until the corrected registration produces `status: registered`. The lower-precedence blueprint's approximate 744-step statement is recorded as reconciled rather than silently changed.
+- **Related requirements/phases:** Logical PR13, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-023, ADR-024.
+- **Supersedes:** Only the PaySim unique-step expectation derived from the logical PR13 blueprint; no fixed product/API/database contract changes.

@@ -14,7 +14,8 @@ The reviewed canonical listing is [Synthetic Financial Datasets For Fraud Detect
 - Kaggle dataset Version 2;
 - one file, `PS_20174392719_1491204439457_log.csv`;
 - displayed size 493.53 MB;
-- a 744-step simulation;
+- hourly simulation steps (the downloaded canonical archive was later measured as
+  the complete contiguous range `1..743`, or 743 unique step values);
 - citation to E. A. Lopez-Rojas, A. Elmir and S. Axelsson, “PaySim: A financial mobile money simulator for fraud detection,” 28th EMSS, 2016;
 - CC BY-SA 4.0 as the dataset licence.
 

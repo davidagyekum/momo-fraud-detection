@@ -3,7 +3,8 @@
 - Acquisition date: 2026-08-11
 - Method: official signed-in Kaggle Dataset Version 2 ZIP download from `https://www.kaggle.com/datasets/ealaxi/paysim1`
 - Network acquisition executed: true
-- Raw records inspected: false
+- Raw records inspected: true, by the bounded registration validator and an
+  independent aggregate-only local recheck
 - Training executed: false
 - Promotion executed: false
 
@@ -19,4 +20,12 @@
 - Member compressed size: `186385351` bytes
 - Member ZIP timestamp: `2019-09-20T12:26:28+01:00`
 
-The archive was hashed as downloaded and its central directory was inspected without extraction. Row/schema/class/duplicate validation remains pending the pinned owner-operated Colab registration notebook. Raw bytes stay outside Git, and the repository records only this identity evidence.
+The archive was hashed as downloaded and its central directory was inspected
+without extraction. The first owner-operated Colab registration attempt verified
+the archive identity, schema, `6362620` rows, `8213` positives, zero exact
+duplicates, zero null cells, zero invalid labels and zero invalid amounts. It
+quarantined only because the predeclared metadata expected 744 unique steps while
+the canonical archive contains the contiguous range `1..743` (743 unique values).
+An independent aggregate-only local pass reproduced the same row, positive and
+step counts. No raw value, identifier or transaction row entered Git. See
+`docs/evidence/PR13_PAYSIM_STEP_COUNT_RECONCILIATION.md`.

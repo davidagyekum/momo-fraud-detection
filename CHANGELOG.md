@@ -9,6 +9,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ### Fixed
 
+- Corrected the PaySim canonical archive expectation from 744 to 743 unique steps after the first fail-closed Colab registration and an independent aggregate-only recheck both measured the complete contiguous range `1..743`; all other identity and validation gates remain unchanged.
 - Colab notebooks now add the checked-out `ml/src` tree to the live kernel import path after editable installation, preventing a clean-session `ModuleNotFoundError` before preflight.
 
 ### Added
