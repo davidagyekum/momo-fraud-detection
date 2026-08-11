@@ -7,7 +7,7 @@
   "notebook_hashes": {
     "00_environment_preflight.ipynb": "ba342fd10400c0acb983fe8b2b99404c82289849a26d317ca7fc46e69394cd6c",
     "01_tiny_restart_safe_smoke.ipynb": "5040f5a4cb28c32e4f6e2845d27ceb57db8159334152a44eeb8bae8e89af4039",
-    "02_dataset_acquisition_validation.ipynb": "c0ba2337b05a756fa76aa0747530d4d989b5fcc2c4c96159a1da21c28da57751",
+    "02_dataset_acquisition_validation.ipynb": "04d636c3436ffccdf6aadb6b46eb0cf42771dd87688b726909955d3b8addc4ac",
     "NOTEBOOK_TEMPLATE.ipynb": "7ef13c424fbd382e22384229fa3123236ddc55924aad4b465e0aa96d44e3bbc5"
   },
   "outputs_stripped": true,

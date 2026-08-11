@@ -9,6 +9,7 @@
 - Current work branch: `codex/p13-dataset-acquisition-validation`
 - Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
+- PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 307 tests at 90.50% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -123,16 +124,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-dataset-acquisition-foundation-session.md`
-- Summary: `Implemented and verified the logical PR13 no-network registration/validation foundation; all six real sources remain disabled and unacquired pending accountable source-rights and schema evidence.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-paysim-rights-review-session.md`
+- Summary: `Verified the canonical PaySim Version 2 source/licence/platform conditions and made PaySim eligible for official local registration; no bytes were downloaded and the owner's Kaggle sign-in is the next gate.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-11-PR13-dataset-acquisition-foundation-session.md`, `data/ACQUISITION_REGISTRATION_RUNBOOK.md` and `docs/security/PR13_ACQUISITION_THREAT_MODEL.md`.
+3. Read `docs/handoffs/2026-08-11-PR13-paysim-rights-review-session.md`, `docs/evidence/PR13_PAYSIM_SOURCE_RIGHTS_REVIEW.md` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
 4. Confirm branch `codex/p13-dataset-acquisition-validation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
-7. Review the six-source readiness report. Keep every source disabled until an accountable reviewer supplies all source-specific permission/licence/consent, version and schema/layout evidence.
-8. After one source becomes eligible through a separate reviewed registry/spec update, run only its owner-operated Colab registration from an approved private root. Do not access locked tests or execute FULL training.
+7. Preserve PaySim as eligible but disabled/unacquired. The owner must sign in to Kaggle in Chrome before the canonical Version 2 official download; never scrape or use a mirror.
+8. After download, record exact SHA-256/byte size and run only PaySim owner-operated Colab registration from an approved private root. Do not access locked tests or execute FULL training.
