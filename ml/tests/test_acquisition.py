@@ -222,12 +222,12 @@ def test_momtsim_specs_freeze_official_identity_and_observed_profiles() -> None:
     )
 
 
-def test_stfd_spec_freezes_metadata_without_opening_or_approving_archive() -> None:
+def test_stfd_spec_freezes_metadata_with_owner_permission_but_without_registration() -> None:
     spec = json.loads((DATA_ROOT / "acquisition_specs/stfd.json").read_text(encoding="utf-8"))
     registry = json.loads((DATA_ROOT / "registry.yaml").read_text(encoding="utf-8"))
     entry = next(item for item in registry["datasets"] if item["dataset_id"] == "stfd")
     source = spec["approved_source_metadata"]
-    assert spec["status"] == "pending_written_access_and_group_mapping"
+    assert spec["status"] == "archive_identity_validated_pending_extraction_and_group_mapping"
     assert source["repository_revision"] == "9edebed2109052a77e9a5581c2ea7ce33d685da0"
     assert source["archive_size_bytes"] == 2941753426
     assert source["archive_lfs_sha256"] == (
@@ -235,8 +235,8 @@ def test_stfd_spec_freezes_metadata_without_opening_or_approving_archive() -> No
     )
     assert spec["pairing_rule"] == "same_filename_within_tampering_directory"
     assert len(spec["tampering_directories"]) == 5
-    assert entry["acquisition_status"] == "not_acquired"
-    assert entry["permission_status"] == "access_request_required"
+    assert entry["acquisition_status"] == "acquired_pending_registration"
+    assert entry["permission_status"] == "approved"
     assert entry["enabled"] is False
 
 
@@ -300,10 +300,11 @@ def test_readiness_names_each_source_specific_blocker() -> None:
     assert sources["paysim"]["eligible_for_local_registration"] is True
     assert sources["momtsim-v1"]["blockers"] == []
     assert sources["momtsim-v2"]["blockers"] == []
-    assert "written_access_approval_missing" in sources["stfd"]["blockers"]
+    assert "written_access_approval_missing" not in sources["stfd"]["blockers"]
+    assert "permission_status:access_request_required" not in sources["stfd"]["blockers"]
     assert "licence_status:unverified" not in sources["stfd"]["blockers"]
     assert (
-        "validation_spec_status:pending_written_access_and_group_mapping"
+        "validation_spec_status:archive_identity_validated_pending_extraction_and_group_mapping"
         in sources["stfd"]["blockers"]
     )
     assert "participant_consent_evidence_missing" in sources["ghana-private"]["blockers"]

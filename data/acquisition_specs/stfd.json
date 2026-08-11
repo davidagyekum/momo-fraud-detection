@@ -1,7 +1,7 @@
 {
   "schema_version": "dataset-validation-spec-v1",
   "dataset_id": "stfd",
-  "status": "pending_written_access_and_group_mapping",
+  "status": "archive_identity_validated_pending_extraction_and_group_mapping",
   "dataset_kind": "image_collection",
   "approved_source_metadata": {
     "canonical_locator": "huggingface:Zegkim/STFD",

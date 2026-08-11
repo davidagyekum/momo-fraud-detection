@@ -1,7 +1,7 @@
 # Logical PR13 STFD source and access review
 
 Date reviewed: 2026-08-11  
-Review scope: authoritative public metadata only; no archive/sample download, extraction, image opening, splitting or training
+Initial review scope: authoritative public metadata only. The 2026-08-11 owner-attestation addendum authorizes a private pinned transfer; extraction, image opening, splitting and training remain outside this review.
 
 ## Canonical source identity
 
@@ -22,7 +22,7 @@ The revision, last-modified value, archive filename, byte size and LFS object ha
 
 The Hugging Face metadata displays `cc-by-4.0`. Its dataset card adds narrower conditions: academic research only, attribution/citation, an access-password request sent from an academic or institutional email with researcher/supervisor/purpose details, and a request not to redistribute images because unintended information leakage may remain. The official project repository announced a public release on 2026-03-06 and currently displays an extraction password, which conflicts with the dataset card's email-request instruction.
 
-Decision: follow the stricter current dataset-card notice. The academic/no-redistribution licence conditions are recorded as verified, but permission remains `access_request_required`. A publicly visible password is not treated as project-specific written approval. No password or access correspondence belongs in Git; only an opaque approval reference may be recorded after the owner receives it.
+Decision: follow the stricter current dataset-card notice. The academic/no-redistribution licence conditions are recorded as verified. On 2026-08-11 the project owner explicitly attested that the project has permission; the repository records only opaque reference `OWNER_ATTESTATION_STFD_20260811`, with no password, email or personal details. Permission is therefore `approved`, but bytes remain unregistered/non-promotable until identity, hostile-archive, image/mask and lineage-grouping checks pass.
 
 ## Authoritative published layout
 
@@ -51,10 +51,26 @@ No STFD split may be created from filenames alone.
 ## Current outcome
 
 - Licence/restrictions: verified under the stricter academic/no-redistribution notice
-- Permission: access request required
+- Permission: approved by opaque project-owner attestation `OWNER_ATTESTATION_STFD_20260811`
 - Exact version/archive metadata: recorded
 - Image/mask pairing: recorded
 - Leakage-safe group mapping: pending
-- Acquisition status: `not_acquired`
+- Acquisition status: `acquired_pending_registration`; the private archive is 2,941,753,426 bytes and its SHA-256 matches `6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c`
 - Enabled/promotable: false
-- Network acquisition, archive opening, splits, locked-test access and training executed by this review: false
+- Network acquisition: true, through a resumable transfer from the exact pinned official URL into restricted private storage
+- Central-directory aggregate review: true; encrypted payload extraction, image decoding, splits, locked-test access and training: false
+
+## Safe aggregate archive evidence
+
+The completed encrypted ZIP contains 7,865 files and 19 directory entries. All 7,865 file payloads are encrypted. The central-directory review found zero unsafe paths, zero duplicate normalized paths, 7,864 PNG members and one metadata document. Total declared uncompressed size is 2,999,173,049 bytes; the largest member is 4,170,908 bytes. Both the 100,000-member and 100 GiB declared-size safety caps pass.
+
+| Category | Tampered images | Masks | Complete pairs | Missing masks | Orphan masks |
+|---|---:|---:|---:|---:|---:|
+| Copy-move | 758 | 758 | 758 | 0 | 0 |
+| Splicing | 830 | 830 | 830 | 0 | 0 |
+| Removal | 1,016 | 1,016 | 1,016 | 0 | 0 |
+| Insertion | 701 | 701 | 701 | 0 | 0 |
+| Replacement | 627 | 627 | 627 | 0 | 0 |
+| **Total** | **3,932** | **3,932** | **3,932** | **0** | **0** |
+
+No raw member name, password, archive byte, screenshot or mask is committed. Central-directory pairing proves structural completeness only; it does not prove decoded image integrity, binary-mask values or independent source lineage.

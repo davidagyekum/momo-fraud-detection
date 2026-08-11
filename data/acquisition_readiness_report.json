@@ -61,17 +61,15 @@
       "validation_spec_status": "ready"
     },
     {
-      "acquisition_status": "not_acquired",
+      "acquisition_status": "acquired_pending_registration",
       "blockers": [
-        "permission_status:access_request_required",
-        "validation_spec_status:pending_written_access_and_group_mapping",
-        "written_access_approval_missing"
+        "validation_spec_status:archive_identity_validated_pending_extraction_and_group_mapping"
       ],
       "dataset_id": "stfd",
       "eligible_for_local_registration": false,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "pending_written_access_and_group_mapping"
+      "validation_spec_status": "archive_identity_validated_pending_extraction_and_group_mapping"
     }
   ],
   "training_executed": false

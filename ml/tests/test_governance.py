@@ -70,9 +70,8 @@ def test_registry_has_exact_sources_cards_schemas_and_explicit_restrictions() ->
     assert states["paysim"] == "registered"
     assert states["momtsim-v1"] == "registered"
     assert states["momtsim-v2"] == "registered"
-    assert all(
-        states[dataset_id] == "not_acquired" for dataset_id in ("stfd", "fsts", "ghana-private")
-    )
+    assert states["stfd"] == "acquired_pending_registration"
+    assert all(states[dataset_id] == "not_acquired" for dataset_id in ("fsts", "ghana-private"))
     assert all(
         isinstance(entry, dict) and entry["redistribution"] in {"blocked", "internal_only"}
         for entry in entries
