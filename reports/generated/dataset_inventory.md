@@ -9,7 +9,7 @@
 | momtsim-v1 | yes | yes | registered | none |
 | momtsim-v2 | yes | yes | registered | none |
 | paysim | yes | yes | registered | none |
-| stfd | yes | no | not_acquired | licence_status:unverified, permission_status:access_request_required, validation_spec_status:pending_written_access_and_layout, written_access_approval_missing |
+| stfd | yes | no | not_acquired | permission_status:access_request_required, validation_spec_status:pending_written_access_and_group_mapping, written_access_approval_missing |
 
 Eligible: 3 / 6.
 

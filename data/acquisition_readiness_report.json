@@ -63,16 +63,15 @@
     {
       "acquisition_status": "not_acquired",
       "blockers": [
-        "licence_status:unverified",
         "permission_status:access_request_required",
-        "validation_spec_status:pending_written_access_and_layout",
+        "validation_spec_status:pending_written_access_and_group_mapping",
         "written_access_approval_missing"
       ],
       "dataset_id": "stfd",
       "eligible_for_local_registration": false,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "pending_written_access_and_layout"
+      "validation_spec_status": "pending_written_access_and_group_mapping"
     }
   ],
   "training_executed": false

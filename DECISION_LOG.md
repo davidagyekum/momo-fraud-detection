@@ -311,3 +311,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** The derivative contains 4,225,938 rows, retains all 2,233,118 positives, has zero exact duplicates and is registered under output SHA-256 `642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd`. It remains disabled and non-promotable. Registration does not authorize PR14 splits or FULL training, and future source-group-first split design must treat the source and derivative as the same lineage. Raw source/derived bytes and private requests remain outside Git.
 - **Related requirements/phases:** Logical PR13-PR14, NFR-AUD-001, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-023, ADR-026, ADR-027.
 - **Supersedes:** None; implements the separately reviewed derivation path required by ADR-027.
+
+## ADR-029 — Follow STFD's stricter access notice and freeze metadata only
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Codex within ADR-021/ADR-023 and the current authoritative STFD sources
+- **Context:** Hugging Face `Zegkim/STFD` is public/ungated and labels the dataset CC BY 4.0, while its current card restricts use to academic research, requests an extraction-password application from an academic/institutional email and asks users not to redistribute images. The official STFL-Net repository separately published an extraction password on 2026-03-06. The public card documents five tampering directories and same-filename binary masks but not a leakage-safe source-lineage grouping key.
+- **Options considered:** Treat the public password as sufficient permission and download immediately; keep every STFD fact unverified; freeze exact public metadata while following the stricter access notice and retaining fail-closed acquisition/grouping gates.
+- **Decision:** Record Hugging Face revision `9edebed2109052a77e9a5581c2ea7ce33d685da0`, archive size 2,941,753,426 bytes and LFS SHA-256 `6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c`. Treat the academic/no-redistribution conditions as the effective licence scope, but keep permission `access_request_required` until the project owner receives written approval through the dataset card's stated channel. Do not download/open the archive or form splits until an authoritative or conservatively reviewed lineage grouping rule exists.
+- **Consequences:** STFD remains `not_acquired`, disabled and non-promotable even though its exact public archive identity and image/mask pairing are now known. A public password is not stored or treated as project-specific approval. Filename-level random splits are prohibited. The repository can validate future archive identity without exposing protected bytes.
+- **Related requirements/phases:** Logical PR13-PR15, NFR-DATA-001, NFR-AUD-001, FR-ML-005, FR-ML-006, ADR-019, ADR-021, ADR-023.
+- **Supersedes:** The blueprint's now-stale implication that STFD's archive identity/layout were wholly unknown; it does not supersede the written-access requirement.

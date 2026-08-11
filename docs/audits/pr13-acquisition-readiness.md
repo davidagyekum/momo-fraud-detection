@@ -13,7 +13,7 @@ The no-network registration and validation foundation is implemented and locally
 | PaySim | yes | ready; registered | disabled/non-promotable pending governed splits |
 | MoMTSim v1 | yes | ready; registered | disabled/non-promotable pending governed splits |
 | MoMTSim v2 | yes | derived version registered; official source quarantine preserved | disabled/non-promotable pending governed source-group-first splits |
-| STFD | yes | pending written access and layout | written access, terms/version and authoritative image/mask/group layout |
+| STFD | yes | exact source/archive and image/mask pairing recorded | written academic access approval and leakage-safe source-lineage grouping rule |
 | FSTS | no | optional; pending terms and layout | necessity decision, authoritative source/terms/version and subset/layout |
 | Ghana-private | yes | pending consent and private index | institutional/supervisor approval, participant consent, withdrawal index and restricted path |
 
@@ -34,8 +34,8 @@ The no-network registration and validation foundation is implemented and locally
 
 ## Verification evidence
 
-`.venv\Scripts\python.exe scripts\verify_ml.py` passed format, lint, strict mypy, 330 tests at 91.06% branch-aware coverage, governance/readiness/report/notebook drift checks and all controlled dataset checks. The final secret/prohibited-artifact scan passed over 494 candidates. Raw packages, official/derived CSVs and private requests remain ignored; only aggregate manifests/profiles and content hashes are committed.
+`.venv\Scripts\python.exe scripts\verify_ml.py` passed format, lint, strict mypy, 331 tests at 91.06% branch-aware coverage, governance/readiness/report/notebook drift checks and all controlled dataset checks. The secret/prohibited-artifact scan passed over 495 candidates before the final handoff. Raw packages, official/derived CSVs and private requests remain ignored; only aggregate manifests/profiles and content hashes are committed.
 
 ## Stop decision
 
-ADR-023 requires source-specific accountable evidence before any local/private source registration. ADR-027 preserves the official v2 quarantine, and ADR-028 records the separate derivative. Logical PR13 stays In Progress because STFD, FSTS and Ghana-private retain separate gates. Logical PR14 split work and all FULL training remain blocked until the remaining governance/data gates and frozen source-group-first split design are complete.
+ADR-023 requires source-specific accountable evidence before any local/private source registration. ADR-027 preserves the official v2 quarantine, ADR-028 records the separate derivative, and ADR-029 freezes STFD's public metadata while following its stricter access notice. Logical PR13 stays In Progress because STFD still needs written access/group mapping and FSTS/Ghana-private retain separate gates. Logical PR14 split work and all FULL training remain blocked until the remaining governance/data gates and frozen source-group-first split design are complete.

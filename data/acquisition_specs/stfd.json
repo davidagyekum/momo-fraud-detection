@@ -1,9 +1,24 @@
 {
   "schema_version": "dataset-validation-spec-v1",
   "dataset_id": "stfd",
-  "status": "pending_written_access_and_layout",
+  "status": "pending_written_access_and_group_mapping",
   "dataset_kind": "image_collection",
+  "approved_source_metadata": {
+    "canonical_locator": "huggingface:Zegkim/STFD",
+    "repository_revision": "9edebed2109052a77e9a5581c2ea7ce33d685da0",
+    "repository_last_modified": "2026-03-18T03:15:17Z",
+    "archive_filename": "STFD_ICASSP2023.zip",
+    "archive_size_bytes": 2941753426,
+    "archive_lfs_sha256": "6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c",
+    "repository_private": false,
+    "repository_gated": false
+  },
+  "tampering_directories": ["1_Copy-move", "2_Splicing", "3_Removal", "4_Insertion", "5_Replacement"],
+  "image_directory_name": "tamper",
+  "mask_directory_name": "masks",
+  "pairing_rule": "same_filename_within_tampering_directory",
+  "mask_values": [0, 255],
   "allowed_image_extensions": [".jpg", ".jpeg", ".png", ".webp"],
   "requires_masks": true,
-  "limitations": ["Authoritative image/mask naming and grouping rules must be recorded after written access approval; no archive or sample may enter Git."]
+  "limitations": ["The exact public repository revision and encrypted archive identity are frozen, but the current dataset card still asks researchers to request the password from an academic or institutional email address.", "The public structure documents same-name image/mask pairing across five tampering types but does not publish a source-lineage grouping key suitable for leakage-safe splitting.", "No archive, password, sample, member name, screenshot or mask may enter Git or a public report."]
 }

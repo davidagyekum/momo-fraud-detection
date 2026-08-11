@@ -26,6 +26,6 @@
 ## Residual risks and required human controls
 
 - Code cannot decide whether third-party terms permit the intended use; an accountable reviewer must record the authoritative decision.
-- Current MoMTSim, STFD and FSTS layouts are intentionally pending rather than guessed.
+- STFD image/mask pairing is documented at an exact public revision, but source-lineage grouping remains pending rather than guessed. FSTS layout remains pending; preserved MoMTSim source/derivative identities are recorded separately.
 - Ghana-private consent, withdrawal linkage and institutional approval remain external human-governance processes.
 - A valid hash proves byte identity, not legality, representativeness, label quality or absence of sensitive content.

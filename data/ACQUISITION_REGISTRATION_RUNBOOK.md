@@ -9,7 +9,7 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 | PaySim | Registered from the author-owned Kaggle Version 2 archive after CC BY-SA 4.0/platform review. Exact source, inventory, registration-manifest and safe-profile hashes are recorded; the first quarantine remains preserved. The source stays disabled/non-promotable pending PR14 frozen splits. |
 | MoMTSim v1 | Registered from the official DOI version-1 package after exact filename, byte size, SHA-256, UTF-8 header and aggregate validation. It remains disabled/non-promotable pending PR14 frozen splits. |
 | MoMTSim v2 | The immutable official source remains quarantined for 20 exact duplicate rows. ADR-028 records a separate content-addressed first-occurrence derivative that removed 20 negative duplicate occurrences and passed full registration with zero duplicates; it remains disabled/non-promotable pending PR14 splits. |
-| STFD | Written academic access approval, licence/restrictions, exact archive/version identity, and authoritative image/mask/grouping layout. |
+| STFD | Exact Hugging Face revision/archive identity and image/mask pairing are recorded. Still required: written academic access approval from the dataset owner and an authoritative/reviewed source-lineage grouping rule; do not rely on filenames as independent split groups. |
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |
 

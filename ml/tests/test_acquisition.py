@@ -222,6 +222,24 @@ def test_momtsim_specs_freeze_official_identity_and_observed_profiles() -> None:
     )
 
 
+def test_stfd_spec_freezes_metadata_without_opening_or_approving_archive() -> None:
+    spec = json.loads((DATA_ROOT / "acquisition_specs/stfd.json").read_text(encoding="utf-8"))
+    registry = json.loads((DATA_ROOT / "registry.yaml").read_text(encoding="utf-8"))
+    entry = next(item for item in registry["datasets"] if item["dataset_id"] == "stfd")
+    source = spec["approved_source_metadata"]
+    assert spec["status"] == "pending_written_access_and_group_mapping"
+    assert source["repository_revision"] == "9edebed2109052a77e9a5581c2ea7ce33d685da0"
+    assert source["archive_size_bytes"] == 2941753426
+    assert source["archive_lfs_sha256"] == (
+        "6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c"
+    )
+    assert spec["pairing_rule"] == "same_filename_within_tampering_directory"
+    assert len(spec["tampering_directories"]) == 5
+    assert entry["acquisition_status"] == "not_acquired"
+    assert entry["permission_status"] == "access_request_required"
+    assert entry["enabled"] is False
+
+
 def test_committed_momtsim_v1_evidence_is_safe_and_matches_registry() -> None:
     dataset_id = "momtsim-v1"
     manifest = load_registration_manifest(DATA_ROOT / "manifests/momtsim-v1.manifest.json")
@@ -283,6 +301,11 @@ def test_readiness_names_each_source_specific_blocker() -> None:
     assert sources["momtsim-v1"]["blockers"] == []
     assert sources["momtsim-v2"]["blockers"] == []
     assert "written_access_approval_missing" in sources["stfd"]["blockers"]
+    assert "licence_status:unverified" not in sources["stfd"]["blockers"]
+    assert (
+        "validation_spec_status:pending_written_access_and_group_mapping"
+        in sources["stfd"]["blockers"]
+    )
     assert "participant_consent_evidence_missing" in sources["ghana-private"]["blockers"]
     assert sources["fsts"]["required"] is False
 
