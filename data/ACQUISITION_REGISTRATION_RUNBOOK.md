@@ -13,7 +13,7 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |
 
-Until those conditions are recorded, the matching registry entry stays disabled and `not_acquired`. PaySim is now eligible for local registration but remains disabled and `not_acquired` until official bytes are hash-verified and validated. Project-owner permission does not by itself establish third-party licence or redistribution rights.
+Until those conditions are recorded, the matching registry entry stays disabled and `not_acquired`. PaySim is now `acquired_pending_registration`: the official archive is hash-verified in private Drive storage, but row/schema/class validation must pass before it can become registered. Project-owner permission does not by itself establish third-party licence or redistribution rights.
 
 ## Safe readiness check
 

@@ -1,8 +1,17 @@
 {
   "schema_version": "dataset-validation-spec-v1",
   "dataset_id": "paysim",
-  "status": "ready_after_governance_approval",
+  "status": "ready",
   "dataset_kind": "transaction_csv",
+  "approved_source": {
+    "canonical_locator": "kaggle:ealaxi/paysim1",
+    "kaggle_dataset_version": 2,
+    "archive_filename": "paysim-ealaxi-v2-f7eef9ffad5c.zip",
+    "archive_sha256": "f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d",
+    "archive_size_bytes": 186385561,
+    "entrypoint": "PS_20174392719_1491204439457_log.csv",
+    "entrypoint_size_bytes": 493534783
+  },
   "required_columns": ["step", "type", "amount", "nameOrig", "oldbalanceOrg", "newbalanceOrig", "nameDest", "oldbalanceDest", "newbalanceDest", "isFraud", "isFlaggedFraud"],
   "label_column": "isFraud",
   "positive_values": ["1"],

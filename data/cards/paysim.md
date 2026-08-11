@@ -3,7 +3,7 @@
 - Registry ID/version: `paysim` / Kaggle dataset Version 2 pending byte verification
 - Source locator/citation key: `kaggle:ealaxi/paysim1`; canonical page https://www.kaggle.com/datasets/ealaxi/paysim1
 - Intended role: internal personal non-commercial academic structured transaction-risk research
-- Acquisition status: `not_acquired`; disabled
+- Acquisition status: `acquired_pending_registration`; disabled. Exact official ZIP identity is recorded, while row/schema/class validation remains pending Colab.
 - Licence/permission: `verified` / `approved` for one official account-based Kaggle download under CC BY-SA 4.0; engineering review `docs/evidence/PR13_PAYSIM_SOURCE_RIGHTS_REVIEW.md`
 - Redistribution: CC BY-SA 4.0 permits sharing/adaptation with attribution and ShareAlike, but repository policy prohibits committing or publicly serving the raw dataset
 - Expected schema: `data/schemas/transaction.schema.json`

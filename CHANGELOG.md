@@ -5,6 +5,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 ## Unreleased
 
 - Verified the canonical PaySim author listing, CC BY-SA 4.0 licence and Kaggle Version 2/platform conditions; PaySim is now eligible for official account-based local registration but remains unacquired, disabled and non-promotable.
+- Acquired the official signed-in PaySim Version 2 ZIP, recorded exact archive/member identity, uploaded it to private Drive storage and prepared the pinned Colab registration/validation flow; no raw bytes entered Git and no training occurred.
 
 ### Fixed
 

@@ -62,9 +62,14 @@ def test_registry_has_exact_sources_cards_schemas_and_explicit_restrictions() ->
     entries = registry["datasets"]
     assert isinstance(entries, list)
     assert all(isinstance(entry, dict) and entry["enabled"] is False for entry in entries)
-    assert all(
-        isinstance(entry, dict) and entry["acquisition_status"] == "not_acquired"
+    states = {
+        entry["dataset_id"]: entry["acquisition_status"]
         for entry in entries
+        if isinstance(entry, dict)
+    }
+    assert states["paysim"] == "acquired_pending_registration"
+    assert all(
+        state == "not_acquired" for dataset_id, state in states.items() if dataset_id != "paysim"
     )
     assert all(
         isinstance(entry, dict) and entry["redistribution"] in {"blocked", "internal_only"}

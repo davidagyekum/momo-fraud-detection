@@ -234,6 +234,7 @@ def load_and_validate_registry(data_root: Path) -> dict[str, object]:
             raise GovernanceError("registry required/enabled flags must be booleans")
         if raw_entry["acquisition_status"] not in {
             "not_acquired",
+            "acquired_pending_registration",
             "quarantined",
             "registered",
         }:
