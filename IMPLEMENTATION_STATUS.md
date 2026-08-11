@@ -25,8 +25,8 @@
 - Last updated: `2026-08-11`
 - CI status: `Logical PR14 foundation gate passes locally with 376 tests at 91.04% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR14 transaction ETL, causal features and frozen partitions — In Progress`
-- Next exact task: `After explicit owner approval for the exact Drive transfer, upload the hash-verified MoMTSim v1 and v2-derivative CSVs to the owner's existing momo-fraud/datasets folder, verify metadata, then run pinned PR14 preprocessing separately for PaySim/v1/v2; do not train.`
+- Current phase: `Logical PR14 transaction ETL, causal features and frozen partitions — Complete`
+- Next exact task: `Stop for project-owner review before logical PR15 transaction-model training. Do not start fitting, calibration or threshold selection until the owner explicitly proceeds.`
 
 ## PR10-PR13 reconciliation status
 
@@ -53,8 +53,9 @@
 - Leakage boundary: causal history uses strictly earlier steps; same-step rows update state together, future insertion cannot alter earlier features, inactive actor state expires after 24 steps and raw actor/source/target/balance fields never enter the model matrix.
 - Artifact boundary: feature, label and opaque provenance Parquet shards are separate and content-hashed; preprocessing neutral values/vocabularies fit train only; tuning/calibration reuse the frozen artifact; the loader rejects locked-test access before PR20.
 - Image boundary: STFD inventory `1087bbc4…` is frozen as exactly one 3,932-pair external-pretraining train-only group with no internal validation/test partition or metric.
-- Colab boundary: `03_build_transaction_features.ipynb` is output-free and performs preprocessing only. Full PaySim/MoMTSim manifests are not yet claimed; each source must run at the eventual pinned PR14 implementation SHA and return only the safe aggregate summary.
-- Verification: Ruff, strict mypy, 376 tests at 91.04% branch-aware coverage and deterministic governance/lock/notebook/data gates pass; the latest secret/prohibited-artifact scan passes 507 candidates. No model training occurred.
+- Colab evidence: owner-operated preprocessing completed at clean pinned commit `af8cce11d4e3f5644f24019498826899d356b503`. PaySim, MoMTSim v1 and the registered MoMTSim v2 derivative produced separate content-hashed Drive bundles with split manifests `4cca1058…`, `55623501…` and `539bcb46…`; train-only preprocessors are `63f67bb2…`, `8fc1f539…` and `9a0ed3bd…`.
+- Safety boundary: all three locked-test partitions are sealed, `locked_test_accessed_for_decisions=false` and `training_executed=false`. Exact safe aggregates and runtime/peak-memory evidence are recorded in `docs/evidence/PR14_TRANSACTION_PREPROCESSING_COLAB.json`.
+- Verification: the post-evidence ML gate passes Ruff, strict mypy, 376 tests at 91.04% branch-aware coverage and deterministic governance/lock/notebook/data checks; the secret/prohibited-artifact scan passes 509 candidate files. No model training occurred.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -128,7 +129,6 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
-| PR14-COLAB-SOURCES | Logical PR14 | The connector rejected uploading the two private MoMTSim CSVs because this transcript does not explicitly authorize those exact payloads to the specific Drive folder. | Full PR14 Colab preprocessing cannot start for MoMTSim; no bytes were uploaded. | Keep both exact hash-verified files in local restricted storage and keep PR14 in progress. | Project owner explicitly authorizes uploading the named v1 and v2-derivative CSVs to their existing private `momo-fraud/datasets` Drive folder. | On approval, upload, verify Drive metadata, run each pinned preprocessing job and review only safe summaries. |
 | PR16-GHANA-PRIVATE | Logical PR16 | Owner transaction/screenshots are not yet imported and require the private consent/index pipeline. | Ghana fine-tuning cannot start until private intake, review, deduplication and withdrawal controls pass. | Keep Ghana-private disabled/not acquired; use no raw private data in Git. | Project owner supplies the export at the PR16 intake checkpoint; Codex builds and validates the private pipeline. | Complete PR14/PR15, then ingest the owner export and governed online fraud-image candidates in PR16. |
 
 ## Active known limitations
@@ -144,16 +144,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR14-preprocessing-foundation-session.md`
-- Summary: `Implemented, verified and pushed the PR14 temporal split/causal-feature/Parquet foundation and pinned preprocessing notebook; the exact MoMTSim Drive upload was rejected before transfer pending explicit payload-and-destination authorization.`
+- Handoff file: `docs/handoffs/2026-08-11-PR14-colab-preprocessing-completion.md`
+- Summary: `Uploaded and verified the two exact MoMTSim CSVs in the owner's private Drive, completed PaySim/v1/v2 preprocessing at the pinned PR14 commit, recorded sealed split/preprocessor evidence and stopped before PR15 training.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-030 and `docs/evidence/PR13_STFD_REGISTRATION.json` before implementing frozen partitions.
-4. Confirm the pushed PR13 head, then create or resume `codex/p14-frozen-splits` from that exact head.
+3. Read `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-031 and `docs/evidence/PR14_TRANSACTION_PREPROCESSING_COLAB.json` before any transaction-model work.
+4. Confirm the pushed PR14 head and clean worktree. Stop unless the project owner explicitly authorizes logical PR15 Google Colab training.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
-7. Preserve PaySim as registered but disabled/non-promotable and preserve both the first quarantine and corrected registration artifacts; do not create splits, access locked tests or execute FULL training yet.
-8. Preserve MoMTSim v1, the separately versioned v2 derivative and STFD as registered but disabled/non-promotable. Preserve STFD's one-corpus train-only rule, three-soft-mask contract and private extraction boundary; do not create filename-level STFD splits or train.
+7. Preserve the three exact PR14 Drive bundles and their recorded source/split/preprocessor hashes. Locked-test partitions remain sealed and unavailable for decisions before PR20.
+8. Preserve MoMTSim v1, the separately versioned v2 derivative and STFD as registered but disabled/non-promotable. PR16 online fraud-image collection and owner transaction intake remain separate later work under consent, review and withdrawal controls.

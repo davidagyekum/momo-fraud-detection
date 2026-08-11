@@ -1,0 +1,162 @@
+{
+  "aggregate_assertions": {
+    "all_locked_tests_sealed": true,
+    "locked_test_accessed_for_decisions": false,
+    "network_acquisition_executed": false,
+    "training_executed": false
+  },
+  "data_transfer": [
+    {
+      "destination": "My Drive/momo-fraud/datasets",
+      "drive_display_size": "177.8 MB",
+      "filename": "paysim-ealaxi-v2-f7eef9ffad5c.zip",
+      "sha256": "f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d",
+      "size_bytes": 186385561,
+      "transfer_state": "already_present_and_verified"
+    },
+    {
+      "destination": "My Drive/momo-fraud/datasets",
+      "drive_display_size": "149.3 MB",
+      "filename": "synthetic_mobile_money_transaction_dataset.csv",
+      "sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7",
+      "size_bytes": 156564413,
+      "transfer_state": "uploaded_and_verified"
+    },
+    {
+      "destination": "My Drive/momo-fraud/datasets",
+      "drive_display_size": "349.4 MB",
+      "filename": "momtsim-v2-derived-exact-dedup-v1.csv",
+      "sha256": "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd",
+      "size_bytes": 366396355,
+      "transfer_state": "uploaded_and_verified"
+    }
+  ],
+  "execution": {
+    "environment": "Google Colab",
+    "mount_note": "Standard Drive mounts timed out. The owner-controlled notebook copy used force_remount=True with timeout_ms=600000 before preprocessing; transaction logic remained pinned and unchanged.",
+    "notebook": "ml/notebooks/colab/03_build_transaction_features.ipynb",
+    "pinned_commit": "af8cce11d4e3f5644f24019498826899d356b503",
+    "profile": "smoke"
+  },
+  "recorded_at": "2026-08-11",
+  "runs": [
+    {
+      "dataset_id": "paysim",
+      "elapsed_seconds": 768.49,
+      "locked_test_accessed_for_decisions": false,
+      "locked_test_sealed": true,
+      "partitions": [
+        {
+          "partition": "train",
+          "positive_count": 5781,
+          "row_count": 6082007,
+          "sealed": false
+        },
+        {
+          "partition": "tuning",
+          "positive_count": 778,
+          "row_count": 157033,
+          "sealed": false
+        },
+        {
+          "partition": "calibration",
+          "positive_count": 808,
+          "row_count": 54732,
+          "sealed": false
+        },
+        {
+          "partition": "locked_test",
+          "positive_count": 846,
+          "row_count": 68848,
+          "sealed": true
+        }
+      ],
+      "peak_memory_bytes": 2056527872,
+      "positive_count": 8213,
+      "preprocessor_sha256": "63f67bb24047d8fb28c0ce9102df6938b376bbc5adfb52a8921c87bb0762c574",
+      "row_count": 6362620,
+      "source_sha256": "f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d",
+      "split_manifest_sha256": "4cca1058464f47b56a329b0a6b3fdd81d60ad81008b8e75d1a8e062a6b7206e1",
+      "training_executed": false
+    },
+    {
+      "dataset_id": "momtsim-v1",
+      "elapsed_seconds": 265.192,
+      "locked_test_accessed_for_decisions": false,
+      "locked_test_sealed": true,
+      "partitions": [
+        {
+          "partition": "train",
+          "positive_count": 122258,
+          "row_count": 1242432,
+          "sealed": false
+        },
+        {
+          "partition": "tuning",
+          "positive_count": 18208,
+          "row_count": 119028,
+          "sealed": false
+        },
+        {
+          "partition": "calibration",
+          "positive_count": 16915,
+          "row_count": 120438,
+          "sealed": false
+        },
+        {
+          "partition": "locked_test",
+          "positive_count": 18137,
+          "row_count": 238283,
+          "sealed": true
+        }
+      ],
+      "peak_memory_bytes": 2056527872,
+      "positive_count": 175518,
+      "preprocessor_sha256": "8fc1f53990a4a0b9f97cab17ac0502495904a36f645e3e7aadbac31fabfc9456",
+      "row_count": 1720181,
+      "source_sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7",
+      "split_manifest_sha256": "5562350167a75785929235f102fa39c98dc534e555791a03ac3ac0272ae5d72d",
+      "training_executed": false
+    },
+    {
+      "dataset_id": "momtsim-v2",
+      "elapsed_seconds": 1443.381,
+      "locked_test_accessed_for_decisions": false,
+      "locked_test_sealed": true,
+      "partitions": [
+        {
+          "partition": "train",
+          "positive_count": 1554992,
+          "row_count": 2887300,
+          "sealed": false
+        },
+        {
+          "partition": "tuning",
+          "positive_count": 221370,
+          "row_count": 430197,
+          "sealed": false
+        },
+        {
+          "partition": "calibration",
+          "positive_count": 223477,
+          "row_count": 441067,
+          "sealed": false
+        },
+        {
+          "partition": "locked_test",
+          "positive_count": 233279,
+          "row_count": 467374,
+          "sealed": true
+        }
+      ],
+      "peak_memory_bytes": 2259533824,
+      "positive_count": 2233118,
+      "preprocessor_sha256": "9a0ed3bdc9518041074b77aa0e95f292c33c7e16119520c0ddcea1eb57634eff",
+      "row_count": 4225938,
+      "source_sha256": "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd",
+      "split_manifest_sha256": "539bcb4679eb6ed250bc25affeeb38f9a659b4c3f4e2fd0ae724cc7299301bf4",
+      "training_executed": false
+    }
+  ],
+  "schema_version": "pr14-transaction-preprocessing-evidence-v1"
+}
