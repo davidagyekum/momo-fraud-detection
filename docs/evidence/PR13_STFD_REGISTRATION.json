@@ -1,0 +1,68 @@
+{
+  "schema_version": "stfd-registration-evidence-v1",
+  "dataset_id": "stfd",
+  "dataset_version": "hf-revision-9edebed2109052a77e9a5581c2ea7ce33d685da0-private-v1",
+  "status": "registered",
+  "created_at": "2026-08-11T15:56:00Z",
+  "archive": {
+    "size_bytes": 2941753426,
+    "sha256": "6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c"
+  },
+  "private_inventory": {
+    "file_count": 7865,
+    "size_bytes": 2999173049,
+    "source_sha256": "1087bbc4ba2cd349f08e2a0a4c4ebbc78c209d603d625c2a5344c0ff50f220dc",
+    "inventory_sha256": "1087bbc4ba2cd349f08e2a0a4c4ebbc78c209d603d625c2a5344c0ff50f220dc"
+  },
+  "registration_artifacts": {
+    "request_sha256": "b9e3b2ba545ba528509297410eefbd9dae79bbd714f1b06e52f013795ebbb023",
+    "validation_spec_sha256": "dd10e854013241808c53d5708b168a8ce9e7cca8cacede6dba4d9f17a6574790",
+    "private_manifest_sha256": "e2a12c8a1c2ddf3324d775486ba0ea69550e9c3688fa7e44fba8c655df7b5945",
+    "private_safe_profile_sha256": "7093dbdb3824d3306145ebaccf694757640844c0323049c3f1e3ee0023e81de6"
+  },
+  "initial_quarantine": {
+    "reason": "category_directory_layout_mismatch",
+    "private_manifest_sha256": "f84d4079bb185452336af99cdef448598e9b484c51acab96faf07bac705523f2",
+    "private_safe_profile_sha256": "f4e9d4d5e572f40aaa99b3e9a62ead6149e3ab33be35fbf8b30f0ea91c2135c9",
+    "preserved": true
+  },
+  "validation_summary": {
+    "image_count": 7864,
+    "original_image_count": 3932,
+    "mask_count": 3932,
+    "paired_image_mask_count": 3932,
+    "category_pair_counts": {
+      "1_Copy-move": 758,
+      "2_Splicing": 830,
+      "3_Removal": 1016,
+      "4_Insertion": 701,
+      "5_Replacement": 627
+    },
+    "missing_mask_count": 0,
+    "orphan_mask_count": 0,
+    "image_decode_failure_count": 0,
+    "mask_decode_failure_count": 0,
+    "mask_dimension_mismatch_count": 0,
+    "blank_mask_count": 0,
+    "exact_duplicate_image_occurrence_count": 0,
+    "exact_duplicate_mask_occurrence_count": 0,
+    "soft_mask_count": 3,
+    "soft_mask_pixel_count": 12860,
+    "soft_mask_threshold": 128,
+    "source_masks_modified": false
+  },
+  "grouping": {
+    "strategy": "single_external_pretraining_corpus_group",
+    "source_group_count": 1,
+    "split_usage": "external_pretraining_train_only",
+    "internal_evaluation_allowed": false,
+    "filename_level_split_allowed": false
+  },
+  "network_acquisition_executed_by_registration": false,
+  "source_bytes_committed": false,
+  "promotable_for_training": false,
+  "training_executed": false,
+  "contains_member_names": false,
+  "contains_source_paths": false,
+  "contains_password": false
+}

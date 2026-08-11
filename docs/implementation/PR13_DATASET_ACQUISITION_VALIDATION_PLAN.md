@@ -22,3 +22,7 @@
 - Keep every registry entry disabled and `not_acquired` while licence, permission, access or consent evidence is unverified.
 - Do not access locked tests, build post-performance splits, train models or redistribute data.
 - Stop after pushing the tested no-network foundation and report the exact source-specific evidence needed before an owner-operated Colab acquisition run.
+
+## Completion addendum — 2026-08-11
+
+The foundation was followed by governed owner-operated/local acquisitions on the same logical PR13 branch. PaySim, MoMTSim v1, a separately versioned exact-deduplicated MoMTSim v2 derivative and STFD are now registered but disabled/non-promotable. Official quarantine evidence is preserved. STFD is constrained by ADR-030 to one external-pretraining train-only group; no PR14 split or model training occurred in logical PR13. FSTS is optional/deferred and Ghana-private collection remains a consent-aware PR16 task.

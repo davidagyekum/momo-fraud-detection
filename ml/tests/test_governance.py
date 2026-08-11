@@ -70,7 +70,7 @@ def test_registry_has_exact_sources_cards_schemas_and_explicit_restrictions() ->
     assert states["paysim"] == "registered"
     assert states["momtsim-v1"] == "registered"
     assert states["momtsim-v2"] == "registered"
-    assert states["stfd"] == "acquired_pending_registration"
+    assert states["stfd"] == "registered"
     assert all(states[dataset_id] == "not_acquired" for dataset_id in ("fsts", "ghana-private"))
     assert all(
         isinstance(entry, dict) and entry["redistribution"] in {"blocked", "internal_only"}
@@ -88,6 +88,7 @@ def test_registry_rejects_unapproved_enablement(tmp_path: Path) -> None:
     entries.remove(blocked_entry)
     entries.insert(0, blocked_entry)
     blocked_entry["enabled"] = True
+    blocked_entry["permission_status"] = "unverified"
     temporary_root = tmp_path / "data"
     temporary_root.mkdir()
     (temporary_root / "registry.yaml").write_text(json.dumps(registry), encoding="utf-8")

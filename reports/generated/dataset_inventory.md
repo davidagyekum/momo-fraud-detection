@@ -9,8 +9,8 @@
 | momtsim-v1 | yes | yes | registered | none |
 | momtsim-v2 | yes | yes | registered | none |
 | paysim | yes | yes | registered | none |
-| stfd | yes | no | acquired_pending_registration | validation_spec_status:archive_identity_validated_pending_extraction_and_group_mapping |
+| stfd | yes | yes | registered | none |
 
-Eligible: 3 / 6.
+Eligible: 4 / 6.
 
 No source bytes were opened; acquisition and training are false.

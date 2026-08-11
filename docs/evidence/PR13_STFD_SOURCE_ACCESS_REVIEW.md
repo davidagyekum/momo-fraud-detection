@@ -22,7 +22,7 @@ The revision, last-modified value, archive filename, byte size and LFS object ha
 
 The Hugging Face metadata displays `cc-by-4.0`. Its dataset card adds narrower conditions: academic research only, attribution/citation, an access-password request sent from an academic or institutional email with researcher/supervisor/purpose details, and a request not to redistribute images because unintended information leakage may remain. The official project repository announced a public release on 2026-03-06 and currently displays an extraction password, which conflicts with the dataset card's email-request instruction.
 
-Decision: follow the stricter current dataset-card notice. The academic/no-redistribution licence conditions are recorded as verified. On 2026-08-11 the project owner explicitly attested that the project has permission; the repository records only opaque reference `OWNER_ATTESTATION_STFD_20260811`, with no password, email or personal details. Permission is therefore `approved`, but bytes remain unregistered/non-promotable until identity, hostile-archive, image/mask and lineage-grouping checks pass.
+Decision: follow the stricter current dataset-card notice. The academic/no-redistribution licence conditions are recorded as verified. On 2026-08-11 the project owner explicitly attested that the project has permission; the repository records only opaque reference `OWNER_ATTESTATION_STFD_20260811`, with no password, email or personal details. Permission is `approved`; the subsequent identity, hostile-archive, decoded image/mask and conservative grouping checks are recorded in `PR13_STFD_REGISTRATION.json`.
 
 ## Authoritative published layout
 
@@ -54,11 +54,11 @@ No STFD split may be created from filenames alone.
 - Permission: approved by opaque project-owner attestation `OWNER_ATTESTATION_STFD_20260811`
 - Exact version/archive metadata: recorded
 - Image/mask pairing: recorded
-- Leakage-safe group mapping: pending
-- Acquisition status: `acquired_pending_registration`; the private archive is 2,941,753,426 bytes and its SHA-256 matches `6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c`
+- Leakage-safe group mapping: all STFD records are one external-pretraining train-only group; no filename-level or internal STFD evaluation split
+- Acquisition status: `registered`; the private archive is 2,941,753,426 bytes, its SHA-256 matches `6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c`, and the extracted inventory hash is `1087bbc4ba2cd349f08e2a0a4c4ebbc78c209d603d625c2a5344c0ff50f220dc`
 - Enabled/promotable: false
 - Network acquisition: true, through a resumable transfer from the exact pinned official URL into restricted private storage
-- Central-directory aggregate review: true; encrypted payload extraction, image decoding, splits, locked-test access and training: false
+- Central-directory and complete decoded image/mask validation: true; splits, locked-test access and training: false
 
 ## Safe aggregate archive evidence
 
@@ -73,4 +73,4 @@ The completed encrypted ZIP contains 7,865 files and 19 directory entries. All 7
 | Replacement | 627 | 627 | 627 | 0 | 0 |
 | **Total** | **3,932** | **3,932** | **3,932** | **0** | **0** |
 
-No raw member name, password, archive byte, screenshot or mask is committed. Central-directory pairing proves structural completeness only; it does not prove decoded image integrity, binary-mask values or independent source lineage.
+No raw member name, password, archive byte, screenshot or mask is committed. The later registration pass decoded all 3,932 pairs with zero decode/dimension/duplicate failures and documented three antialiased masks containing 12,860 soft pixels. Source masks remain immutable; any thresholding at 128 is derived-data-only. Independent lineage remains unavailable, so ADR-030 treats the complete corpus as one train-only external-pretraining group.

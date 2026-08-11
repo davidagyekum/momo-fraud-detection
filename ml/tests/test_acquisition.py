@@ -178,8 +178,8 @@ def test_committed_readiness_matches_recorded_report_without_opening_bytes() -> 
     )
     assert report == recorded
     assert report["source_count"] == 6
-    assert report["eligible_source_count"] == 3
-    assert report["blocked_source_count"] == 3
+    assert report["eligible_source_count"] == 4
+    assert report["blocked_source_count"] == 2
     assert report["network_acquisition_executed"] is False
     assert report["source_bytes_opened"] is False
     assert report["training_executed"] is False
@@ -222,22 +222,49 @@ def test_momtsim_specs_freeze_official_identity_and_observed_profiles() -> None:
     )
 
 
-def test_stfd_spec_freezes_metadata_with_owner_permission_but_without_registration() -> None:
+def test_stfd_spec_is_ready_with_conservative_train_only_grouping() -> None:
     spec = json.loads((DATA_ROOT / "acquisition_specs/stfd.json").read_text(encoding="utf-8"))
     registry = json.loads((DATA_ROOT / "registry.yaml").read_text(encoding="utf-8"))
     entry = next(item for item in registry["datasets"] if item["dataset_id"] == "stfd")
     source = spec["approved_source_metadata"]
-    assert spec["status"] == "archive_identity_validated_pending_extraction_and_group_mapping"
+    assert spec["status"] == "ready"
     assert source["repository_revision"] == "9edebed2109052a77e9a5581c2ea7ce33d685da0"
     assert source["archive_size_bytes"] == 2941753426
     assert source["archive_lfs_sha256"] == (
         "6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c"
     )
     assert spec["pairing_rule"] == "same_filename_within_tampering_directory"
+    assert spec["pairing_strategy"] == "parallel_category_directories"
+    assert sum(spec["expected_pair_counts"].values()) == 3932
+    assert spec["expected_soft_mask_count"] == 3
+    assert spec["expected_soft_mask_pixel_count"] == 12860
+    assert spec["soft_mask_threshold"] == 128
+    assert spec["grouping_strategy"] == "single_external_pretraining_corpus_group"
     assert len(spec["tampering_directories"]) == 5
-    assert entry["acquisition_status"] == "acquired_pending_registration"
+    assert entry["acquisition_status"] == "registered"
     assert entry["permission_status"] == "approved"
     assert entry["enabled"] is False
+
+
+def test_committed_stfd_registration_evidence_is_safe_and_train_only() -> None:
+    evidence = json.loads(
+        (REPOSITORY_ROOT / "docs/evidence/PR13_STFD_REGISTRATION.json").read_text(encoding="utf-8")
+    )
+    summary = evidence["validation_summary"]
+    grouping = evidence["grouping"]
+    assert evidence["status"] == "registered"
+    assert summary["paired_image_mask_count"] == 3932
+    assert summary["soft_mask_count"] == 3
+    assert summary["soft_mask_pixel_count"] == 12860
+    assert summary["source_masks_modified"] is False
+    assert grouping["source_group_count"] == 1
+    assert grouping["split_usage"] == "external_pretraining_train_only"
+    assert grouping["internal_evaluation_allowed"] is False
+    assert evidence["promotable_for_training"] is False
+    assert evidence["training_executed"] is False
+    assert evidence["contains_member_names"] is False
+    assert evidence["contains_source_paths"] is False
+    assert evidence["contains_password"] is False
 
 
 def test_committed_momtsim_v1_evidence_is_safe_and_matches_registry() -> None:
@@ -303,10 +330,8 @@ def test_readiness_names_each_source_specific_blocker() -> None:
     assert "written_access_approval_missing" not in sources["stfd"]["blockers"]
     assert "permission_status:access_request_required" not in sources["stfd"]["blockers"]
     assert "licence_status:unverified" not in sources["stfd"]["blockers"]
-    assert (
-        "validation_spec_status:archive_identity_validated_pending_extraction_and_group_mapping"
-        in sources["stfd"]["blockers"]
-    )
+    assert sources["stfd"]["blockers"] == []
+    assert sources["stfd"]["eligible_for_local_registration"] is True
     assert "participant_consent_evidence_missing" in sources["ghana-private"]["blockers"]
     assert sources["fsts"]["required"] is False
 
@@ -620,6 +645,110 @@ def test_image_mask_pair_dimensions_are_enforced(tmp_path: Path) -> None:
     assert summary["mask_count"] == 1
 
 
+def test_parallel_mask_collection_registers_with_soft_mask_and_train_only_group(
+    tmp_path: Path,
+) -> None:
+    data_root = _approved_data_root(
+        tmp_path,
+        dataset_id="stfd",
+        dataset_kind="image_collection",
+        requires_masks=True,
+    )
+    spec_path = data_root / "acquisition_specs/stfd.json"
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec.pop("mask_suffix")
+    spec.update(
+        pairing_strategy="parallel_category_directories",
+        tampering_directories=["1_Copy-move"],
+        image_directory_name="tamper",
+        mask_directory_name="masks",
+        expected_pair_counts={"1_Copy-move": 1},
+        expected_soft_mask_count=1,
+        expected_soft_mask_pixel_count=1,
+        soft_mask_threshold=128,
+        grouping_strategy="single_external_pretraining_corpus_group",
+    )
+    spec_path.write_text(json.dumps(spec), encoding="utf-8")
+    source_root = tmp_path / "private"
+    category_root = source_root / "stfd" / "1_Copy-move"
+    image_root = category_root / "tamper"
+    mask_root = category_root / "masks"
+    image_root.mkdir(parents=True)
+    mask_root.mkdir(parents=True)
+    (mask_root / "1_Copy-move" / "masks").mkdir(parents=True)
+    Image.new("RGB", (8, 6), "white").save(image_root / "opaque-source.png")
+    mask = Image.new("L", (8, 6), 0)
+    mask.putpixel((1, 1), 255)
+    mask.putpixel((2, 1), 127)
+    mask.save(mask_root / "opaque-source.png")
+    request = _request(
+        tmp_path / "request.json",
+        dataset_id="stfd",
+        source=source_root / "stfd",
+        source_kind="directory",
+    )
+    outputs = _register(
+        tmp_path, data_root=data_root, request_path=request, source_root=source_root
+    )
+    assert outputs.manifest["status"] == "registered"
+    summary = outputs.manifest["validation_summary"]
+    assert summary["paired_image_mask_count"] == 1
+    assert summary["soft_mask_count"] == 1
+    assert summary["soft_mask_pixel_count"] == 1
+    assert summary["source_masks_modified"] is False
+    assert summary["source_group_count"] == 1
+    assert summary["split_usage"] == "external_pretraining_train_only"
+    assert summary["internal_evaluation_allowed"] is False
+
+
+def test_parallel_mask_collection_quarantines_soft_mask_contract_drift(
+    tmp_path: Path,
+) -> None:
+    data_root = _approved_data_root(
+        tmp_path,
+        dataset_id="stfd",
+        dataset_kind="image_collection",
+        requires_masks=True,
+    )
+    spec_path = data_root / "acquisition_specs/stfd.json"
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec.pop("mask_suffix")
+    spec.update(
+        pairing_strategy="parallel_category_directories",
+        tampering_directories=["1_Copy-move"],
+        image_directory_name="tamper",
+        mask_directory_name="masks",
+        expected_pair_counts={"1_Copy-move": 1},
+        expected_soft_mask_count=1,
+        expected_soft_mask_pixel_count=2,
+        soft_mask_threshold=128,
+        grouping_strategy="single_external_pretraining_corpus_group",
+    )
+    spec_path.write_text(json.dumps(spec), encoding="utf-8")
+    source_root = tmp_path / "private"
+    category_root = source_root / "stfd" / "1_Copy-move"
+    image_root = category_root / "tamper"
+    mask_root = category_root / "masks"
+    image_root.mkdir(parents=True)
+    mask_root.mkdir(parents=True)
+    Image.new("RGB", (8, 6), "white").save(image_root / "opaque-source.png")
+    mask = Image.new("L", (8, 6), 0)
+    mask.putpixel((1, 1), 255)
+    mask.putpixel((2, 1), 127)
+    mask.save(mask_root / "opaque-source.png")
+    request = _request(
+        tmp_path / "request.json",
+        dataset_id="stfd",
+        source=source_root / "stfd",
+        source_kind="directory",
+    )
+    outputs = _register(
+        tmp_path, data_root=data_root, request_path=request, source_root=source_root
+    )
+    assert outputs.manifest["status"] == "quarantined"
+    assert "soft_mask_pixel_count_mismatch" in outputs.manifest["quarantine_reasons"]
+
+
 def test_image_size_cap_quarantines_without_decoding_payload(tmp_path: Path) -> None:
     data_root = _approved_data_root(tmp_path, dataset_id="fsts", dataset_kind="image_collection")
     spec_path = data_root / "acquisition_specs/fsts.json"
@@ -667,7 +796,7 @@ def test_cli_readiness_and_fail_closed_registration(tmp_path: Path, capsys) -> N
         )
         == 0
     )
-    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 3
+    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 4
 
     request_path = tmp_path / "invalid-request.json"
     request_path.write_text("{}", encoding="utf-8")

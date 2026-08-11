@@ -12,6 +12,7 @@ import sqlite3
 import stat
 import tempfile
 import zipfile
+from collections import Counter
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -628,6 +629,238 @@ def deterministic_subset_ids(member_names: list[str], *, seed: int, count: int) 
     return [hashlib.sha256(name.encode("utf-8")).hexdigest() for name in ranked[:count]]
 
 
+def _scan_parallel_mask_collection(
+    source: Path,
+    spec: Mapping[str, object],
+    *,
+    extensions: set[str],
+    max_image_bytes: int,
+    max_dimension: int,
+    max_pixels: int,
+) -> tuple[dict[str, object], list[str]]:
+    if not source.is_dir():
+        raise AcquisitionError("parallel mask collection must be an extracted directory")
+    raw_categories = spec.get("tampering_directories")
+    if (
+        not isinstance(raw_categories, list)
+        or not raw_categories
+        or not all(isinstance(value, str) and value for value in raw_categories)
+    ):
+        raise AcquisitionError("parallel mask collection lacks category directories")
+    categories = [str(value) for value in raw_categories]
+    image_directory_name = _expect_string(spec.get("image_directory_name"), "image_directory_name")
+    mask_directory_name = _expect_string(spec.get("mask_directory_name"), "mask_directory_name")
+    raw_expected_counts = spec.get("expected_pair_counts")
+    if not isinstance(raw_expected_counts, dict) or set(raw_expected_counts) != set(categories):
+        raise AcquisitionError("parallel mask collection pair-count contract is incomplete")
+    expected_counts = {
+        category: _expect_positive_int(raw_expected_counts[category], category)
+        for category in categories
+    }
+    expected_soft_masks = _expect_positive_int(
+        spec.get("expected_soft_mask_count"), "expected_soft_mask_count"
+    )
+    expected_soft_mask_pixels = _expect_positive_int(
+        spec.get("expected_soft_mask_pixel_count"), "expected_soft_mask_pixel_count"
+    )
+    soft_mask_threshold = _expect_positive_int(
+        spec.get("soft_mask_threshold"), "soft_mask_threshold"
+    )
+    if soft_mask_threshold > 254:
+        raise AcquisitionError("soft mask threshold must be between 1 and 254")
+    grouping_strategy = _expect_string(spec.get("grouping_strategy"), "grouping_strategy")
+    if grouping_strategy != "single_external_pretraining_corpus_group":
+        raise AcquisitionError("parallel mask collection grouping strategy is unsupported")
+
+    reasons: list[str] = []
+    category_pair_counts: dict[str, int] = {}
+    dimensions: Counter[str] = Counter()
+    image_modes: Counter[str] = Counter()
+    mask_modes: Counter[str] = Counter()
+    image_hashes: Counter[str] = Counter()
+    mask_hashes: Counter[str] = Counter()
+    original_names: list[str] = []
+    original_count = 0
+    mask_count = 0
+    paired_count = 0
+    missing_mask_count = 0
+    orphan_mask_count = 0
+    image_decode_failures = 0
+    mask_decode_failures = 0
+    oversized_files = 0
+    zero_dimension = 0
+    dimension_violations = 0
+    dimension_mismatches = 0
+    soft_mask_count = 0
+    soft_mask_pixel_count = 0
+    blank_mask_count = 0
+
+    for category in categories:
+        matches = sorted(
+            (
+                path
+                for path in source.rglob(category)
+                if path.is_dir()
+                and (path / image_directory_name).is_dir()
+                and (path / mask_directory_name).is_dir()
+            ),
+            key=lambda value: value.as_posix(),
+        )
+        if len(matches) != 1:
+            reasons.append("category_directory_layout_mismatch")
+            category_pair_counts[category] = 0
+            continue
+        category_root = matches[0]
+        image_root = category_root / image_directory_name
+        mask_root = category_root / mask_directory_name
+        if not image_root.is_dir() or not mask_root.is_dir():
+            reasons.append("parallel_mask_directory_layout_mismatch")
+            category_pair_counts[category] = 0
+            continue
+        image_paths = {
+            path.name.casefold(): path
+            for path in image_root.iterdir()
+            if path.is_file() and path.suffix.lower() in extensions
+        }
+        mask_paths = {
+            path.name.casefold(): path
+            for path in mask_root.iterdir()
+            if path.is_file() and path.suffix.lower() in extensions
+        }
+        original_count += len(image_paths)
+        mask_count += len(mask_paths)
+        missing = set(image_paths) - set(mask_paths)
+        orphaned = set(mask_paths) - set(image_paths)
+        missing_mask_count += len(missing)
+        orphan_mask_count += len(orphaned)
+        shared = sorted(set(image_paths) & set(mask_paths))
+        category_pair_counts[category] = len(shared)
+        if len(shared) != expected_counts[category]:
+            reasons.append("expected_category_pair_count_mismatch")
+
+        for normalized_name in shared:
+            image_path = image_paths[normalized_name]
+            mask_path = mask_paths[normalized_name]
+            if image_path.is_symlink() or mask_path.is_symlink():
+                raise AcquisitionError("source directory symbolic links are prohibited")
+            original_names.append(f"{category}/{image_directory_name}/{image_path.name}")
+            image_size_bytes = image_path.stat().st_size
+            mask_size_bytes = mask_path.stat().st_size
+            if image_size_bytes > max_image_bytes or mask_size_bytes > max_image_bytes:
+                oversized_files += 1
+                continue
+            try:
+                with image_path.open("rb") as stream:
+                    image_hashes[hashlib.file_digest(stream, "sha256").hexdigest()] += 1
+                with Image.open(image_path) as image:
+                    image.load()
+                    image_size = image.size
+                    image_modes[image.mode] += 1
+                    width, height = image_size
+                    dimensions[f"{width}x{height}"] += 1
+                    if width < 1 or height < 1:
+                        zero_dimension += 1
+                    if (
+                        width > max_dimension
+                        or height > max_dimension
+                        or width * height > max_pixels
+                    ):
+                        dimension_violations += 1
+            except (UnidentifiedImageError, OSError, ValueError):
+                image_decode_failures += 1
+                continue
+            try:
+                with mask_path.open("rb") as stream:
+                    mask_hashes[hashlib.file_digest(stream, "sha256").hexdigest()] += 1
+                with Image.open(mask_path) as mask:
+                    mask.load()
+                    mask_modes[mask.mode] += 1
+                    mask_size = mask.size
+                    histogram = mask.convert("L").histogram()
+                    nonbinary_pixels = sum(histogram[1:255])
+                    if nonbinary_pixels:
+                        soft_mask_count += 1
+                        soft_mask_pixel_count += nonbinary_pixels
+                    if histogram[0] == 0 or histogram[255] == 0:
+                        blank_mask_count += 1
+            except (UnidentifiedImageError, OSError, ValueError):
+                mask_decode_failures += 1
+                continue
+            if image_size != mask_size:
+                dimension_mismatches += 1
+            paired_count += 1
+
+    if original_count == 0:
+        reasons.append("empty_image_collection")
+    if missing_mask_count:
+        reasons.append("missing_masks")
+    if orphan_mask_count:
+        reasons.append("orphan_masks")
+    if image_decode_failures:
+        reasons.append("image_decode_failures")
+    if mask_decode_failures:
+        reasons.append("mask_decode_failures")
+    if oversized_files:
+        reasons.append("oversized_image_files")
+    if zero_dimension:
+        reasons.append("invalid_image_dimensions")
+    if dimension_violations:
+        reasons.append("image_dimension_cap_exceeded")
+    if dimension_mismatches:
+        reasons.append("mask_dimension_mismatch")
+    if blank_mask_count:
+        reasons.append("blank_masks")
+    if soft_mask_count != expected_soft_masks:
+        reasons.append("soft_mask_count_mismatch")
+    if soft_mask_pixel_count != expected_soft_mask_pixels:
+        reasons.append("soft_mask_pixel_count_mismatch")
+    duplicate_image_occurrences = sum(count - 1 for count in image_hashes.values() if count > 1)
+    duplicate_mask_occurrences = sum(count - 1 for count in mask_hashes.values() if count > 1)
+    if duplicate_image_occurrences:
+        reasons.append("duplicate_image_payloads")
+    if duplicate_mask_occurrences:
+        reasons.append("duplicate_mask_payloads")
+    subset_count = min(100, len(original_names))
+    return (
+        {
+            "dataset_kind": str(spec["dataset_kind"]),
+            "image_count": original_count + mask_count,
+            "original_image_count": original_count,
+            "mask_count": mask_count,
+            "paired_image_mask_count": paired_count,
+            "missing_mask_count": missing_mask_count,
+            "orphan_mask_count": orphan_mask_count,
+            "image_decode_failure_count": image_decode_failures,
+            "mask_decode_failure_count": mask_decode_failures,
+            "zero_dimension_count": zero_dimension,
+            "oversized_file_count": oversized_files,
+            "dimension_violation_count": dimension_violations,
+            "mask_dimension_mismatch_count": dimension_mismatches,
+            "blank_mask_count": blank_mask_count,
+            "soft_mask_count": soft_mask_count,
+            "soft_mask_pixel_count": soft_mask_pixel_count,
+            "soft_mask_threshold": soft_mask_threshold,
+            "source_masks_modified": False,
+            "derived_mask_policy": "rendered_luminance_threshold_train_only",
+            "exact_duplicate_image_occurrence_count": duplicate_image_occurrences,
+            "exact_duplicate_mask_occurrence_count": duplicate_mask_occurrences,
+            "category_pair_counts": dict(sorted(category_pair_counts.items())),
+            "dimension_counts": dict(sorted(dimensions.items())),
+            "image_mode_counts": dict(sorted(image_modes.items())),
+            "mask_mode_counts": dict(sorted(mask_modes.items())),
+            "grouping_strategy": grouping_strategy,
+            "source_group_count": 1,
+            "split_usage": "external_pretraining_train_only",
+            "internal_evaluation_allowed": False,
+            "deterministic_subset_seed": 20260811,
+            "deterministic_subset_ids": deterministic_subset_ids(
+                original_names, seed=20260811, count=subset_count
+            ),
+        },
+        sorted(set(reasons)),
+    )
+
+
 def _scan_image_collection(
     source: Path, spec: Mapping[str, object]
 ) -> tuple[dict[str, object], list[str]]:
@@ -645,6 +878,15 @@ def _scan_image_collection(
     max_pixels = _expect_positive_int(
         spec.get("max_image_pixels", DEFAULT_MAX_IMAGE_PIXELS), "max_image_pixels"
     )
+    if spec.get("pairing_strategy") == "parallel_category_directories":
+        return _scan_parallel_mask_collection(
+            source,
+            spec,
+            extensions=extensions,
+            max_image_bytes=max_image_bytes,
+            max_dimension=max_dimension,
+            max_pixels=max_pixels,
+        )
     image_count = 0
     decode_failures = 0
     zero_dimension = 0

@@ -1,6 +1,6 @@
 {
-  "blocked_source_count": 3,
-  "eligible_source_count": 3,
+  "blocked_source_count": 2,
+  "eligible_source_count": 4,
   "foundation_version": "dataset-acquisition-foundation-v1",
   "network_acquisition_executed": false,
   "schema_version": "dataset-acquisition-readiness-v1",
@@ -61,15 +61,13 @@
       "validation_spec_status": "ready"
     },
     {
-      "acquisition_status": "acquired_pending_registration",
-      "blockers": [
-        "validation_spec_status:archive_identity_validated_pending_extraction_and_group_mapping"
-      ],
+      "acquisition_status": "registered",
+      "blockers": [],
       "dataset_id": "stfd",
-      "eligible_for_local_registration": false,
+      "eligible_for_local_registration": true,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "archive_identity_validated_pending_extraction_and_group_mapping"
+      "validation_spec_status": "ready"
     }
   ],
   "training_executed": false

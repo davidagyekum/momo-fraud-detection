@@ -9,11 +9,11 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 | PaySim | Registered from the author-owned Kaggle Version 2 archive after CC BY-SA 4.0/platform review. Exact source, inventory, registration-manifest and safe-profile hashes are recorded; the first quarantine remains preserved. The source stays disabled/non-promotable pending PR14 frozen splits. |
 | MoMTSim v1 | Registered from the official DOI version-1 package after exact filename, byte size, SHA-256, UTF-8 header and aggregate validation. It remains disabled/non-promotable pending PR14 frozen splits. |
 | MoMTSim v2 | The immutable official source remains quarantined for 20 exact duplicate rows. ADR-028 records a separate content-addressed first-occurrence derivative that removed 20 negative duplicate occurrences and passed full registration with zero duplicates; it remains disabled/non-promotable pending PR14 splits. |
-| STFD | Exact Hugging Face revision/archive identity, image/mask pairing and opaque project-owner permission attestation `OWNER_ATTESTATION_STFD_20260811` are recorded. The private transfer matches the official size/SHA-256 and safe aggregate ZIP review found 3,932 complete pairs with no unsafe or duplicate normalized paths. Still required: authorized private extraction, decoded image/mask validation and an authoritative/reviewed source-lineage grouping rule; do not rely on filenames as independent split groups. |
+| STFD | Registered from the exact pinned private archive after permission, hash, extraction, decoded image/mask, duplicate and soft-mask checks. All 3,932 pairs form one external-pretraining train-only group because no authoritative source lineage is published. The three antialiased masks remain immutable; only derived training tensors may threshold rendered luminance at 128. |
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |
 
-Until those conditions are recorded, the matching registry entry stays disabled. PaySim, MoMTSim v1 and the separately versioned MoMTSim v2 derivative are registered but non-promotable. The official v2 quarantine remains preserved; STFD is `acquired_pending_registration`, while FSTS and Ghana-private remain `not_acquired` behind their separate prerequisites. Project-owner permission does not by itself establish third-party licence or redistribution rights.
+Until those conditions are recorded, the matching registry entry stays disabled. PaySim, MoMTSim v1, the separately versioned MoMTSim v2 derivative and STFD are registered but non-promotable. The official v2 and initial STFD layout quarantines remain preserved; FSTS and Ghana-private remain `not_acquired` behind their separate prerequisites. Project-owner permission does not by itself establish third-party licence or redistribution rights.
 
 ## Safe readiness check
 
@@ -50,7 +50,7 @@ The example paths are placeholders. Do not copy them into a real request without
 - The resolved source must remain inside the approved private root and may not be a symbolic link.
 - ZIP inventory rejects traversal, symbolic links, duplicate normalised member paths, excessive member counts and excessive expanded size.
 - Transaction validation checks exact raw columns, row/positive/step expectations, target values, amounts, nulls and exact duplicate rows using temporary disk-backed hashes.
-- Image validation checks extension, decoded content, byte/dimension/pixel caps, deterministic subset IDs and configured mask pairing/dimensions.
+- Image validation checks extension, decoded content, byte/dimension/pixel caps, deterministic subset IDs, configured mask pairing/dimensions, rendered mask semantics, soft-mask drift and duplicate payloads. Source masks are immutable.
 - Identity or validation failure writes a safe `quarantined` manifest; it does not modify the source.
 - Registered and quarantined manifests remain `promotable_for_training: false`. A separate reviewed registry update, frozen splits and later training milestone are required.
 - Safe profiles contain hashes and aggregates only; never source paths, member names, raw identifiers, images, masks or transcripts.
