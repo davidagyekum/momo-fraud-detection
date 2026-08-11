@@ -14,6 +14,7 @@
 - PR13 PaySim step-reconciliation code SHA: `af248bd6b71e77bdf9ddaa4dc3457856f1cff87a`
 - PR13 corrected Colab pin SHA: `6b9945c6b03d394b9304045fa1ab02e928bb1951`
 - PR13 PaySim registration evidence SHA: `f2ccf7aba8d18154df12ed13b9cb4d1eec96b334`
+- PR13 MoMTSim rights/schema review SHA: `53f852f99204185ebd11781edcf19b77b98ec982`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 308 tests at 90.52% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -37,7 +38,7 @@
 - Evidence boundary: PaySim's corrected owner-operated Colab run registered 6,362,620 rows and content-addressed manifest/profile evidence in `docs/evidence/PR13_PAYSIM_REGISTRATION.json`. `docs/evidence/PR13_MOMTSIM_SOURCE_RIGHTS_REVIEW.md` records the official Mendeley DOI versions, CC BY 4.0, listed files, ten published raw columns, exact row/class counts and the remaining exact-file gate. STFD, FSTS and Ghana-private retain separate access/terms/consent gates.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and registration-only; it cannot download, create splits, train, inspect locked tests or promote an artifact.
 - Honesty boundary: the first PaySim quarantine remains preserved and the corrected result is registered, but registration is not training approval. PaySim stays disabled and non-promotable; no split, training, locked-test, metric or promotion claim is made.
-- Verification: the registered ML gate passes format, lint, strict mypy, 308 tests at 90.52% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 478 candidates.
+- Verification: the registered ML gate passes format, lint, strict mypy, 308 tests at 90.52% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 479 candidates.
 - Current registry hash after PaySim registration and MoMTSim rights approval: `3a9b18d9999b697438716af1b5031a9b79e979a002aacc0bfab49a3a5184ced8`.
 
 ## Logical PR10 evidence/execution foundation
@@ -127,14 +128,14 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-paysim-registered-session.md`
-- Summary: `Recorded the successful owner-operated PaySim registration and content-addressed manifest/profile evidence, transitioned only its acquisition state to registered, and kept the source disabled/non-promotable; no split, training or locked-test access occurred.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-momtsim-rights-review-session.md`
+- Summary: `Verified the official Mendeley MoMTSim v1/v2 DOI versions, CC BY 4.0 and peer-reviewed schema/counts; kept both disabled/not acquired pending exact official file identity, and performed no training or locked-test access.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-11-PR13-paysim-registered-session.md`, `docs/evidence/PR13_PAYSIM_REGISTRATION.json` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
+3. Read `docs/handoffs/2026-08-11-PR13-momtsim-rights-review-session.md`, `docs/evidence/PR13_MOMTSIM_SOURCE_RIGHTS_REVIEW.md` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
 4. Confirm branch `codex/p13-dataset-acquisition-validation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
