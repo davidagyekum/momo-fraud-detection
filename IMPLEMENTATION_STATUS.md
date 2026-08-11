@@ -20,6 +20,7 @@
 - PR13 STFD metadata/access review implementation SHA: `7b12b9f6a7572bbf569c707ac057ec541ed92b10`
 - PR13 STFD acquisition evidence SHA: `17b60cbe7bab10dfd1ffd4fba1c77f93ebc09aa9`
 - PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
+- PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR14 foundation gate passes locally with 376 tests at 91.04% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
