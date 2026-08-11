@@ -13,6 +13,7 @@
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
 - PR13 PaySim step-reconciliation code SHA: `af248bd6b71e77bdf9ddaa4dc3457856f1cff87a`
 - PR13 corrected Colab pin SHA: `6b9945c6b03d394b9304045fa1ab02e928bb1951`
+- PR13 PaySim registration evidence SHA: `f2ccf7aba8d18154df12ed13b9cb4d1eec96b334`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 308 tests at 90.52% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -36,7 +37,7 @@
 - Evidence boundary: PaySim's author-owned Kaggle Version 2 listing, CC BY-SA 4.0 licence and active Kaggle platform terms are reviewed in `docs/evidence/PR13_PAYSIM_SOURCE_RIGHTS_REVIEW.md`. The official ZIP is privately stored with SHA-256 `f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d` and size `186385561`. The corrected owner-operated Colab run registered 6,362,620 rows, 8,213 positives, zero duplicates/nulls/invalid labels/invalid amounts and 743 unique steps. Manifest SHA-256 `6ec6421c…` and safe-profile SHA-256 `6aa3b23d…` are recorded in `docs/evidence/PR13_PAYSIM_REGISTRATION.json`. MoMTSim v1/v2, STFD, FSTS and Ghana-private retain their separate gates.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and registration-only; it cannot download, create splits, train, inspect locked tests or promote an artifact.
 - Honesty boundary: the first PaySim quarantine remains preserved and the corrected result is registered, but registration is not training approval. PaySim stays disabled and non-promotable; no split, training, locked-test, metric or promotion claim is made.
-- Verification: the registered ML gate passes format, lint, strict mypy, 308 tests at 90.52% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 476 candidates.
+- Verification: the registered ML gate passes format, lint, strict mypy, 308 tests at 90.52% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 477 candidates.
 - Current registry hash after PaySim registration: `515545a3d9b626cfc74145f912a4282969f90a362667df68881dd7ef7f638af4`.
 
 ## Logical PR10 evidence/execution foundation
@@ -126,14 +127,14 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-paysim-step-reconciliation-session.md`
-- Summary: `Preserved the first fail-closed PaySim quarantine, independently confirmed contiguous steps 1..743, corrected only the off-by-one expectation, and published a new immutable registration pin; no training or locked-test access occurred.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-paysim-registered-session.md`
+- Summary: `Recorded the successful owner-operated PaySim registration and content-addressed manifest/profile evidence, transitioned only its acquisition state to registered, and kept the source disabled/non-promotable; no split, training or locked-test access occurred.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-11-PR13-paysim-step-reconciliation-session.md`, `docs/evidence/PR13_PAYSIM_STEP_COUNT_RECONCILIATION.md` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
+3. Read `docs/handoffs/2026-08-11-PR13-paysim-registered-session.md`, `docs/evidence/PR13_PAYSIM_REGISTRATION.json` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
 4. Confirm branch `codex/p13-dataset-acquisition-validation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
