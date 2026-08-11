@@ -9,6 +9,7 @@ from momo_fdvs_ml.cli import main
 from momo_fdvs_ml.execution import FULL_TRAINING_ACKNOWLEDGEMENT
 from momo_fdvs_ml.image_model import ImageTrainingOutputs
 from momo_fdvs_ml.smoke import SmokeOutputs
+from momo_fdvs_ml.transaction_model import TransactionTrainingOutputs
 
 
 def test_cli_generates_and_validates_dataset(tmp_path: Path, capsys) -> None:  # type: ignore[no-untyped-def]
@@ -130,6 +131,87 @@ def test_cli_dispatches_transaction_feature_build_without_training(
     assert spec.expected_row_count == 16
     assert spec.minimum_partition_positives == 2
     assert spec.entrypoint == "source.csv"
+
+
+def test_cli_transaction_training_and_verification_dispatch(
+    tmp_path: Path, capsys, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    report = {
+        "dataset_id": "paysim",
+        "selection": {"family": "logistic"},
+    }
+    outputs = TransactionTrainingOutputs(
+        artifact_path=tmp_path / "transaction.joblib",
+        artifact_sha256="a" * 64,
+        report_path=tmp_path / "report.json",
+        model_card_path=tmp_path / "card.md",
+        registry_payload_path=tmp_path / "registry.json",
+        run_manifest_path=tmp_path / "run-manifest.json",
+        report=report,
+    )
+    captured: dict[str, object] = {}
+
+    def train(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+        return outputs
+
+    monkeypatch.setattr(cli, "train_and_package_transaction_core", train)
+    monkeypatch.setattr(cli, "load_training_config", lambda path: "config")
+    monkeypatch.setattr(cli, "transaction_runtime_fingerprint", lambda: {"runtime": "test"})
+    monkeypatch.setattr(cli, "require_training_execution", lambda *args, **kwargs: None)
+    assert (
+        main(
+            [
+                "train-transaction-core",
+                "--dataset-root",
+                str(tmp_path / "dataset"),
+                "--output-dir",
+                str(tmp_path / "output"),
+                "--model-version",
+                "transaction-core-v1",
+                "--training-commit-sha",
+                "b" * 40,
+                "--notebook",
+                "ml/notebooks/colab/04_train_transaction_models.ipynb",
+                "--dependency-lock-sha256",
+                "c" * 64,
+                "--profile",
+                "full",
+                "--acknowledge-full-training",
+                FULL_TRAINING_ACKNOWLEDGEMENT,
+            ]
+        )
+        == 0
+    )
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["selected_family"] == "logistic"
+    assert summary["locked_test_accessed_for_decisions"] is False
+    assert captured["dataset_root"] == tmp_path / "dataset"
+    assert captured["config"] == "config"
+
+    monkeypatch.setattr(
+        cli,
+        "load_and_verify_transaction_artifact",
+        lambda *args, **kwargs: {
+            "model_name": "transaction_core",
+            "model_version": "transaction-core-v1",
+            "dataset_id": "paysim",
+            "feature_contract_version": "transaction-core-features-v1",
+        },
+    )
+    assert (
+        main(
+            [
+                "verify-transaction-artifact",
+                "--artifact",
+                str(tmp_path / "transaction.joblib"),
+                "--sha256",
+                "a" * 64,
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["artifact_verified"] is True
 
 
 def test_cli_image_training_and_verification_dispatch(tmp_path: Path, capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]

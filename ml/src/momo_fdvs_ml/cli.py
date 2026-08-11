@@ -67,6 +67,15 @@ from momo_fdvs_ml.transaction_etl import (
     TransactionBuildSpec,
     build_transaction_parquet_dataset,
 )
+from momo_fdvs_ml.transaction_model import (
+    TransactionModelError,
+    load_and_verify_transaction_artifact,
+    load_training_config,
+    train_and_package_transaction_core,
+)
+from momo_fdvs_ml.transaction_model import (
+    runtime_fingerprint as transaction_runtime_fingerprint,
+)
 from momo_fdvs_ml.transaction_pipeline import TransactionPipelineError
 
 
@@ -192,6 +201,40 @@ def build_parser() -> argparse.ArgumentParser:
     build_transactions.add_argument("--entrypoint")
     build_transactions.add_argument("--minimum-partition-positives", type=int, default=100)
     build_transactions.add_argument("--shard-size", type=int, default=100_000)
+
+    train_transaction = subparsers.add_parser(
+        "train-transaction-core",
+        help="fit/calibrate/export PR15 from PR14 bundles in acknowledged Google Colab FULL mode",
+    )
+    train_transaction.add_argument("--dataset-root", type=Path, required=True)
+    train_transaction.add_argument("--output-dir", type=Path, required=True)
+    train_transaction.add_argument("--model-version", required=True)
+    train_transaction.add_argument("--training-commit-sha", required=True)
+    train_transaction.add_argument("--notebook", required=True)
+    train_transaction.add_argument("--dependency-lock-sha256", required=True)
+    train_transaction.add_argument("--config", type=Path)
+    train_transaction.add_argument(
+        "--external-dataset-root",
+        type=Path,
+        action="append",
+        default=[],
+        help="repeat for compatible non-final cross-source tuning evaluation",
+    )
+    train_transaction.add_argument(
+        "--profile", choices=[profile.value for profile in ExecutionProfile], required=True
+    )
+    train_transaction.add_argument(
+        "--acknowledge-full-training",
+        metavar="TOKEN",
+        help=f"required for FULL mode: {FULL_TRAINING_ACKNOWLEDGEMENT}",
+    )
+
+    verify_transaction = subparsers.add_parser(
+        "verify-transaction-artifact",
+        help="hash and contract-check one trusted PR15 transaction bundle",
+    )
+    verify_transaction.add_argument("--artifact", type=Path, required=True)
+    verify_transaction.add_argument("--sha256", required=True)
 
     train = subparsers.add_parser(
         "train-structured",
@@ -462,6 +505,63 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(report, indent=2, sort_keys=True))
             return 0
 
+        if args.command == "train-transaction-core":
+            require_training_execution(
+                ExecutionProfile(args.profile),
+                acknowledgement=args.acknowledge_full_training,
+            )
+            transaction_outputs = train_and_package_transaction_core(
+                dataset_root=args.dataset_root,
+                output_dir=args.output_dir,
+                model_version=args.model_version,
+                training_commit_sha=args.training_commit_sha,
+                notebook=args.notebook,
+                dependency_lock_sha256=args.dependency_lock_sha256,
+                config=load_training_config(args.config),
+                external_dataset_roots=tuple(args.external_dataset_root),
+            )
+            print(
+                json.dumps(
+                    {
+                        "artifact_path": str(transaction_outputs.artifact_path),
+                        "artifact_sha256": transaction_outputs.artifact_sha256,
+                        "report_path": str(transaction_outputs.report_path),
+                        "model_card_path": str(transaction_outputs.model_card_path),
+                        "registry_payload_path": str(transaction_outputs.registry_payload_path),
+                        "run_manifest_path": str(transaction_outputs.run_manifest_path),
+                        "dataset_id": transaction_outputs.report["dataset_id"],
+                        "selected_family": transaction_outputs.report["selection"]["family"],
+                        "locked_test_accessed_for_decisions": False,
+                        "final_evaluation_executed": False,
+                        "not_real_world_probability": True,
+                        "runtime": transaction_runtime_fingerprint(),
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "verify-transaction-artifact":
+            transaction_bundle = load_and_verify_transaction_artifact(
+                args.artifact, expected_sha256=args.sha256
+            )
+            print(
+                json.dumps(
+                    {
+                        "artifact_verified": True,
+                        "model_name": transaction_bundle["model_name"],
+                        "model_version": transaction_bundle["model_version"],
+                        "dataset_id": transaction_bundle["dataset_id"],
+                        "feature_contract_version": transaction_bundle["feature_contract_version"],
+                        "locked_test_accessed": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
         if args.command == "train-structured":
             require_training_execution(
                 ExecutionProfile(args.profile),
@@ -575,6 +675,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         NotebookPolicyError,
         StructuredDatasetError,
         StructuredModelError,
+        TransactionModelError,
         TransactionPipelineError,
     ) as exc:
         print(json.dumps({"error": str(exc)}, indent=2, sort_keys=True))

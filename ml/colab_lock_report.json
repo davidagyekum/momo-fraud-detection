@@ -12,8 +12,8 @@
     },
     {
       "path": "ml/requirements-training.lock",
-      "requirement_count": 1,
-      "sha256": "cd5bf3458be6e397c98bb38f5a37292fd6825c4030af4429879c0835482fa39c"
+      "requirement_count": 2,
+      "sha256": "06debd67f5f1fc30966661e49c407784184db56ab88f9147f6d9f0ff0f552b45"
     },
     {
       "path": "ml/requirements-dev.lock",

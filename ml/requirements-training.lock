@@ -1,2 +1,3 @@
-# Google Colab reportable image-model training only (Python 3.12).
+# Google Colab reportable image and transaction-model training (Python 3.12).
 tensorflow==2.21.0
+xgboost==3.3.0

@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p14-frozen-splits`
-- Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
+- Current work branch: `codex/p15-transaction-models`
+- Base SHA: `f4862e32756a9b9ebde106a2eaf4993ba875b33a`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
-- CI status: `Logical PR14 foundation gate passes locally with 376 tests at 91.04% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR15 implementation gate passes locally with 391 tests at 90.98% branch-aware coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR14 transaction ETL, causal features and frozen partitions — Complete`
-- Next exact task: `Stop for project-owner review before logical PR15 transaction-model training. Do not start fitting, calibration or threshold selection until the owner explicitly proceeds.`
+- Current phase: `Logical PR15 transaction model training, calibration and export — In Progress`
+- Next exact task: `Freeze and push the verified PR15 implementation, pin the Colab notebook to its immutable code SHA, then run the owner-authorised PaySim, MoMTSim v1 and MoMTSim v2-derivative training workflows in Google Colab without opening the locked-test partitions.`
 
 ## PR10-PR13 reconciliation status
 
@@ -56,6 +56,16 @@
 - Colab evidence: owner-operated preprocessing completed at clean pinned commit `af8cce11d4e3f5644f24019498826899d356b503`. PaySim, MoMTSim v1 and the registered MoMTSim v2 derivative produced separate content-hashed Drive bundles with split manifests `4cca1058…`, `55623501…` and `539bcb46…`; train-only preprocessors are `63f67bb2…`, `8fc1f539…` and `9a0ed3bd…`.
 - Safety boundary: all three locked-test partitions are sealed, `locked_test_accessed_for_decisions=false` and `training_executed=false`. Exact safe aggregates and runtime/peak-memory evidence are recorded in `docs/evidence/PR14_TRANSACTION_PREPROCESSING_COLAB.json`.
 - Verification: the post-evidence ML gate passes Ruff, strict mypy, 376 tests at 91.04% branch-aware coverage and deterministic governance/lock/notebook/data checks; the secret/prohibited-artifact scan passes 509 candidate files. No model training occurred.
+
+## Logical PR15 transaction training, calibration and export
+
+- Implementation: source-specific binary transaction-risk search supports bounded dummy, logistic, histogram-gradient-boosting, XGBoost and random-forest candidates under the exact seeds `42`, `123` and `2026`; the configured candidate counts remain within the blueprint maxima.
+- Frozen-data boundary: training loads only PR14 train, tuning and calibration shards; it verifies build/split/preprocessor identities and content hashes, applies the frozen train-only preprocessor without refitting and rejects locked-test access.
+- Selection/calibration: candidate ranking prioritises average precision and recall under the configured false-positive-rate cap. Chronological calibration halves separate calibrator fitting from calibrator/threshold selection; medium and high thresholds use explicit F2/FPR and precision targets with recorded fallbacks.
+- Compatibility: ADR-032 keeps PR15's internal probability binary and source-specific, projects only labels to the fixed `GENUINE`/`SUSPICIOUS`/`FRAUDULENT` product taxonomy and forbids fabrication of a three-class probability vector.
+- Artifact/evidence boundary: exported joblib artifacts are content-hashed before trusted reload and checked for prediction parity. Reports and run manifests record config, dataset, split, preprocessor, dependency and code identities; every PR15 artifact remains inactive, non-promotable, non-final and not a real-world probability claim.
+- Domain-shift boundary: the other registered structured sources may be evaluated on tuning partitions only, using the source calibrator without external recalibration. These comparisons are research evidence, never final metrics or promotion evidence.
+- Verification: the implementation gate passes formatting, Ruff, strict mypy, 391 tests at 90.98% branch-aware coverage, governance, lock, notebook and controlled-data checks. No full training run or metric is claimed yet; owner-authorised Google Colab execution is pending.
 
 ## Logical PR10 evidence/execution foundation
 

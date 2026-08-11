@@ -86,6 +86,41 @@ The local/CI fixture gate can exercise the complete path without external bytes:
 
 Do not run `build-transaction-features` against an unregistered source or a Git path. Full outputs belong only in restricted VM/Drive storage. This PR14 command performs preprocessing, not training; logical PR15 remains a separate owner-operated Colab stop point.
 
+## Logical PR15 transaction models
+
+`transaction_model.py` verifies the exact PR14 report, split, preprocessor and
+non-test shard hashes before fitting. Its bounded search includes dummy,
+logistic, histogram-boosting, XGBoost and secondary-forest adapters; model
+selection uses tuning average precision first. The chronological calibration
+partition is split into independent calibrator-fit and threshold-selection
+halves. Every exported bundle remains source-specific, inactive,
+non-promotable and labelled `not_real_world_probability` until the one-time
+PR20 final evaluation.
+
+Full fitting is available only through the pinned, owner-operated
+`04_train_transaction_models.ipynb`. The CLI guard requires detected Google
+Colab FULL mode and the exact acknowledgement token:
+
+```powershell
+$env:PYTHONPATH = "ml/src"
+.venv\Scripts\python.exe -m momo_fdvs_ml train-transaction-core `
+  --dataset-root C:\approved-private\pr14\paysim `
+  --output-dir C:\approved-private\pr15\transaction-core-paysim-pr15-v1 `
+  --model-version transaction-core-paysim-pr15-v1 `
+  --training-commit-sha <40-hex-pushed-commit> `
+  --notebook ml/notebooks/colab/04_train_transaction_models.ipynb `
+  --dependency-lock-sha256 <64-hex-lock-hash> `
+  --config ml/configs/transaction_core_default.json `
+  --profile full `
+  --acknowledge-full-training I_ACKNOWLEDGE_FULL_COLAB_TRAINING
+```
+
+This example documents the contract; it must not be run on the laptop or in
+CI. `train`, `tuning` and `calibration` are the only accepted partitions. The
+PR14 loader and PR15 verifier both reject `locked_test` before PR20. PR15's
+binary score does not fabricate the fixed public three-class probability
+vector; ADR-032 preserves the compatibility boundary for PR19.
+
 ## P12 pre-training commands
 
 Validate the frozen binary image task and exact 224×224 RGB preprocessing contract:

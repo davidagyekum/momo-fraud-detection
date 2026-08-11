@@ -27,6 +27,7 @@ dev = [
 ]
 training = [
   "tensorflow==2.21.0",
+  "xgboost==3.3.0",
 ]
 
 [tool.setuptools.packages.find]
