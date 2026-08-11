@@ -1,10 +1,23 @@
 {
   "schema_version": "dataset-validation-spec-v1",
   "dataset_id": "momtsim-v1",
-  "status": "pending_authoritative_schema",
+  "status": "pending_exact_file_identity",
   "dataset_kind": "transaction_csv",
-  "reference_row_count": 1720000,
-  "reference_positive_count": 175518,
+  "approved_source": {
+    "canonical_locator": "mendeley:10.17632/zhj366m53p.1",
+    "mendeley_dataset_version": 1,
+    "published_date": "2024-10-07",
+    "licence": "CC BY 4.0"
+  },
+  "required_columns": ["step", "transactionType", "amount", "initiator", "oldBalInitiator", "newBalInitiator", "recipient", "oldBalRecipient", "newBalRecipient", "isFraud"],
+  "label_column": "isFraud",
+  "positive_values": ["1"],
+  "step_column": "step",
+  "amount_column": "amount",
+  "expected_row_count": 1720181,
+  "expected_positive_count": 175518,
+  "published_simulation_step_parameter": 720,
+  "forbidden_primary_benchmark_columns": ["oldBalInitiator", "newBalInitiator", "oldBalRecipient", "newBalRecipient"],
   "required_semantic_roles": ["transaction_type", "amount", "initiator", "recipient", "initiator_balance", "recipient_balance", "fraud_label"],
-  "limitations": ["Raw field names and exact archive layout must be verified from authorised version-1 bytes/documentation before registration can pass."]
+  "limitations": ["The peer-reviewed article establishes the raw columns and aggregate counts, but exact version-1 file name, byte size, SHA-256 and observed unique-step count must be verified from the official Mendeley download before registration can pass."]
 }

@@ -275,3 +275,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** This is a metadata correction, not dataset substitution or a bypass. PaySim remains disabled and non-promotable until the corrected registration produces `status: registered`. The lower-precedence blueprint's approximate 744-step statement is recorded as reconciled rather than silently changed.
 - **Related requirements/phases:** Logical PR13, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-023, ADR-024.
 - **Supersedes:** Only the PaySim unique-step expectation derived from the logical PR13 blueprint; no fixed product/API/database contract changes.
+
+## ADR-026 — Approve only official Mendeley MoMTSim DOI versions
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Codex within ADR-021/ADR-023 and authoritative CC BY 4.0 metadata
+- **Context:** Logical PR13 requires MoMTSim v1 and v2 as separate structured sources. Mendeley Data publishes immutable DOI versions `10.17632/zhj366m53p.1` and `.2`, both under CC BY 4.0, while the linked peer-reviewed data article publishes the common raw schema and exact row/class counts. The version-2 page lists two CSV files, but displayed sizes alone do not prove their version mapping or exact byte identity.
+- **Options considered:** Keep rights unverified; accept a mirror or infer versions from filenames/sizes; approve official Mendeley acquisition while retaining an exact-file identity gate.
+- **Decision:** Approve permission and verify CC BY 4.0 only for official Mendeley DOI downloads for the recorded academic purpose. Keep v1 and v2 disabled and `not_acquired`; do not register either until exact official file mapping, byte size, SHA-256, encoding/header and measured aggregate profile are recorded separately. Treat the published `nbSteps=720` as a simulator parameter, not an observed unique-step assertion.
+- **Consequences:** Rights and published-schema blockers are resolved without opening bytes. Acquisition/registration remains blocked on exact official file identity. Attribution, licence link and change indication are mandatory; mirrors, version substitution, raw Git/public serving, merged-population claims and Ghana/provider prevalence claims remain prohibited.
+- **Related requirements/phases:** Logical PR13, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-021, ADR-023.
+- **Supersedes:** None.

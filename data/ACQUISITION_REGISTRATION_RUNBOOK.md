@@ -7,8 +7,8 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 | Source | Evidence required before bytes may be acquired or opened |
 |---|---|
 | PaySim | Registered from the author-owned Kaggle Version 2 archive after CC BY-SA 4.0/platform review. Exact source, inventory, registration-manifest and safe-profile hashes are recorded; the first quarantine remains preserved. The source stays disabled/non-promotable pending PR14 frozen splits. |
-| MoMTSim v1 | Authoritative Mendeley v1 citation/licence; exact v1 archive identity; approved raw-field mapping for transaction, actor, balance and label roles. |
-| MoMTSim v2 | Authoritative Mendeley v2 citation/licence; exact v2 archive identity; approved raw-field mapping kept separate from v1. |
+| MoMTSim v1 | DOI/version, CC BY 4.0 and the published raw schema/counts are reviewed. Remaining gate: official file-to-version mapping, exact byte size/SHA-256/header/encoding and measured aggregate profile. |
+| MoMTSim v2 | DOI/version, CC BY 4.0, the two listed filenames and published raw schema/counts are reviewed. Remaining gate: exact file-to-version mapping, byte size/SHA-256/header/encoding and measured aggregate profile, kept separate from v1. |
 | STFD | Written academic access approval, licence/restrictions, exact archive/version identity, and authoritative image/mask/grouping layout. |
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |

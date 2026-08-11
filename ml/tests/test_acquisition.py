@@ -223,9 +223,7 @@ def test_readiness_names_each_source_specific_blocker() -> None:
     sources = {source["dataset_id"]: source for source in report["sources"]}
     assert sources["paysim"]["blockers"] == []
     assert sources["paysim"]["eligible_for_local_registration"] is True
-    assert (
-        "validation_spec_status:pending_authoritative_schema" in sources["momtsim-v1"]["blockers"]
-    )
+    assert "validation_spec_status:pending_exact_file_identity" in sources["momtsim-v1"]["blockers"]
     assert "written_access_approval_missing" in sources["stfd"]["blockers"]
     assert "participant_consent_evidence_missing" in sources["ghana-private"]["blockers"]
     assert sources["fsts"]["required"] is False
@@ -318,7 +316,9 @@ def test_identity_mismatch_quarantines_with_safe_profile(tmp_path: Path) -> None
     }
 
 
-def test_current_registry_blocks_before_any_source_access(tmp_path: Path) -> None:
+def test_current_registry_blocks_unready_source_before_any_source_access(
+    tmp_path: Path,
+) -> None:
     request_path = tmp_path / "request.json"
     payload = {
         "schema_version": "acquisition-request-v1",
@@ -342,7 +342,7 @@ def test_current_registry_blocks_before_any_source_access(tmp_path: Path) -> Non
         },
     }
     request_path.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(AcquisitionError, match="permission is not approved"):
+    with pytest.raises(AcquisitionError, match="validation specification is not ready"):
         register_local_source(
             data_root=DATA_ROOT,
             request_path=request_path,

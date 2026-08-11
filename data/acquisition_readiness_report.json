@@ -27,21 +27,21 @@
     },
     {
       "acquisition_status": "not_acquired",
-      "blockers": ["licence_status:unverified", "permission_status:unverified", "validation_spec_status:pending_authoritative_schema"],
+      "blockers": ["validation_spec_status:pending_exact_file_identity"],
       "dataset_id": "momtsim-v1",
       "eligible_for_local_registration": false,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "pending_authoritative_schema"
+      "validation_spec_status": "pending_exact_file_identity"
     },
     {
       "acquisition_status": "not_acquired",
-      "blockers": ["licence_status:unverified", "permission_status:unverified", "validation_spec_status:pending_authoritative_schema"],
+      "blockers": ["validation_spec_status:pending_exact_file_identity"],
       "dataset_id": "momtsim-v2",
       "eligible_for_local_registration": false,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "pending_authoritative_schema"
+      "validation_spec_status": "pending_exact_file_identity"
     },
     {
       "acquisition_status": "registered",

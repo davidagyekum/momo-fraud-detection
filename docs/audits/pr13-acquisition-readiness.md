@@ -11,8 +11,8 @@ The no-network registration and validation foundation is implemented and locally
 | Source | Required | Validation-spec state | Blocking evidence |
 |---|---:|---|---|
 | PaySim | yes | ready after governance approval | accountable licence/permission review and exact version/archive identity |
-| MoMTSim v1 | yes | pending authoritative schema | licence/permission, exact v1 identity and approved raw-field mapping |
-| MoMTSim v2 | yes | pending authoritative schema | licence/permission, exact v2 identity and approved raw-field mapping |
+| MoMTSim v1 | yes | pending exact file identity | official file-to-version mapping, exact bytes/hash/header/encoding and measured aggregate profile; licence and published schema/counts reviewed |
+| MoMTSim v2 | yes | pending exact file identity | exact mapping of the two official listed files, bytes/hash/header/encoding and measured aggregate profile; licence and published schema/counts reviewed |
 | STFD | yes | pending written access and layout | written access, terms/version and authoritative image/mask/group layout |
 | FSTS | no | optional; pending terms and layout | necessity decision, authoritative source/terms/version and subset/layout |
 | Ghana-private | yes | pending consent and private index | institutional/supervisor approval, participant consent, withdrawal index and restricted path |

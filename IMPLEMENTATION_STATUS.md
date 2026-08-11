@@ -18,8 +18,8 @@
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 308 tests at 90.52% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; PaySim registered but disabled/non-promotable, while five canonical sources remain blocked`
-- Next exact task: `Review MoMTSim v1/v2 authoritative Mendeley licences, exact version/file identity and published schema/count mapping. Do not acquire or open bytes until the source-specific evidence gate is recorded.`
+- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; PaySim registered, MoMTSim v1/v2 rights/schema reviewed pending exact official file identity, and three image sources retain separate gates`
+- Next exact task: `Use only the official Mendeley DOI download path for MoMTSim v1/v2, keep versions separate in private storage, and record exact file-to-version mapping, byte sizes, SHA-256 values, headers/encoding and safe aggregate profiles before registration.`
 
 ## PR10-PR13 reconciliation status
 
@@ -31,14 +31,14 @@
 
 ## Logical PR13 dataset acquisition and validation
 
-- Readiness: deterministic metadata-only inventory reports PaySim `registered` and five of six canonical sources blocked; every source remains disabled.
+- Readiness: deterministic metadata-only inventory reports PaySim `registered`; MoMTSim v1/v2 now have approved permission, verified CC BY 4.0 and published schema/count controls but remain blocked on exact official file identity; all six sources remain disabled.
 - Registration: strict request/manifest contracts, approved-root confinement, content-addressed file/directory/ZIP inventory, transaction/image validators, redacted safe profiles and non-mutating quarantine are implemented without a network client.
 - Hostile-input controls: path traversal, symlink substitution, duplicate normalised ZIP members, archive expansion, malformed/oversized images, schema/count/class drift, mask pairing and identity mismatches fail closed.
-- Evidence boundary: PaySim's author-owned Kaggle Version 2 listing, CC BY-SA 4.0 licence and active Kaggle platform terms are reviewed in `docs/evidence/PR13_PAYSIM_SOURCE_RIGHTS_REVIEW.md`. The official ZIP is privately stored with SHA-256 `f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d` and size `186385561`. The corrected owner-operated Colab run registered 6,362,620 rows, 8,213 positives, zero duplicates/nulls/invalid labels/invalid amounts and 743 unique steps. Manifest SHA-256 `6ec6421c…` and safe-profile SHA-256 `6aa3b23d…` are recorded in `docs/evidence/PR13_PAYSIM_REGISTRATION.json`. MoMTSim v1/v2, STFD, FSTS and Ghana-private retain their separate gates.
+- Evidence boundary: PaySim's corrected owner-operated Colab run registered 6,362,620 rows and content-addressed manifest/profile evidence in `docs/evidence/PR13_PAYSIM_REGISTRATION.json`. `docs/evidence/PR13_MOMTSIM_SOURCE_RIGHTS_REVIEW.md` records the official Mendeley DOI versions, CC BY 4.0, listed files, ten published raw columns, exact row/class counts and the remaining exact-file gate. STFD, FSTS and Ghana-private retain separate access/terms/consent gates.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and registration-only; it cannot download, create splits, train, inspect locked tests or promote an artifact.
 - Honesty boundary: the first PaySim quarantine remains preserved and the corrected result is registered, but registration is not training approval. PaySim stays disabled and non-promotable; no split, training, locked-test, metric or promotion claim is made.
-- Verification: the registered ML gate passes format, lint, strict mypy, 308 tests at 90.52% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 477 candidates.
-- Current registry hash after PaySim registration: `515545a3d9b626cfc74145f912a4282969f90a362667df68881dd7ef7f638af4`.
+- Verification: the registered ML gate passes format, lint, strict mypy, 308 tests at 90.52% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 478 candidates.
+- Current registry hash after PaySim registration and MoMTSim rights approval: `3a9b18d9999b697438716af1b5031a9b79e979a002aacc0bfab49a3a5184ced8`.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -103,7 +103,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-11 — PaySim registered with content-addressed safe Colab evidence, remains disabled/non-promotable, five sources remain blocked, and no training occurred`
+- Traceability file last verified: `2026-08-11 — PaySim registered; MoMTSim v1/v2 rights and published schemas/counts reviewed but exact official file identities remain pending; all sources disabled and no training occurred`
 
 ## Current blockers
 
@@ -112,7 +112,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
-| PR13-DATA-RIGHTS | Logical PR13 | MoMTSim v1/v2, STFD, FSTS and Ghana-private still lack at least one accountable permission/licence/consent, exact-version or authoritative schema/layout prerequisite. | PR13 cannot complete and PR14 frozen splits cannot start. | Keep those five registry entries disabled and use only fictitious validator tests. | Project owner/data steward supplies source-specific evidence listed in `data/ACQUISITION_REGISTRATION_RUNBOOK.md`. | Review the remaining sources one at a time without opening uncertain-rights bytes. |
+| PR13-DATA-RIGHTS | Logical PR13 | MoMTSim v1/v2 still require exact official file mapping/hashes; STFD, FSTS and Ghana-private retain access/terms/consent and layout prerequisites. | PR13 cannot complete and PR14 frozen splits cannot start. | Keep all five entries disabled and do not infer file identity from names/sizes. | Project owner/data steward follows `data/ACQUISITION_REGISTRATION_RUNBOOK.md`. | Acquire MoMTSim only through official Mendeley, preserve versions separately and record exact identity before registration. |
 
 ## Active known limitations
 
@@ -139,4 +139,4 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve PaySim as registered but disabled/non-promotable and preserve both the first quarantine and corrected registration artifacts; do not create splits, access locked tests or execute FULL training yet.
-8. Continue logical PR13 with MoMTSim v1/v2 authoritative source-rights, exact-version and schema/layout review. Do not open source bytes before those gates are recorded.
+8. MoMTSim source rights/schema review is complete under ADR-026. Next, use only official Mendeley DOI downloads and record exact file mapping/byte identity before changing either validation specification to ready or running registration.

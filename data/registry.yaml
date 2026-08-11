@@ -29,14 +29,14 @@
       "required": true,
       "enabled": false,
       "acquisition_status": "not_acquired",
-      "permission_status": "unverified",
-      "licence_status": "unverified",
+      "permission_status": "approved",
+      "licence_status": "verified",
       "redistribution": "blocked",
-      "data_classification": "restricted_until_verified",
+      "data_classification": "licensed_synthetic_restricted_storage",
       "card_path": "data/cards/momtsim-v1.md",
       "expected_schema": "data/schemas/transaction.schema.json",
       "allowed_purposes": ["academic_research_after_terms_review"],
-      "prohibited_uses": ["acquisition_before_terms_review", "version_substitution", "public_redistribution"]
+      "prohibited_uses": ["unattributed_use", "unverified_file_mapping", "version_substitution", "public_raw_git_storage"]
     },
     {
       "dataset_id": "momtsim-v2",
@@ -47,14 +47,14 @@
       "required": true,
       "enabled": false,
       "acquisition_status": "not_acquired",
-      "permission_status": "unverified",
-      "licence_status": "unverified",
+      "permission_status": "approved",
+      "licence_status": "verified",
       "redistribution": "blocked",
-      "data_classification": "restricted_until_verified",
+      "data_classification": "licensed_synthetic_restricted_storage",
       "card_path": "data/cards/momtsim-v2.md",
       "expected_schema": "data/schemas/transaction.schema.json",
       "allowed_purposes": ["academic_research_after_terms_review"],
-      "prohibited_uses": ["acquisition_before_terms_review", "version_substitution", "public_redistribution"]
+      "prohibited_uses": ["unattributed_use", "unverified_file_mapping", "version_substitution", "public_raw_git_storage"]
     },
     {
       "dataset_id": "stfd",
