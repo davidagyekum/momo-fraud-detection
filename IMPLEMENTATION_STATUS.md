@@ -15,6 +15,7 @@
 - PR13 corrected Colab pin SHA: `6b9945c6b03d394b9304045fa1ab02e928bb1951`
 - PR13 PaySim registration evidence SHA: `f2ccf7aba8d18154df12ed13b9cb4d1eec96b334`
 - PR13 MoMTSim rights/schema review SHA: `53f852f99204185ebd11781edcf19b77b98ec982`
+- PR13 MoMTSim acquisition/registration evidence SHA: `91da9dd3841cca880974c5cbfc76bd82acddf07d`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 311 tests at 90.53% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -129,16 +130,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-momtsim-rights-review-session.md`
-- Summary: `Verified the official Mendeley MoMTSim v1/v2 DOI versions, CC BY 4.0 and peer-reviewed schema/counts; kept both disabled/not acquired pending exact official file identity, and performed no training or locked-test access.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-momtsim-registration-session.md`
+- Summary: `Acquired exact official MoMTSim DOI packages through Chrome, registered v1, preserved v2 under a 20-duplicate-row quarantine, kept all sources disabled/non-promotable, and performed no split, training or locked-test access.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read `docs/handoffs/2026-08-11-PR13-momtsim-rights-review-session.md`, `docs/evidence/PR13_MOMTSIM_SOURCE_RIGHTS_REVIEW.md` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
+3. Read `docs/handoffs/2026-08-11-PR13-momtsim-registration-session.md`, `docs/evidence/PR13_MOMTSIM_ACQUISITION_REGISTRATION.json` and `data/ACQUISITION_REGISTRATION_RUNBOOK.md`.
 4. Confirm branch `codex/p13-dataset-acquisition-validation`, its pushed head and the immutable code SHA printed in the handoff/notebooks.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve PaySim as registered but disabled/non-promotable and preserve both the first quarantine and corrected registration artifacts; do not create splits, access locked tests or execute FULL training yet.
-8. MoMTSim source rights/schema review is complete under ADR-026. Next, use only official Mendeley DOI downloads and record exact file mapping/byte identity before changing either validation specification to ready or running registration.
+8. Preserve MoMTSim v1 as registered and v2 as quarantined under ADR-027. Do not mutate or deduplicate official v2 bytes; review a content-addressed deterministic derived-dataset policy before any re-registration.
