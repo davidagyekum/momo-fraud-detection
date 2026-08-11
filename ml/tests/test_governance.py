@@ -68,8 +68,10 @@ def test_registry_has_exact_sources_cards_schemas_and_explicit_restrictions() ->
         if isinstance(entry, dict)
     }
     assert states["paysim"] == "registered"
+    assert states["momtsim-v1"] == "registered"
+    assert states["momtsim-v2"] == "quarantined"
     assert all(
-        state == "not_acquired" for dataset_id, state in states.items() if dataset_id != "paysim"
+        states[dataset_id] == "not_acquired" for dataset_id in ("stfd", "fsts", "ghana-private")
     )
     assert all(
         isinstance(entry, dict) and entry["redistribution"] in {"blocked", "internal_only"}
@@ -84,7 +86,7 @@ def test_registry_rejects_unapproved_enablement(tmp_path: Path) -> None:
     blocked_entry = next(
         entry
         for entry in entries
-        if isinstance(entry, dict) and entry["dataset_id"] == "momtsim-v1"
+        if isinstance(entry, dict) and entry["dataset_id"] == "momtsim-v2"
     )
     entries.remove(blocked_entry)
     entries.insert(0, blocked_entry)

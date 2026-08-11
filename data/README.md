@@ -4,7 +4,7 @@ This directory contains metadata, schemas, fictitious fixtures and governance te
 
 `registry.yaml` is deliberately JSON-compatible YAML so the pinned Python standard library can validate it without adding a parser dependency. Every source is disabled and not acquired. An entry may be enabled only after its permission/licence and exact bytes are approved and registered outside Git.
 
-Logical PR13 validation specifications live in `acquisition_specs/`; their reference counts/layout expectations are gates derived from the approved blueprint, not measured dataset evidence. `acquisition_readiness_report.json` and `reports/generated/dataset_inventory.md` prove that PaySim alone is eligible for local registration while the other five sources remain blocked; the readiness command itself opens no source bytes. PaySim's official acquired archive identity is recorded separately in `docs/evidence/PR13_PAYSIM_ACQUISITION_IDENTITY.md`. See `ACQUISITION_REGISTRATION_RUNBOOK.md` before preparing a private request.
+Logical PR13 validation specifications live in `acquisition_specs/`. `acquisition_readiness_report.json` and `reports/generated/dataset_inventory.md` prove that PaySim and MoMTSim v1 are registered but disabled, MoMTSim v2 is quarantined, and the three image sources retain separate gates; the readiness command itself opens no source bytes. Exact PaySim and MoMTSim identities are recorded under `docs/evidence`, while raw bytes remain in ignored private storage. See `ACQUISITION_REGISTRATION_RUNBOOK.md` before preparing a private request.
 
 Run:
 

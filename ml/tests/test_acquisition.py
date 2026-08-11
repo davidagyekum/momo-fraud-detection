@@ -178,8 +178,8 @@ def test_committed_readiness_matches_recorded_report_without_opening_bytes() -> 
     )
     assert report == recorded
     assert report["source_count"] == 6
-    assert report["eligible_source_count"] == 1
-    assert report["blocked_source_count"] == 5
+    assert report["eligible_source_count"] == 2
+    assert report["blocked_source_count"] == 4
     assert report["network_acquisition_executed"] is False
     assert report["source_bytes_opened"] is False
     assert report["training_executed"] is False
@@ -205,6 +205,44 @@ def test_paysim_spec_matches_observed_canonical_archive_profile() -> None:
     assert spec["expected_step_count"] == 743
 
 
+def test_momtsim_specs_freeze_official_identity_and_observed_profiles() -> None:
+    v1 = json.loads((DATA_ROOT / "acquisition_specs/momtsim-v1.json").read_text(encoding="utf-8"))
+    v2 = json.loads((DATA_ROOT / "acquisition_specs/momtsim-v2.json").read_text(encoding="utf-8"))
+    assert (v1["status"], v1["expected_step_count"]) == ("ready", 144)
+    assert v1["approved_source"]["file_sha256"] == (
+        "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7"
+    )
+    assert (v2["status"], v2["expected_step_count"]) == ("ready", 193)
+    assert v2["approved_source"]["file_sha256"] == (
+        "99fd07c3a9d3c4bd6d3462240058ca19d0d9e9284683f78bf77542ff7fcc05e7"
+    )
+
+
+@pytest.mark.parametrize(
+    ("dataset_id", "expected_status", "expected_duplicates"),
+    [("momtsim-v1", "registered", 0), ("momtsim-v2", "quarantined", 20)],
+)
+def test_committed_momtsim_evidence_is_safe_and_matches_registry(
+    dataset_id: str, expected_status: str, expected_duplicates: int
+) -> None:
+    manifest = load_registration_manifest(DATA_ROOT / "manifests" / f"{dataset_id}.manifest.json")
+    profile = json.loads(
+        (
+            REPOSITORY_ROOT
+            / "reports/generated/dataset_profiles"
+            / f"{dataset_id}-safe-summary.json"
+        ).read_text(encoding="utf-8")
+    )
+    registry = json.loads((DATA_ROOT / "registry.yaml").read_text(encoding="utf-8"))
+    entry = next(item for item in registry["datasets"] if item["dataset_id"] == dataset_id)
+    assert manifest["status"] == profile["status"] == entry["acquisition_status"]
+    assert manifest["status"] == expected_status
+    assert manifest["validation_summary"]["duplicate_row_count"] == expected_duplicates
+    assert profile["contains_source_paths"] is False
+    assert profile["contains_member_names"] is False
+    assert profile["promotable_for_training"] is False
+
+
 def test_acquisition_contracts_are_strict_json_schema_2020_12() -> None:
     contract_root = REPOSITORY_ROOT / "ml/contracts"
     for name in (
@@ -223,7 +261,8 @@ def test_readiness_names_each_source_specific_blocker() -> None:
     sources = {source["dataset_id"]: source for source in report["sources"]}
     assert sources["paysim"]["blockers"] == []
     assert sources["paysim"]["eligible_for_local_registration"] is True
-    assert "validation_spec_status:pending_exact_file_identity" in sources["momtsim-v1"]["blockers"]
+    assert sources["momtsim-v1"]["blockers"] == []
+    assert sources["momtsim-v2"]["blockers"] == ["acquisition_status:quarantined"]
     assert "written_access_approval_missing" in sources["stfd"]["blockers"]
     assert "participant_consent_evidence_missing" in sources["ghana-private"]["blockers"]
     assert sources["fsts"]["required"] is False
@@ -316,9 +355,14 @@ def test_identity_mismatch_quarantines_with_safe_profile(tmp_path: Path) -> None
     }
 
 
-def test_current_registry_blocks_unready_source_before_any_source_access(
-    tmp_path: Path,
-) -> None:
+def test_unready_spec_blocks_before_any_source_access(tmp_path: Path) -> None:
+    data_root = tmp_path / "repository" / "data"
+    data_root.parent.mkdir(parents=True)
+    shutil.copytree(DATA_ROOT, data_root)
+    spec_path = data_root / "acquisition_specs/momtsim-v1.json"
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec["status"] = "pending_exact_file_identity"
+    spec_path.write_text(json.dumps(spec), encoding="utf-8")
     request_path = tmp_path / "request.json"
     payload = {
         "schema_version": "acquisition-request-v1",
@@ -344,7 +388,7 @@ def test_current_registry_blocks_unready_source_before_any_source_access(
     request_path.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(AcquisitionError, match="validation specification is not ready"):
         register_local_source(
-            data_root=DATA_ROOT,
+            data_root=data_root,
             request_path=request_path,
             allowed_source_root=tmp_path,
             manifest_path=tmp_path / "manifest.json",
@@ -580,7 +624,7 @@ def test_cli_readiness_and_fail_closed_registration(tmp_path: Path, capsys) -> N
         )
         == 0
     )
-    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 1
+    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 2
 
     request_path = tmp_path / "invalid-request.json"
     request_path.write_text("{}", encoding="utf-8")

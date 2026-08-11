@@ -1,7 +1,7 @@
 {
   "schema_version": "dataset-validation-spec-v1",
   "dataset_id": "momtsim-v2",
-  "status": "pending_exact_file_identity",
+  "status": "ready",
   "dataset_kind": "transaction_csv",
   "approved_source": {
     "canonical_locator": "mendeley:10.17632/zhj366m53p.2",
@@ -11,7 +11,13 @@
     "listed_files": [
       {"name": "MoMTSim_20240722202413_1000_dataset.csv", "displayed_size": "349 MB"},
       {"name": "synthetic_mobile_money_transaction_dataset.csv", "displayed_size": "149 MB"}
-    ]
+    ],
+    "registration_file": "MoMTSim_20240722202413_1000_dataset.csv",
+    "mendeley_file_id": "8a68b93f-5121-4510-bb6d-7862cd0776df",
+    "file_sha256": "99fd07c3a9d3c4bd6d3462240058ca19d0d9e9284683f78bf77542ff7fcc05e7",
+    "file_size_bytes": 366397921,
+    "encoding": "UTF-8 without BOM",
+    "retained_v1_file_sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7"
   },
   "required_columns": ["step", "transactionType", "amount", "initiator", "oldBalInitiator", "newBalInitiator", "recipient", "oldBalRecipient", "newBalRecipient", "isFraud"],
   "label_column": "isFraud",
@@ -20,8 +26,9 @@
   "amount_column": "amount",
   "expected_row_count": 4225958,
   "expected_positive_count": 2233118,
+  "expected_step_count": 193,
   "published_simulation_step_parameter": 720,
   "forbidden_primary_benchmark_columns": ["oldBalInitiator", "newBalInitiator", "oldBalRecipient", "newBalRecipient"],
   "required_semantic_roles": ["transaction_type", "amount", "initiator", "recipient", "initiator_balance", "recipient_balance", "fraud_label"],
-  "limitations": ["The official version-2 page lists two CSV files and the peer-reviewed article establishes raw columns and aggregate counts, but the exact v1/v2 file-to-version mapping, byte sizes, SHA-256 values and observed unique-step counts must be verified before registration can pass."]
+  "limitations": ["The exact official version-2 registration file identity and bounded aggregate profile were measured on 2026-08-11. The second file retained in the version-2 package is byte-identical to the registered v1 candidate and is not a separate v2 training population."]
 }

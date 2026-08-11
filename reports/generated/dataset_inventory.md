@@ -6,11 +6,11 @@
 |---|---:|---:|---|---|
 | fsts | no | no | not_acquired | licence_status:unverified, permission_status:unverified, validation_spec_status:optional_pending_terms_and_layout |
 | ghana-private | yes | no | not_acquired | participant_consent_evidence_missing, permission_status:consent_required, validation_spec_status:pending_consent_and_private_index |
-| momtsim-v1 | yes | no | not_acquired | validation_spec_status:pending_exact_file_identity |
-| momtsim-v2 | yes | no | not_acquired | validation_spec_status:pending_exact_file_identity |
+| momtsim-v1 | yes | yes | registered | none |
+| momtsim-v2 | yes | no | quarantined | acquisition_status:quarantined |
 | paysim | yes | yes | registered | none |
 | stfd | yes | no | not_acquired | licence_status:unverified, permission_status:access_request_required, validation_spec_status:pending_written_access_and_layout, written_access_approval_missing |
 
-Eligible: 1 / 6.
+Eligible: 2 / 6.
 
 No source bytes were opened; acquisition and training are false.

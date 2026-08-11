@@ -177,6 +177,8 @@ def acquisition_readiness_report(data_root: Path) -> dict[str, object]:
             blockers.append(f"licence_status:{entry['licence_status']}")
         if spec["status"] not in READY_SPEC_STATUSES:
             blockers.append(f"validation_spec_status:{spec['status']}")
+        if entry["acquisition_status"] == "quarantined":
+            blockers.append("acquisition_status:quarantined")
         if dataset_id == "stfd" and entry["permission_status"] != "approved":
             blockers.append("written_access_approval_missing")
         if dataset_id == "ghana-private" and entry["permission_status"] != "approved":

@@ -1,6 +1,6 @@
 {
-  "blocked_source_count": 5,
-  "eligible_source_count": 1,
+  "blocked_source_count": 4,
+  "eligible_source_count": 2,
   "foundation_version": "dataset-acquisition-foundation-v1",
   "network_acquisition_executed": false,
   "schema_version": "dataset-acquisition-readiness-v1",
@@ -9,7 +9,11 @@
   "sources": [
     {
       "acquisition_status": "not_acquired",
-      "blockers": ["licence_status:unverified", "permission_status:unverified", "validation_spec_status:optional_pending_terms_and_layout"],
+      "blockers": [
+        "licence_status:unverified",
+        "permission_status:unverified",
+        "validation_spec_status:optional_pending_terms_and_layout"
+      ],
       "dataset_id": "fsts",
       "eligible_for_local_registration": false,
       "enabled": false,
@@ -18,7 +22,11 @@
     },
     {
       "acquisition_status": "not_acquired",
-      "blockers": ["participant_consent_evidence_missing", "permission_status:consent_required", "validation_spec_status:pending_consent_and_private_index"],
+      "blockers": [
+        "participant_consent_evidence_missing",
+        "permission_status:consent_required",
+        "validation_spec_status:pending_consent_and_private_index"
+      ],
       "dataset_id": "ghana-private",
       "eligible_for_local_registration": false,
       "enabled": false,
@@ -26,22 +34,24 @@
       "validation_spec_status": "pending_consent_and_private_index"
     },
     {
-      "acquisition_status": "not_acquired",
-      "blockers": ["validation_spec_status:pending_exact_file_identity"],
+      "acquisition_status": "registered",
+      "blockers": [],
       "dataset_id": "momtsim-v1",
-      "eligible_for_local_registration": false,
+      "eligible_for_local_registration": true,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "pending_exact_file_identity"
+      "validation_spec_status": "ready"
     },
     {
-      "acquisition_status": "not_acquired",
-      "blockers": ["validation_spec_status:pending_exact_file_identity"],
+      "acquisition_status": "quarantined",
+      "blockers": [
+        "acquisition_status:quarantined"
+      ],
       "dataset_id": "momtsim-v2",
       "eligible_for_local_registration": false,
       "enabled": false,
       "required": true,
-      "validation_spec_status": "pending_exact_file_identity"
+      "validation_spec_status": "ready"
     },
     {
       "acquisition_status": "registered",
@@ -54,7 +64,12 @@
     },
     {
       "acquisition_status": "not_acquired",
-      "blockers": ["licence_status:unverified", "permission_status:access_request_required", "validation_spec_status:pending_written_access_and_layout", "written_access_approval_missing"],
+      "blockers": [
+        "licence_status:unverified",
+        "permission_status:access_request_required",
+        "validation_spec_status:pending_written_access_and_layout",
+        "written_access_approval_missing"
+      ],
       "dataset_id": "stfd",
       "eligible_for_local_registration": false,
       "enabled": false,

@@ -287,3 +287,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** Rights and published-schema blockers are resolved without opening bytes. Acquisition/registration remains blocked on exact official file identity. Attribution, licence link and change indication are mandatory; mirrors, version substitution, raw Git/public serving, merged-population claims and Ghana/provider prevalence claims remain prohibited.
 - **Related requirements/phases:** Logical PR13, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-021, ADR-023.
 - **Supersedes:** None.
+
+## ADR-027 — Preserve the official MoMTSim v2 duplicate-row quarantine
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Codex within ADR-023/ADR-026 and the measured fail-closed registration evidence
+- **Context:** The official version-2 CSV matched its DOI package identity, SHA-256, byte size, UTF-8 header, 4,225,958 rows, 2,233,118 positives and 193 observed distinct steps, with no null, invalid-label or invalid-amount values. The strict validator found 20 exact duplicate rows and therefore produced `status: quarantined`. Version 1 passed the same validator with zero duplicates.
+- **Options considered:** Weaken the validator; silently delete the 20 rows and call the official source registered; preserve the immutable quarantine and require a separately reviewed deterministic derived-dataset policy.
+- **Decision:** Preserve the official v2 source and quarantine manifest unchanged. Keep v2 disabled and non-promotable. Do not delete, rewrite or merge source rows. Any future deduplicated candidate must be a content-addressed derived dataset with an explicit transformation manifest, duplicate-group audit counts, source-group-first split rules and independent validation before the registry can change.
+- **Consequences:** MoMTSim v1 may proceed to later governed split design, but v2 cannot be used for splitting, fitting, evaluation or promotion. The 20 duplicate rows are a data-quality finding, not permission to bypass the acquisition gate. No raw duplicate values or identifiers are committed.
+- **Related requirements/phases:** Logical PR13-PR14, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-019, ADR-023, ADR-026.
+- **Supersedes:** None.
