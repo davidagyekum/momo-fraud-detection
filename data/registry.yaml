@@ -1,24 +1,24 @@
 {
   "registry_version": "dataset-registry-v1",
-  "updated_at": "2026-08-10",
+  "updated_at": "2026-08-11",
   "datasets": [
     {
       "dataset_id": "paysim",
       "display_name": "PaySim",
       "category": "structured_transaction",
       "source_locator": "kaggle:ealaxi/paysim1",
-      "version": "registry-pending-byte-verification",
+      "version": "kaggle-version-2-pending-byte-verification",
       "required": true,
       "enabled": false,
       "acquisition_status": "not_acquired",
-      "permission_status": "unverified",
-      "licence_status": "unverified",
+      "permission_status": "approved",
+      "licence_status": "verified",
       "redistribution": "blocked",
-      "data_classification": "restricted_until_verified",
+      "data_classification": "licensed_synthetic_restricted_storage",
       "card_path": "data/cards/paysim.md",
       "expected_schema": "data/schemas/transaction.schema.json",
-      "allowed_purposes": ["academic_research_after_terms_review"],
-      "prohibited_uses": ["acquisition_before_terms_review", "public_redistribution"]
+      "allowed_purposes": ["internal_personal_noncommercial_academic_research"],
+      "prohibited_uses": ["scraping_or_crawling", "mirror_or_version_substitution", "unattributed_use", "public_raw_git_storage"]
     },
     {
       "dataset_id": "momtsim-v1",

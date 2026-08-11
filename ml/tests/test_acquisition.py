@@ -171,15 +171,15 @@ def _register(
     )
 
 
-def test_committed_readiness_is_fail_closed_and_matches_recorded_report() -> None:
+def test_committed_readiness_matches_recorded_report_without_opening_bytes() -> None:
     report = acquisition_readiness_report(DATA_ROOT)
     recorded = json.loads(
         (DATA_ROOT / "acquisition_readiness_report.json").read_text(encoding="utf-8")
     )
     assert report == recorded
     assert report["source_count"] == 6
-    assert report["eligible_source_count"] == 0
-    assert report["blocked_source_count"] == 6
+    assert report["eligible_source_count"] == 1
+    assert report["blocked_source_count"] == 5
     assert report["network_acquisition_executed"] is False
     assert report["source_bytes_opened"] is False
     assert report["training_executed"] is False
@@ -205,7 +205,8 @@ def test_acquisition_contracts_are_strict_json_schema_2020_12() -> None:
 def test_readiness_names_each_source_specific_blocker() -> None:
     report = acquisition_readiness_report(DATA_ROOT)
     sources = {source["dataset_id"]: source for source in report["sources"]}
-    assert "licence_status:unverified" in sources["paysim"]["blockers"]
+    assert sources["paysim"]["blockers"] == []
+    assert sources["paysim"]["eligible_for_local_registration"] is True
     assert (
         "validation_spec_status:pending_authoritative_schema" in sources["momtsim-v1"]["blockers"]
     )
@@ -305,17 +306,17 @@ def test_current_registry_blocks_before_any_source_access(tmp_path: Path) -> Non
     request_path = tmp_path / "request.json"
     payload = {
         "schema_version": "acquisition-request-v1",
-        "dataset_id": "paysim",
+        "dataset_id": "momtsim-v1",
         "purpose": "academic_research_after_terms_review",
         "reviewer_id": "REVIEWER_A1B2C3D4E5F6",
         "permission_reference": "PERMISSION_A1B2C3D4E5F6",
         "licence_reference": "LICENCE_A1B2C3D4E5F6",
         "source_kind": "file",
         "source_path": str((tmp_path / "missing.zip").resolve()),
-        "entrypoint": "paysim.csv",
+        "entrypoint": "momtsim.csv",
         "expected_sha256": "a" * 64,
         "expected_size_bytes": 1,
-        "expected_version": "registry-pending-byte-verification",
+        "expected_version": "1",
         "created_at": "2026-08-11T00:00:00Z",
         "acknowledgements": {
             "terms_reviewed": True,
@@ -563,7 +564,7 @@ def test_cli_readiness_and_fail_closed_registration(tmp_path: Path, capsys) -> N
         )
         == 0
     )
-    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 0
+    assert json.loads(capsys.readouterr().out)["eligible_source_count"] == 1
 
     request_path = tmp_path / "invalid-request.json"
     request_path.write_text("{}", encoding="utf-8")

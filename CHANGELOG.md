@@ -4,6 +4,8 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ## Unreleased
 
+- Verified the canonical PaySim author listing, CC BY-SA 4.0 licence and Kaggle Version 2/platform conditions; PaySim is now eligible for official account-based local registration but remains unacquired, disabled and non-promotable.
+
 ### Fixed
 
 - Colab notebooks now add the checked-out `ml/src` tree to the live kernel import path after editable installation, preventing a clean-session `ModuleNotFoundError` before preflight.

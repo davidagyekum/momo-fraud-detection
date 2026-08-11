@@ -13,8 +13,8 @@
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 307 tests at 90.50% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; no-network registration foundation complete locally, all six real-source gates unresolved`
-- Next exact task: `Obtain accountable authoritative permission/licence/consent, exact version identity and source schema/layout evidence for one canonical source; update its registry/spec in review, then run owner-operated Colab registration against an approved private path. Do not download or open source bytes before that gate passes.`
+- Current phase: `Logical PR13 dataset acquisition and validation — In Progress; PaySim rights gate passed and 1/6 sources are eligible for local registration`
+- Next exact task: `Project owner signs in to Kaggle in Chrome; then use only the canonical PaySim Version 2 Download action, store the file privately, record exact SHA-256/byte size, and run owner-operated Colab registration. Do not scrape, use a mirror, access locked tests or train.`
 
 ## PR10-PR13 reconciliation status
 
@@ -26,13 +26,14 @@
 
 ## Logical PR13 dataset acquisition and validation
 
-- Readiness: deterministic metadata-only inventory reports zero of six canonical sources eligible; all remain disabled and `not_acquired`.
+- Readiness: deterministic metadata-only inventory reports PaySim eligible and five of six canonical sources blocked; all remain disabled and `not_acquired`.
 - Registration: strict request/manifest contracts, approved-root confinement, content-addressed file/directory/ZIP inventory, transaction/image validators, redacted safe profiles and non-mutating quarantine are implemented without a network client.
 - Hostile-input controls: path traversal, symlink substitution, duplicate normalised ZIP members, archive expansion, malformed/oversized images, schema/count/class drift, mask pairing and identity mismatches fail closed.
-- Evidence boundary: PaySim is structurally specified from the reconciled blueprint but remains blocked on accountable terms/version approval. MoMTSim v1/v2, STFD, FSTS and Ghana-private also require the source-specific evidence recorded in the runbook.
+- Evidence boundary: PaySim's author-owned Kaggle Version 2 listing, CC BY-SA 4.0 licence and active Kaggle platform terms are reviewed in `docs/evidence/PR13_PAYSIM_SOURCE_RIGHTS_REVIEW.md`. Exact downloaded hash/byte size remain pending. MoMTSim v1/v2, STFD, FSTS and Ghana-private still require the source-specific evidence recorded in the runbook.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and `readiness_only`; it cannot download, register, train, inspect locked tests or promote an artifact.
 - Honesty boundary: no source bytes were downloaded, opened, registered or validated; no acquisition, split, training, metric or promotion claim is made.
 - Verification: the registered ML gate passes format, lint, strict mypy, 307 tests at 90.50% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the secret/prohibited-artifact scan passes 468 candidates.
+- Current registry hash after the PaySim rights decision: `14272a5c216cc569b56a83e05857e45f4e0e7691b49b228dadf0a9d899f3bd51`.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -97,7 +98,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `45 / 87`
 - SHOULD requirements complete: `5 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-11 — logical PR13 no-network acquisition foundation mapped to NFR-DATA-001 and NFR-AUD-001; all six sources remain disabled/unacquired and no source bytes or training were accessed`
+- Traceability file last verified: `2026-08-11 — canonical PaySim Version 2/CC BY-SA/Kaggle terms reviewed; PaySim is eligible but unacquired, five sources remain blocked, and no source bytes or training were accessed`
 
 ## Current blockers
 
@@ -106,7 +107,8 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
-| PR13-DATA-RIGHTS | Logical PR13 | All six canonical sources lack at least one accountable permission/licence/consent, exact-version or authoritative schema/layout prerequisite. | Real acquisition and validation cannot execute; PR13 cannot complete and PR14 splits cannot start. | Keep the no-network readiness report, disabled registry entries and fictitious validator tests; do not open uncertain-rights bytes. | Project owner/data steward supplies source-specific authoritative evidence listed in `data/ACQUISITION_REGISTRATION_RUNBOOK.md`. | Review and approve one source at a time, update its registry/spec separately, then run local/private registration in owner-operated Colab. |
+| PR13-PAYSIM-AUTH | Logical PR13 | The canonical PaySim Download action requires the project owner to sign in to Kaggle in Chrome; exact downloaded hash and byte size do not exist yet. | PaySim is eligible but cannot be registered or validated. | Do not scrape, crawl, use a mirror or guess byte identity. | Project owner signs in to their own Kaggle account and confirms readiness. | Download Version 2 through the official action into approved private storage, then hash and register it. |
+| PR13-DATA-RIGHTS | Logical PR13 | MoMTSim v1/v2, STFD, FSTS and Ghana-private still lack at least one accountable permission/licence/consent, exact-version or authoritative schema/layout prerequisite. | PR13 cannot complete and PR14 frozen splits cannot start. | Keep those five registry entries disabled and use only fictitious validator tests. | Project owner/data steward supplies source-specific evidence listed in `data/ACQUISITION_REGISTRATION_RUNBOOK.md`. | Review the remaining sources one at a time without opening uncertain-rights bytes. |
 
 ## Active known limitations
 

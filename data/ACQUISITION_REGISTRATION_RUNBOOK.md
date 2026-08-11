@@ -6,14 +6,14 @@ Logical PR13 deliberately separates permission review, byte acquisition and byte
 
 | Source | Evidence required before bytes may be acquired or opened |
 |---|---|
-| PaySim | Authoritative citation and Kaggle terms reviewed by a named reviewer; permitted academic purpose; exact version/archive identity; private storage location. |
+| PaySim | Rights review passed for the author-owned Kaggle listing, Version 2, CC BY-SA 4.0 and internal personal non-commercial academic use. Use only the official signed-in Download action; exact downloaded hash/byte size and private storage location remain required for registration. |
 | MoMTSim v1 | Authoritative Mendeley v1 citation/licence; exact v1 archive identity; approved raw-field mapping for transaction, actor, balance and label roles. |
 | MoMTSim v2 | Authoritative Mendeley v2 citation/licence; exact v2 archive identity; approved raw-field mapping kept separate from v1. |
 | STFD | Written academic access approval, licence/restrictions, exact archive/version identity, and authoritative image/mask/grouping layout. |
 | FSTS | Decision that the optional source is necessary, exact authoritative source/citation, applicable terms and approved deterministic subset/layout. |
 | Ghana-private | Institution/supervisor-approved collection documents, per-participant consent, opaque permission references, withdrawal-aware private index and restricted storage. |
 
-Until those conditions are recorded, the matching registry entry stays disabled and `not_acquired`. Project-owner permission does not establish third-party licence or redistribution rights.
+Until those conditions are recorded, the matching registry entry stays disabled and `not_acquired`. PaySim is now eligible for local registration but remains disabled and `not_acquired` until official bytes are hash-verified and validated. Project-owner permission does not by itself establish third-party licence or redistribution rights.
 
 ## Safe readiness check
 

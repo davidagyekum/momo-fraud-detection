@@ -251,3 +251,15 @@ Use this file for Architecture Decision Records (ADRs). Do not edit an accepted 
 - **Consequences:** The registration and validation foundation can be tested without acquiring private or uncertain-rights data. Logical PR13 remains incomplete until at least the required sources are approved and their real bytes validate in owner-operated Colab. Registry approval is a separate reviewed change; a valid hash does not prove legality, representativeness or label quality.
 - **Related requirements/phases:** Logical PR13, FR-ML-005, FR-ML-006, NFR-AUD-001, NFR-DATA-001, ADR-014, ADR-019, ADR-021, ADR-022.
 - **Supersedes:** None.
+
+## ADR-024 — Approve only the canonical PaySim Version 2 account-based acquisition path
+
+- **Status:** Accepted
+- **Date:** 2026-08-11
+- **Decision owners:** Project owner and Codex within ADR-021/ADR-023
+- **Context:** PaySim is the first logical PR13 source with a ready structural validation specification. Its canonical Kaggle listing is published under PaySim author Edgar Lopez-Rojas, declares CC BY-SA 4.0, identifies Dataset Version 2 and one 493.53 MB CSV, and cites the 2016 PaySim paper. Kaggle's active Terms effective 2025-06-22 restrict service use and prohibit crawling/scraping while exposing an official signed-in Download action.
+- **Options considered:** Keep PaySim blocked despite authoritative terms; download from a mirror or scrape Kaggle; approve a narrowly controlled official account-based acquisition path.
+- **Decision:** Set PaySim permission to approved and licence to verified only for the project owner's internal personal non-commercial academic use of the canonical `ealaxi/paysim1` Version 2 download. Require the owner's own signed-in Kaggle account, official Download functionality, CC BY-SA attribution/change/ShareAlike compliance, private raw storage, exact post-download SHA-256/byte size and source-specific validation. Prohibit scraping, crawling, mirrors, version substitution, raw Git storage and provider/Ghana prevalence claims.
+- **Consequences:** PaySim becomes the sole source eligible for local registration. It remains disabled, `not_acquired` and non-promotable until official bytes are obtained, hash-verified and validated. The other five source gates are unchanged. The review is an engineering governance determination, not legal advice.
+- **Related requirements/phases:** Logical PR13, NFR-DATA-001, FR-ML-005, FR-ML-006, ADR-021, ADR-023.
+- **Supersedes:** None.

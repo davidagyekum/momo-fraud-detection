@@ -1,6 +1,6 @@
 {
-  "blocked_source_count": 6,
-  "eligible_source_count": 0,
+  "blocked_source_count": 5,
+  "eligible_source_count": 1,
   "foundation_version": "dataset-acquisition-foundation-v1",
   "network_acquisition_executed": false,
   "schema_version": "dataset-acquisition-readiness-v1",
@@ -45,9 +45,9 @@
     },
     {
       "acquisition_status": "not_acquired",
-      "blockers": ["licence_status:unverified", "permission_status:unverified"],
+      "blockers": [],
       "dataset_id": "paysim",
-      "eligible_for_local_registration": false,
+      "eligible_for_local_registration": true,
       "enabled": false,
       "required": true,
       "validation_spec_status": "ready_after_governance_approval"
