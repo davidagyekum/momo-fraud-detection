@@ -18,6 +18,7 @@
 - PR13 MoMTSim acquisition/registration evidence SHA: `91da9dd3841cca880974c5cbfc76bd82acddf07d`
 - PR13 MoMTSim v2 deterministic derivative implementation SHA: `58f7955fb7cc9e60f859cf1eb21a93ebd538c3e1`
 - PR13 STFD metadata/access review implementation SHA: `7b12b9f6a7572bbf569c707ac057ec541ed92b10`
+- PR13 STFD acquisition evidence SHA: `17b60cbe7bab10dfd1ffd4fba1c77f93ebc09aa9`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 331 tests at 91.01% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -132,8 +133,8 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-stfd-source-access-review-session.md`
-- Summary: `Froze STFD's exact authoritative repository/archive metadata and documented image/mask pairing, followed the stricter academic/no-redistribution notice, kept acquisition blocked on written access and source-lineage grouping, and downloaded/opened no archive bytes.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-stfd-acquisition-session.md`
+- Summary: `Recorded owner-attested STFD permission, acquired the exact pinned encrypted archive into restricted storage, verified its size/SHA-256 and aggregate pairing layout, and retained decoded-validation/grouping/training gates.`
 
 ## Next session startup
 
