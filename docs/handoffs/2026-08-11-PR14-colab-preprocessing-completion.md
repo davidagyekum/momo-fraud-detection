@@ -9,8 +9,8 @@
 - Work branch: `codex/p14-frozen-splits`
 - Executed implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - Pull request: not created in this session
-- Push status: pending the final documentation/evidence commit
-- Worktree status: verified; pending commit
+- Push status: evidence commit `b74b9f3186ad25261d7ef68c3e3a015751446fbf` pushed successfully to `origin/codex/p14-frozen-splits`
+- Worktree status: verified and clean after the evidence commit
 
 ## Scope completed
 
@@ -104,8 +104,8 @@ Resolved in this session: `PR14-COLAB-SOURCES`.
 ```text
 base SHA: 3e87dd7d79fdb91863b18a656aa6df735ee88041
 executed code SHA: af8cce11d4e3f5644f24019498826899d356b503
-final documentation/evidence commit: pending this handoff commit
-push output: pending
+documentation/evidence commit: b74b9f3186ad25261d7ef68c3e3a015751446fbf
+push output: 3e87dd7..b74b9f3 codex/p14-frozen-splits -> codex/p14-frozen-splits
 ```
 
 ## Next exact task
