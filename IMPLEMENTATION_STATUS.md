@@ -17,6 +17,7 @@
 - PR13 MoMTSim rights/schema review SHA: `53f852f99204185ebd11781edcf19b77b98ec982`
 - PR13 MoMTSim acquisition/registration evidence SHA: `91da9dd3841cca880974c5cbfc76bd82acddf07d`
 - PR13 MoMTSim v2 deterministic derivative implementation SHA: `58f7955fb7cc9e60f859cf1eb21a93ebd538c3e1`
+- PR13 STFD metadata/access review implementation SHA: `7b12b9f6a7572bbf569c707ac057ec541ed92b10`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 331 tests at 91.06% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
@@ -40,7 +41,7 @@
 - Evidence boundary: PaySim's corrected owner-operated Colab run registered 6,362,620 rows. Official Mendeley browser acquisition established exact v1/v2 identities: v1 registered at 1,720,181 rows; official v2 matched 4,225,958 rows but remains quarantined for 20 exact duplicates. ADR-028's derivative contains 4,225,938 rows, retains all 2,233,118 positives and registered with zero duplicates. STFD metadata review froze Hugging Face revision `9edebed2…`, the 2,941,753,426-byte archive and LFS SHA-256 `6159a661…`, but downloaded/opened no bytes because written access and source-group mapping remain pending. FSTS and Ghana-private retain separate gates.
 - Colab boundary: `02_dataset_acquisition_validation.ipynb` is output-free and registration-only; it cannot download, create splits, train, inspect locked tests or promote an artifact.
 - Honesty boundary: the first PaySim quarantine and official MoMTSim v2 duplicate-row quarantine remain preserved. All three registered structured candidates are disabled/non-promotable; no split, training, locked-test, metric or promotion claim is made.
-- Verification: the registered ML gate passes format, lint, strict mypy, 331 tests at 91.06% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 495 candidates.
+- Verification: the registered ML gate passes format, lint, strict mypy, 331 tests at 91.06% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 496 candidates.
 - Current registry hash after the STFD metadata/access review: `378c62a60e48a5c70f274ba353445e47d4a8ef2e196810ba5ae9135b94124a87`.
 
 ## Logical PR10 evidence/execution foundation
@@ -131,8 +132,8 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-11-PR13-momtsim-v2-dedup-session.md`
-- Summary: `Created and independently registered a separately versioned deterministic MoMTSim v2 derivative, removed 20 negative duplicate occurrences while retaining every positive row, preserved the official quarantine, and performed no split, training or locked-test access.`
+- Handoff file: `docs/handoffs/2026-08-11-PR13-stfd-source-access-review-session.md`
+- Summary: `Froze STFD's exact authoritative repository/archive metadata and documented image/mask pairing, followed the stricter academic/no-redistribution notice, kept acquisition blocked on written access and source-lineage grouping, and downloaded/opened no archive bytes.`
 
 ## Next session startup
 
