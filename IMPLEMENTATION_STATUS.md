@@ -10,6 +10,7 @@
 - Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
+- PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
 - CI status: `Logical PR13 registered ML gate passes locally with 307 tests at 90.50% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
