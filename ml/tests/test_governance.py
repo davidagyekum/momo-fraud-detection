@@ -67,7 +67,7 @@ def test_registry_has_exact_sources_cards_schemas_and_explicit_restrictions() ->
         for entry in entries
         if isinstance(entry, dict)
     }
-    assert states["paysim"] == "acquired_pending_registration"
+    assert states["paysim"] == "registered"
     assert all(
         state == "not_acquired" for dataset_id, state in states.items() if dataset_id != "paysim"
     )
@@ -81,7 +81,14 @@ def test_registry_rejects_unapproved_enablement(tmp_path: Path) -> None:
     registry = _json(DATA_ROOT / "registry.yaml")
     entries = registry["datasets"]
     assert isinstance(entries, list) and isinstance(entries[0], dict)
-    entries[0]["enabled"] = True
+    blocked_entry = next(
+        entry
+        for entry in entries
+        if isinstance(entry, dict) and entry["dataset_id"] == "momtsim-v1"
+    )
+    entries.remove(blocked_entry)
+    entries.insert(0, blocked_entry)
+    blocked_entry["enabled"] = True
     temporary_root = tmp_path / "data"
     temporary_root.mkdir()
     (temporary_root / "registry.yaml").write_text(json.dumps(registry), encoding="utf-8")

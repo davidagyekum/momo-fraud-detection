@@ -44,7 +44,7 @@
       "validation_spec_status": "pending_authoritative_schema"
     },
     {
-      "acquisition_status": "acquired_pending_registration",
+      "acquisition_status": "registered",
       "blockers": [],
       "dataset_id": "paysim",
       "eligible_for_local_registration": true,

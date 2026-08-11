@@ -10,7 +10,7 @@
       "version": "kaggle-version-2-pending-byte-verification",
       "required": true,
       "enabled": false,
-      "acquisition_status": "acquired_pending_registration",
+      "acquisition_status": "registered",
       "permission_status": "approved",
       "licence_status": "verified",
       "redistribution": "blocked",
