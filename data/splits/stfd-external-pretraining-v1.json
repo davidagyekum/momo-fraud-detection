@@ -1,0 +1,15 @@
+{
+  "assignment": "train_only",
+  "dataset_id": "stfd",
+  "frozen": true,
+  "internal_metrics_allowed": false,
+  "inventory_sha256": "1087bbc4ba2cd349f08e2a0a4c4ebbc78c209d603d625c2a5344c0ff50f220dc",
+  "manifest_sha256": "1ebd79ad359edf4456c9fb31881b5fd228b3c3189e6707c41abc583fb2e1f71b",
+  "pair_count": 3932,
+  "schema_version": "external-pretraining-split-v1",
+  "source_group_count": 1,
+  "source_group_id": "single_external_pretraining_corpus_group",
+  "test_partition_created": false,
+  "training_executed": false,
+  "validation_partition_created": false
+}

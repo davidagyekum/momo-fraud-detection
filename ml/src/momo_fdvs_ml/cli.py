@@ -63,6 +63,11 @@ from momo_fdvs_ml.synthetic import (
     generate_controlled_dataset,
     verify_recorded_report,
 )
+from momo_fdvs_ml.transaction_etl import (
+    TransactionBuildSpec,
+    build_transaction_parquet_dataset,
+)
+from momo_fdvs_ml.transaction_pipeline import TransactionPipelineError
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -171,6 +176,22 @@ def build_parser() -> argparse.ArgumentParser:
     validate_structured.add_argument("--dataset", type=Path, required=True)
     validate_structured.add_argument("--source-manifest", type=Path, required=True)
     validate_structured.add_argument("--recorded-report", type=Path)
+
+    build_transactions = subparsers.add_parser(
+        "build-transaction-features",
+        help="build frozen private transaction Parquet shards without model training",
+    )
+    build_transactions.add_argument(
+        "--dataset-id", choices=["paysim", "momtsim-v1", "momtsim-v2"], required=True
+    )
+    build_transactions.add_argument("--source", type=Path, required=True)
+    build_transactions.add_argument("--source-sha256", required=True)
+    build_transactions.add_argument("--expected-rows", type=int, required=True)
+    build_transactions.add_argument("--expected-positives", type=int, required=True)
+    build_transactions.add_argument("--output", type=Path, required=True)
+    build_transactions.add_argument("--entrypoint")
+    build_transactions.add_argument("--minimum-partition-positives", type=int, default=100)
+    build_transactions.add_argument("--shard-size", type=int, default=100_000)
 
     train = subparsers.add_parser(
         "train-structured",
@@ -424,6 +445,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(report, indent=2, sort_keys=True))
             return 0
 
+        if args.command == "build-transaction-features":
+            report = build_transaction_parquet_dataset(
+                source_path=args.source,
+                output_path=args.output,
+                spec=TransactionBuildSpec(
+                    dataset_id=args.dataset_id,
+                    source_sha256=args.source_sha256,
+                    expected_row_count=args.expected_rows,
+                    expected_positive_count=args.expected_positives,
+                    minimum_partition_positives=args.minimum_partition_positives,
+                    shard_size=args.shard_size,
+                    entrypoint=args.entrypoint,
+                ),
+            )
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0
+
         if args.command == "train-structured":
             require_training_execution(
                 ExecutionProfile(args.profile),
@@ -537,6 +575,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         NotebookPolicyError,
         StructuredDatasetError,
         StructuredModelError,
+        TransactionPipelineError,
     ) as exc:
         print(json.dumps({"error": str(exc)}, indent=2, sort_keys=True))
         return 1

@@ -11,6 +11,7 @@ dependencies = [
   "joblib==1.5.3",
   "pandas==3.0.3",
   "Pillow==12.3.0",
+  "pyarrow==25.0.1",
   "scikit-learn==1.9.0",
 ]
 
@@ -57,7 +58,7 @@ module = ["PIL.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["joblib.*", "pandas.*", "sklearn.*", "tensorflow.*"]
+module = ["joblib.*", "pandas", "pandas.*", "sklearn.*", "tensorflow.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

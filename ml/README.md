@@ -72,7 +72,19 @@ $env:PYTHONPATH = "ml/src"
   --recorded-report data/acquisition_readiness_report.json
 ```
 
-The current result is zero eligible sources. Do not invoke `register-dataset` until the relevant licence/permission/consent, exact version, independent hash/size and validation layout have been reviewed. Registration never downloads or mutates source bytes, quarantines mismatches and emits only non-promotable content-addressed manifests plus redacted profiles. See [the acquisition runbook](../data/ACQUISITION_REGISTRATION_RUNBOOK.md).
+PaySim, MoMTSim v1, the separately versioned MoMTSim v2 derivative and STFD are registered but disabled/non-promotable; FSTS and Ghana-private retain their separate prerequisites. Registration never downloads or mutates source bytes, quarantines mismatches and emits only non-promotable content-addressed manifests plus redacted profiles. See [the acquisition runbook](../data/ACQUISITION_REGISTRATION_RUNBOOK.md).
+
+## Logical PR14 frozen transaction features
+
+`03_build_transaction_features.ipynb` is a thin, output-free Colab wrapper around `transaction_pipeline.py` and `transaction_etl.py`. It processes one exact registered source at a time, freezes chronological train/tuning/calibration/locked-test step ranges, derives history only from strictly earlier steps, fits neutral values/category vocabularies on train only and writes features, labels and opaque provenance into separate atomic Parquet shards. The pre-PR20 loader refuses the locked-test partition.
+
+The local/CI fixture gate can exercise the complete path without external bytes:
+
+```powershell
+.venv\Scripts\python.exe scripts\verify_ml.py
+```
+
+Do not run `build-transaction-features` against an unregistered source or a Git path. Full outputs belong only in restricted VM/Drive storage. This PR14 command performs preprocessing, not training; logical PR15 remains a separate owner-operated Colab stop point.
 
 ## P12 pre-training commands
 

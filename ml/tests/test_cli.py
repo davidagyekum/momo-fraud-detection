@@ -83,6 +83,55 @@ def test_cli_validates_recorded_image_report(capsys) -> None:  # type: ignore[no
     assert report["record_count"] == 12
 
 
+def test_cli_dispatches_transaction_feature_build_without_training(
+    tmp_path: Path, capsys, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    captured: dict[str, object] = {}
+
+    def build(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+        return {
+            "dataset_id": "paysim",
+            "training_executed": False,
+            "locked_test_accessed_for_decisions": False,
+        }
+
+    monkeypatch.setattr(cli, "build_transaction_parquet_dataset", build)
+    assert (
+        main(
+            [
+                "build-transaction-features",
+                "--dataset-id",
+                "paysim",
+                "--source",
+                str(tmp_path / "source.csv"),
+                "--source-sha256",
+                "a" * 64,
+                "--expected-rows",
+                "16",
+                "--expected-positives",
+                "4",
+                "--output",
+                str(tmp_path / "output"),
+                "--entrypoint",
+                "source.csv",
+                "--minimum-partition-positives",
+                "2",
+                "--shard-size",
+                "3",
+            ]
+        )
+        == 0
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert report["training_executed"] is False
+    assert captured["source_path"] == tmp_path / "source.csv"
+    spec = captured["spec"]
+    assert spec.expected_row_count == 16
+    assert spec.minimum_partition_positives == 2
+    assert spec.entrypoint == "source.csv"
+
+
 def test_cli_image_training_and_verification_dispatch(tmp_path: Path, capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     artifact = tmp_path / "model.keras"
     artifact.write_bytes(b"artifact")

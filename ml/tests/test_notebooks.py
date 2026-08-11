@@ -55,7 +55,7 @@ def test_committed_standard_notebooks_are_clean_and_match_recorded_report() -> N
     report = require_clean_notebooks(NOTEBOOK_ROOT)
     recorded = json.loads((NOTEBOOK_ROOT / "notebook_report.json").read_text(encoding="utf-8"))
     assert report == recorded
-    assert report["notebook_count"] == 4
+    assert report["notebook_count"] == 5
     assert report["outputs_stripped"] is True
     assert report["execution_counts_stripped"] is True
     assert report["full_mode_selected"] is False

@@ -7,8 +7,8 @@
   "locks": [
     {
       "path": "ml/requirements-runtime.lock",
-      "requirement_count": 11,
-      "sha256": "f3ff040e4b76998631672a02c138d0fc680163b9e9c2545e039f9b9d0cc7db44"
+      "requirement_count": 12,
+      "sha256": "486c85c17a9d07136a5366ea5f05cb5c952f77527bb84aeb60faeeddf6b1b3c5"
     },
     {
       "path": "ml/requirements-training.lock",

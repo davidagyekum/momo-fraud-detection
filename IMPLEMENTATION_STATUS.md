@@ -6,7 +6,7 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p13-dataset-acquisition-validation`
+- Current work branch: `codex/p14-frozen-splits`
 - Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
@@ -22,10 +22,10 @@
 - PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-11`
-- CI status: `Logical PR13 registered ML gate passes locally with 334 tests at 90.11% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR14 foundation gate passes locally with 376 tests at 91.04% coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR13 dataset acquisition and validation — Complete; PaySim, MoMTSim v1/v2 derivative and STFD are registered but disabled/non-promotable, with official quarantines preserved`
-- Next exact task: `Create codex/p14-frozen-splits from the pushed PR13 head and implement source-group-first structured partitions plus STFD's single external-pretraining train-only assignment; do not train.`
+- Current phase: `Logical PR14 transaction ETL, causal features and frozen partitions — In Progress`
+- Next exact task: `Implement and test canonical source mapping, chronological 70/10/10/10 split planning, causal-history invariance, sealed locked-test outputs and STFD's one-corpus train-only manifest; do not train.`
 
 ## PR10-PR13 reconciliation status
 
@@ -45,6 +45,15 @@
 - Honesty boundary: the first PaySim quarantine and official MoMTSim v2 duplicate-row quarantine remain preserved. All three registered structured candidates are disabled/non-promotable; no split, training, locked-test, metric or promotion claim is made.
 - Verification: the registered ML gate passes format, lint, strict mypy, 334 tests at 90.11% branch-aware coverage, governance/readiness/notebook drift and controlled-dataset checks; the latest secret/prohibited-artifact scan passes 499 candidates.
 - Current registry hash after STFD registration: `5c0df60dcde83a38c92a2c5f3dde325d3b7dc7e2a58338b291317d92ce1bb208`.
+
+## Logical PR14 transaction ETL and frozen partitions
+
+- Foundation: exact source mappings, stable opaque row IDs, chronological unique-step split planning, minimum-positive boundary adjustment and source-specific frozen manifest hashes are implemented.
+- Leakage boundary: causal history uses strictly earlier steps; same-step rows update state together, future insertion cannot alter earlier features, inactive actor state expires after 24 steps and raw actor/source/target/balance fields never enter the model matrix.
+- Artifact boundary: feature, label and opaque provenance Parquet shards are separate and content-hashed; preprocessing neutral values/vocabularies fit train only; tuning/calibration reuse the frozen artifact; the loader rejects locked-test access before PR20.
+- Image boundary: STFD inventory `1087bbc4…` is frozen as exactly one 3,932-pair external-pretraining train-only group with no internal validation/test partition or metric.
+- Colab boundary: `03_build_transaction_features.ipynb` is output-free and performs preprocessing only. Full PaySim/MoMTSim manifests are not yet claimed; each source must run at the eventual pinned PR14 implementation SHA and return only the safe aggregate summary.
+- Verification: Ruff, strict mypy, 376 tests at 91.04% branch-aware coverage and deterministic governance/lock/notebook/data gates pass; the latest secret/prohibited-artifact scan passes 506 candidates. No model training occurred.
 
 ## Logical PR10 evidence/execution foundation
 
