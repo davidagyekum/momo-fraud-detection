@@ -8,7 +8,7 @@
 - Base branch: `main`
 - Base SHA: `000bc65983d242cac8a8806a0cb116373bbcb4c2`
 - Work branch: `codex/p13-dataset-acquisition-validation`
-- Final implementation head SHA before this handoff: `bdb5b7a57ce5e2aaeda929f7f2ab236acdbc43c8`
+- Final implementation head SHA before this handoff update: `6b9945c6b03d394b9304045fa1ab02e928bb1951`
 - Pull request: not opened in this session
 - Push status: implementation and corrected notebook pin pushed successfully
 - Worktree status: documentation handoff pending its final commit
@@ -86,7 +86,7 @@ Skipped/blocked checks and reason: top-level `scripts/verify.py --ml` doctor use
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR13-PAYSIM-COLAB | Medium | Corrected registration has not yet rerun | PaySim remains disabled and unavailable to PR14 | Preserve exact bytes and first quarantine | Project owner runs signed-in Colab | Run pin `bdb5b7a` and report the safe summary |
+| PR13-PAYSIM-COLAB | Medium | Corrected registration has not yet rerun | PaySim remains disabled and unavailable to PR14 | Preserve exact bytes and first quarantine | Project owner runs signed-in Colab | Run pin `6b9945c` and report the safe summary |
 | PR13-DATA-RIGHTS | High | MoMTSim v1/v2, STFD, FSTS and Ghana-private retain source-specific gates | Logical PR13 cannot complete | Keep entries disabled | Project owner/data steward | Review sources one at a time |
 | B-CI-001 | Medium | GitHub Actions account billing lock prevents job allocation | No hosted reproduction | Preserve exact local evidence | Repository owner | Resolve account lock and rerun workflow |
 
@@ -103,13 +103,14 @@ Skipped/blocked checks and reason: top-level `scripts/verify.py --ml` doctor use
 ```text
 af248bd6 fix(data): reconcile PaySim step count
 bdb5b7a5 docs(data): pin corrected PaySim registration
-push: 2c9e9de..bdb5b7a codex/p13-dataset-acquisition-validation -> origin
+6b9945c6 fix(data): preserve first PaySim quarantine
+pushes: 2c9e9de..bdb5b7a, then final preservation/handoff commits to origin
 ```
 
 ## Next exact task
 
 Open the GitHub-backed Colab notebook at pin
-`bdb5b7a57ce5e2aaeda929f7f2ab236acdbc43c8`, run all cells, and record the new
+`6b9945c6b03d394b9304045fa1ab02e928bb1951`, run all cells, and record the new
 safe summary plus manifest/profile hashes. Stop before splits, locked tests or
 training. If it registers, update the registry/evidence in a separately reviewed
 commit; otherwise preserve the new quarantine and investigate without weakening
