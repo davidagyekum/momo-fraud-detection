@@ -1,0 +1,203 @@
+{
+  "aggregate_assertions": {
+    "all_completed_run_locked_tests_sealed": true,
+    "final_evaluation_executed": false,
+    "locked_test_accessed_for_decisions": false,
+    "not_real_world_probability": true,
+    "promotable": false
+  },
+  "execution": {
+    "environment": "Google Colab",
+    "notebook": "ml/notebooks/colab/04_train_transaction_models.ipynb",
+    "pinned_commit": "38e5a8c13ac61483c57501b8745aad3daa88848f",
+    "profile": "full"
+  },
+  "recorded_at": "2026-08-13",
+  "runs": [
+    {
+      "artifacts": {
+        "model_artifact_sha256": "6b16cab3a60aa1fee5527243254beed87680e1d42231335e9423d1f9d0ed991c",
+        "model_card_sha256": "c727e6e60db6ee40bbfc207e2ba8e3881a9869c076a8b947ecc760537a19c997",
+        "registry_payload_sha256": "61d0ab477357fcc45e4c2d7d64a623a741216ded34fd5a4c0c161844f8b54ed0",
+        "reload_parity_rows": 128,
+        "reload_prediction_digest": "9d3065ee1799fc7a8987b0c6dedd93338a73685924a2c989dfab7ff3c672c213",
+        "training_report_sha256": "d9195a6dd7911436551a084ce81d8ad1f44c65fc57d80361063a2e70e94fb71e"
+      },
+      "build_report_sha256": "67773f34c22c3a8db22fd7b2951510d61ca5b36ab839ec8720a583c034b9bcab",
+      "calibration": {
+        "chronological_fit_rows": 27366,
+        "chronological_threshold_selection_rows": 27366,
+        "fit_positive_count": 243,
+        "selected_method": "isotonic",
+        "threshold_selection_positive_count": 565
+      },
+      "completed_at": "2026-08-12T03:48:48Z",
+      "config_sha256": "cbfb5a5cccab25f9a8cccc86b8d77105f8215e0dd7e31a8abc0036ea80fda02f",
+      "dataset_id": "paysim",
+      "external_tuning": [
+        {
+          "average_precision": 0.31242019,
+          "dataset_id": "momtsim-v1",
+          "interpretation": "domain_shift_research_only",
+          "roc_auc": 0.80044392
+        },
+        {
+          "average_precision": 0.95093392,
+          "dataset_id": "momtsim-v2",
+          "interpretation": "domain_shift_research_only",
+          "roc_auc": 0.96723911
+        }
+      ],
+      "final_evaluation_executed": false,
+      "fit_checkpoint_count": 14,
+      "full_training_executed": true,
+      "locked_test_accessed_for_decisions": false,
+      "locked_test_sealed": true,
+      "model_version": "transaction-core-paysim-pr15-v1",
+      "not_real_world_probability": true,
+      "preprocessor_sha256": "63f67bb24047d8fb28c0ce9102df6938b376bbc5adfb52a8921c87bb0762c574",
+      "promotable": false,
+      "registry_status": "EXPERIMENTAL_NOT_FINAL_EVALUATED",
+      "run_id": "20260812T034848Z_transaction-core_38e5a8c1_seed123",
+      "selection": {
+        "family": "forest",
+        "parameters": {
+          "max_depth": 18,
+          "min_samples_leaf": 2,
+          "n_estimators": 240
+        },
+        "seed": 123,
+        "three_seed_average_precision_mean": 0.37482429,
+        "three_seed_average_precision_stddev": 0.00138771,
+        "tuning_average_precision": 0.37612244,
+        "tuning_recall_at_or_below_fpr_cap": 0.66195373
+      },
+      "source_sha256": "f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d",
+      "split_manifest_sha256": "4cca1058464f47b56a329b0a6b3fdd81d60ad81008b8e75d1a8e062a6b7206e1",
+      "started_at": "2026-08-11T20:18:58Z",
+      "status": "completed",
+      "thresholds": {
+        "high": 0.4,
+        "high_precision": 0.94573643,
+        "high_recall": 0.2159292,
+        "medium": 0.0610687,
+        "medium_f2": 0.4630829,
+        "medium_fpr": 0.02022313
+      },
+      "training_commit_sha": "38e5a8c13ac61483c57501b8745aad3daa88848f"
+    },
+    {
+      "artifacts": {
+        "model_artifact_sha256": "4f13884cb3496612dc32fe9b283683206279f25162ab0ecd4aec985d0df263b0",
+        "model_card_sha256": "97d37cac17718ed8c2b706b5f0a46219ffdff23e17136d97f2e5008c724bc7ad",
+        "registry_payload_sha256": "346026557f1c2f5c50cb65361dab50bd950f855ea931c4798b3d1d50799350dd",
+        "reload_parity_rows": 128,
+        "reload_prediction_digest": "eb4dbba951aa6e8660d9d69a080d8f88fbcabd23dcaecb482a31b5893b2dbf7d",
+        "training_report_sha256": "ee62f9ed40eac938b81d159b2cd1f934a4de8a00bf1c86abc30e9806bc600594"
+      },
+      "build_report_sha256": "05fbbfdab3365c366e283e74de112b5d386b2bead033a72d9acdd2629915eee5",
+      "calibration": {
+        "chronological_fit_rows": 60219,
+        "chronological_threshold_selection_rows": 60219,
+        "fit_positive_count": 7718,
+        "selected_method": "isotonic",
+        "threshold_selection_positive_count": 9197
+      },
+      "completed_at": "2026-08-12T14:34:30Z",
+      "config_sha256": "cbfb5a5cccab25f9a8cccc86b8d77105f8215e0dd7e31a8abc0036ea80fda02f",
+      "dataset_id": "momtsim-v1",
+      "external_tuning": [
+        {
+          "average_precision": 0.01680688,
+          "dataset_id": "paysim",
+          "interpretation": "domain_shift_research_only",
+          "roc_auc": 0.706774
+        },
+        {
+          "average_precision": 0.86726851,
+          "dataset_id": "momtsim-v2",
+          "interpretation": "domain_shift_research_only",
+          "roc_auc": 0.88908226
+        }
+      ],
+      "final_evaluation_executed": false,
+      "fit_checkpoint_count": 14,
+      "full_training_executed": true,
+      "locked_test_accessed_for_decisions": false,
+      "locked_test_sealed": true,
+      "model_version": "transaction-core-momtsim-v1-pr15-v1",
+      "not_real_world_probability": true,
+      "preprocessor_sha256": "8fc1f53990a4a0b9f97cab17ac0502495904a36f645e3e7aadbac31fabfc9456",
+      "promotable": false,
+      "registry_status": "EXPERIMENTAL_NOT_FINAL_EVALUATED",
+      "run_id": "20260812T143430Z_transaction-core_38e5a8c1_seed42",
+      "selection": {
+        "family": "xgboost",
+        "parameters": {
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "seed": 42,
+        "three_seed_average_precision_mean": 0.35126485,
+        "three_seed_average_precision_stddev": 0.0,
+        "tuning_average_precision": 0.35126485,
+        "tuning_recall_at_or_below_fpr_cap": 0.15668937
+      },
+      "source_sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7",
+      "split_manifest_sha256": "5562350167a75785929235f102fa39c98dc534e555791a03ac3ac0272ae5d72d",
+      "started_at": "2026-08-12T06:21:26Z",
+      "status": "completed",
+      "thresholds": {
+        "high": 0.53468669,
+        "high_precision": 0.92272727,
+        "high_recall": 0.02207241,
+        "medium": 0.30333994,
+        "medium_f2": 0.15474152,
+        "medium_fpr": 0.04425542
+      },
+      "training_commit_sha": "38e5a8c13ac61483c57501b8745aad3daa88848f"
+    },
+    {
+      "checkpoint": {
+        "candidate": {
+          "family": "dummy",
+          "parameters": {
+            "strategy": "prior"
+          }
+        },
+        "elapsed_seconds": 6.092,
+        "identity_sha256": "bb5fba536f418cdb2efb57a7d574220bcd71783d93a9a07eb6b106c374502096",
+        "model_sha256": "bde70a7023045444fc7486e5a9b48749af770e9fc8479b1f2452bf875d2dbc95",
+        "seed": 42,
+        "training_positive_count": 1554992,
+        "training_row_count": 2887300,
+        "tuning_average_precision": 0.5145782,
+        "tuning_row_count": 430197
+      },
+      "config_sha256": "cbfb5a5cccab25f9a8cccc86b8d77105f8215e0dd7e31a8abc0036ea80fda02f",
+      "dataset_id": "momtsim-v2",
+      "deferral": {
+        "completed_candidate_bundle": false,
+        "longest_observed_uninterrupted_attempt": "PT6H13M22S",
+        "reason": "The next full-data logistic fit repeatedly exceeded free-Colab session reliability and was lost on backend disconnection before an atomic candidate checkpoint could be written.",
+        "reason_code": "FREE_COLAB_RUNTIME_RELIABILITY",
+        "restart_safe_checkpoint_pairs": 1,
+        "retry_condition": "Use a paid or otherwise long-running Colab runtime, or approve a separately versioned bounded stress configuration; do not relabel the partial run as complete."
+      },
+      "final_evaluation_executed": false,
+      "full_training_executed": false,
+      "locked_test_accessed_for_decisions": false,
+      "locked_test_sealed": true,
+      "model_version": "transaction-core-momtsim-v2-pr15-v1",
+      "not_real_world_probability": true,
+      "preprocessor_sha256": "9a0ed3bd552ef81f570964ade8c5d64b50d94af96dc6dc828e2d524cfaec0f20",
+      "promotable": false,
+      "source_sha256": "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd",
+      "split_manifest_sha256": "539bcb4679eb6ed250bc25affeeb38f9a659b4c3f4e2fd0ae724cc7299301bf4",
+      "status": "deferred_incomplete",
+      "training_commit_sha": "38e5a8c13ac61483c57501b8745aad3daa88848f"
+    }
+  ],
+  "schema_version": "pr15-transaction-training-evidence-v1"
+}
