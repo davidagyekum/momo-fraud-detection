@@ -3,22 +3,22 @@
 ## Session identity
 
 - Date/time: 2026-08-13, Africa/Lagos
-- Phase/sub-phase: Logical PR16 private Ghana screenshot dataset — implementation foundation and first private pilot
+- Phase/sub-phase: Logical PR16 private Ghana screenshot dataset — private pilot second review
 - Repository: `davidagyekum/momo-fraud-detection`
 - Base branch: `codex/p15-transaction-models`
 - Base SHA: `9d77ed28fd8de4a92e91a8788ddde0d96305bcd8`
 - Work branch: `codex/p16-ghana-screenshot-dataset`
 - Final head SHA: reported in the final task handoff after commit
 - Pull request: not created in this session
-- Push status: pending final commit/push
-- Worktree status: pending final commit
+- Push status: reported in the final task response
+- Worktree status: reported in the final task response
 
 ## Scope completed
 
 - Requirement IDs: NFR-DATA-001, NFR-PRIV-001, NFR-AUD-001; logical PR16 blueprint
 - Backlog task IDs: PR16 private consent, de-identification, duplicate, review, withdrawal and group-safe split controls
 - Goal: establish a fail-closed private Ghana screenshot pipeline and validate it on the first consent-attested friend batch without leaking data or training a model
-- Actual completed work: implemented the private pipeline/contracts/CLI/notebook, indexed the owner's iMazing messages privately, quarantined/reviewed the initial online candidates, and admitted ten friend-supplied files to a private internal-only pilot. The pilot quarantined one exact duplicate, grouped related variants conservatively, wrote no working copies while de-identification is pending and performed no split or training.
+- Actual completed work: implemented the private pipeline/contracts/CLI/notebook, indexed the owner's iMazing messages privately, quarantined/reviewed the initial online candidates, admitted ten friend-supplied files to a private internal-only pilot, completed deterministic de-identification and recorded the project owner's independent label review. Ten fraud, two genuine and one suspicious labels are approved pending later field/mask gates; two ambiguous records are excluded. The mixed online source was replaced by two same-group redacted crops. No split or training occurred.
 
 ## Changed files
 
@@ -59,15 +59,15 @@
 
 - Pipeline/model/rule/template versions: `ghana-private-pipeline-v1`; no model version created
 - Dataset/split/artifact hashes: safe pilot evidence in `docs/evidence/PR16_GHANA_PRIVATE_PILOT.json`; no split/artifact exists
-- Metrics actually measured: 10 friend records across 8 conservative groups with 1 exact duplicate; 9 friend plus 5 permitted-online metadata-stripped working copies; provisional labels total 10 fraud candidates, 1 genuine candidate, 2 ambiguous and 1 mixed; 0 training-eligible records
-- Limitations: permission is project-owner-attested; direct contributor forms are not supplied; online permission covers images 1-5 but not image 6; only images 1, 2 and 4 have a strong whole-image fraud triage; labels are not independently adjudicated; the batch is small and non-representative
+- Metrics actually measured: 10 friend records across 8 conservative groups with 1 exact duplicate; 9 friend working copies, 5 permitted-online whole-image working copies and 2 controlled crops; 13 label approvals (10 fraud, 2 genuine, 1 suspicious), 2 ambiguous exclusions and 0 training-eligible records
+- Limitations: permission is project-owner-attested; direct contributor forms are not supplied; online permission covers images 1-5 but not image 6; label approval is complete but transcription, field annotation and mask-quality review are not; the batch is small, class-imbalanced and non-representative
 - No fabricated or unavailable evidence: no split, model fit, accuracy, F1, deployment or promotion claim
 
 ## Security/privacy
 
 - Access-control impact: private artifacts stay outside Git under the owner-controlled backup root
 - Private-data impact: original screenshots remain private; consent/permission references are pseudonymous; 14 metadata-stripped/masked derivatives were reviewed for exposed phone/name/reference and sensitive balance values
-- Upload/storage impact: private only; every derivative and provisional label remains blocked pending independent second review
+- Upload/storage impact: private only; approved labels remain blocked from training pending transcription, field/mask review, minimum-group sufficiency and split freezing
 - Audit events: private review history and withdrawal receipts are supported by the pipeline
 - Security checks: hostile path/image validation, filename PII rejection, exact/perceptual duplicate quarantine, secret/prohibited artifact scan and registered ML gate
 
@@ -75,17 +75,17 @@
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 435 tests; 90.78% branch-aware coverage; governance/lock/notebook/data gates; no training | 109.4 s |
-| Private friend/online de-identification | PASS | 14 working copies; 1 friend duplicate retained; 14 provisional annotations; 0 training eligible; 0 splits/training | 3 deterministic passes plus visual mask review |
+| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 438 tests; 90.50% branch-aware coverage; governance/lock/notebook/data gates; no training | 102.8 s |
+| Private second review and controlled crop pass | PASS | 16 working derivatives including 2 same-group crops; 13 labels approved; 2 ambiguous records excluded; 1 friend duplicate retained; 0 training eligible; 0 splits/training | Deterministic execution plus visual privacy review |
 
-Skipped/blocked checks and reason: no model training, split freezing or locked-test evaluation is authorised at this stage. Hosted GitHub Actions remain blocked by B-CI-001.
+Skipped/blocked checks and reason: no model training, split freezing or locked-test evaluation is authorised at this stage. The secret/prohibited-artifact scan passed 526 candidates. Repository `--quick` is environment-blocked because the active Node/npm versions are not the pinned versions; `--security` additionally reports the already-documented unregistered security marker. Hosted GitHub Actions remain blocked by B-CI-001.
 
 ## Known defects/blockers
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR16-GHANA-PRIVATE | High | Fourteen masked derivatives and provisional annotations require an independent second review | Cannot freeze splits or train | Keep originals private and all eligibility false | Independent data steward/reviewer | Inspect masks and confirm/reject provisional labels |
-| PR16-ONLINE-REVIEW | High | Permission covers images 1-5, but image 3 is ambiguous, image 5 is mixed and image 6 is unpermitted | Those records cannot become training eligible as-is | Keep them outside training; use only adjudicated crops/derivatives | Data steward/source reviewer | Crop/adjudicate 3/5 and exclude image 6 |
+| PR16-GHANA-PRIVATE | High | Label review is complete, but de-identified transcription, field annotation, mask-quality review and minimum class-balanced source groups remain incomplete | Cannot freeze splits or train | Keep all eligibility false and continue only private preparation | Data steward/project owner | Complete the remaining review stages and expand independent genuine/suspicious/fraud groups |
+| PR16-ONLINE-RIGHTS | High | Image 6 remains unpermitted and the two ambiguous records are explicitly excluded | These sources cannot enter training | Preserve their private quarantine/exclusion state | Project owner/data steward | Do not use them unless new rights evidence and a fresh review are recorded |
 | B-CI-001 | Medium | GitHub Actions account billing lock prevents runner allocation | Hosted CI unavailable | Preserve passing local gate evidence | Repository owner | Resolve the account lock and rerun CI |
 
 ## Documentation updated
@@ -106,4 +106,4 @@ push output: recorded in final task report
 
 ## Next exact task
 
-Independently review the 14 masked derivatives and their provisional annotations. Resolve the two ambiguous and one mixed record, crop online images 3/5 where a defensible sub-image label is possible, keep image 6 rights-blocked, retain the friend duplicate quarantine and preserve the `images 10/12` family before any group-safe split is frozen.
+Create de-identified transcriptions and structured field annotations for the 13 label-approved records, then complete mask-quality review. Keep image 6 rights-blocked, retain the friend duplicate quarantine and preserve all source groups. Do not freeze splits or start Colab training until enough independent groups exist for every class.

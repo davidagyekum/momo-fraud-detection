@@ -15,6 +15,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     attest_online_candidate_permission,
     changed_pixels_are_masked,
     create_controlled_edit,
+    create_controlled_online_crop,
     deidentify_message_text,
     deidentify_online_candidate,
     freeze_group_splits,
@@ -24,6 +25,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     load_development_records,
     quarantine_online_candidate,
     record_provisional_annotation,
+    record_second_review,
     review_online_candidate,
     safe_intake_summary,
 )
@@ -698,6 +700,156 @@ def test_provisional_annotation_rejects_invalid_values(
     arguments.update(mutation)
     with pytest.raises(GhanaPrivateError, match=message):
         record_provisional_annotation(**arguments)  # type: ignore[arg-type]
+
+
+def test_second_review_approves_label_but_keeps_later_gates_closed(tmp_path: Path) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0031",
+        source_path="first.png",
+        participant=_hash("second-review"),
+        group="GHGROUP_OWNER_0031",
+    )
+    _image(tmp_path / "raw/first.png", phase=16)
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0031",
+        provisional_label="fraud_candidate",
+        sender_kind="phone_number",
+        indicators=["numeric_sender"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    with pytest.raises(GhanaPrivateError, match="independent reviewer"):
+        record_second_review(
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            record_id="GHIMG_OWNER_0031",
+            decision="approve",
+            reviewer_id="REVIEWER_OWNER_001",
+            reason_code="SECOND_REVIEW_CONFIRMED_001",
+        )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0031",
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    reviewed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    report = json.loads(outputs.report_path.read_text(encoding="utf-8"))
+    assert reviewed["final_annotation"]["label"] == "FRAUDULENT"
+    assert reviewed["annotation_state"] == "label_approved_pending_field_review"
+    assert reviewed["training_eligible"] is False
+    assert report["final_label_counts"] == {"FRAUDULENT": 1}
+    assert report["training_eligible_count"] == 0
+    assert report["training_executed"] is False
+
+
+def test_second_review_excludes_ambiguous_content(tmp_path: Path) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0032",
+        source_path="first.png",
+        participant=_hash("ambiguous-review"),
+        group="GHGROUP_OWNER_0032",
+    )
+    _image(tmp_path / "raw/first.png", phase=17)
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0032",
+        provisional_label="ambiguous",
+        sender_kind="unknown",
+        indicators=["cropped_context"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0032",
+        decision="exclude",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="AMBIGUOUS_CONTENT_EXCLUDED_001",
+    )
+    reviewed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert reviewed["final_annotation"]["label"] is None
+    assert reviewed["annotation_state"] == "excluded_from_training"
+    assert reviewed["training_eligible"] is False
+
+
+def test_controlled_online_crops_preserve_group_and_redact(tmp_path: Path) -> None:
+    source = _image(tmp_path / "mixed.png", phase=18)
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    attest_online_candidate_permission(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        permission_reference="PERMISSION_SITE_20260813",
+        reviewer_id="REVIEWER_OWNER_002",
+        permission_scope="internal_model_development",
+    )
+    deidentify_online_candidate(
+        source_path=source,
+        index_path=outputs.index_path,
+        candidate_id=outputs.candidate_id,
+        working_root=tmp_path / "working",
+        redaction_regions=[[1, 1, 10, 10]],
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_002",
+    )
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id=outputs.candidate_id,
+        provisional_label="mixed",
+        sender_kind="alphanumeric_label",
+        indicators=["mixed_message_context"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    arguments = {
+        "source_path": source,
+        "index_path": outputs.index_path,
+        "report_path": outputs.report_path,
+        "source_candidate_id": outputs.candidate_id,
+        "source_group_id": "GHGROUP_ONLINE_MIXED_001",
+        "working_root": tmp_path / "working",
+        "crop_box": [10, 8, 60, 40],
+        "redaction_regions": [[2, 3, 10, 5]],
+        "sender_kind": "alphanumeric_label",
+        "indicators": ["normal_transaction_language"],
+        "reviewer_id": "REVIEWER_OWNER_001",
+        "repository_root": tmp_path / "repository",
+    }
+    first = create_controlled_online_crop(
+        **arguments,
+        candidate_id="GHCROP_ONLINE_MIXED_NORMAL_001",
+        provisional_label="genuine_candidate",
+    )
+    create_controlled_online_crop(
+        **{
+            **arguments,
+            "candidate_id": "GHCROP_ONLINE_MIXED_SUSPICIOUS_001",
+            "provisional_label": "suspicious_candidate",
+            "indicators": ["suspicious_link_or_call_to_action"],
+        }
+    )
+    index = json.loads(outputs.index_path.read_text(encoding="utf-8"))
+    derived = [record for record in index["records"] if record.get("derivative_type")]
+    with Image.open(first.working_path) as image:
+        assert image.size == (60, 40)
+        assert image.getpixel((3, 4)) == (32, 32, 32)
+        assert not image.info
+    assert len(derived) == 2
+    assert {record["source_group_id"] for record in derived} == {"GHGROUP_ONLINE_MIXED_001"}
+    assert index["records"][0]["annotation_state"] == "superseded_by_controlled_crops"
+    assert all(record["training_eligible"] is False for record in derived)
 
 
 def test_review_workflow_is_ordered_auditable_and_fail_closed(tmp_path: Path) -> None:

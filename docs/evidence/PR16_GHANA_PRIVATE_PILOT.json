@@ -4,30 +4,53 @@
   "deidentification_plan_sha256": "f7621a00c6de8e3ad1979d6c0985cad07a502dd09d61c325075ff33fbd0611f0",
   "direct_contributor_consent_artifacts_supplied": false,
   "direct_identifiers_written": false,
+  "excluded_from_training_count": 2,
   "exact_duplicate_count": 1,
+  "final_label_counts": {
+    "FRAUDULENT": 10,
+    "GENUINE": 2,
+    "SUSPICIOUS": 1
+  },
+  "label_approved_pending_field_review_count": 13,
   "network_acquisition_executed": false,
   "online_candidate_pilot": {
     "ambiguous_requires_adjudication_count": 1,
     "candidate_count": 6,
+    "controlled_crop_count": 2,
+    "controlled_crop_sha256": {
+      "genuine": "2451642409fd63bd0d06c19effce768564a38aeb31332785c9e5796e84aa1e65",
+      "suspicious": "17fc25403f5b8cf2cf9af7b3b16f85279d2cc65c97e252eae361dd774499285f"
+    },
     "exact_duplicate_count": 0,
     "mixed_authenticity_thread_count": 2,
     "owner_attested_permission_count": 5,
+    "final_label_counts": {
+      "FRAUDULENT": 3,
+      "GENUINE": 1,
+      "SUSPICIOUS": 1
+    },
+    "indexed_record_count_including_controlled_crops": 11,
     "provisional_label_counts": {
       "ambiguous": 1,
       "fraud_candidate": 3,
+      "genuine_candidate": 1,
+      "suspicious_candidate": 1,
       "mixed": 1
     },
     "perceptual_duplicate_count": 0,
     "primary_ghana_momo_fraud_count": 3,
-    "private_index_sha256": "6b42ec8300fe53c3796ab81baf54de29745c8cea9d01ebd5df81ec3045279415",
-    "safe_report_sha256": "cc668193aa63aef886ed6d412d3b0e998129b1a8e6f1338ef84e7c09549608bb",
+    "private_index_sha256": "93a44dfa0960658340a207274c07bbab4b7b21335292e223e5afaf9198bb6b7c",
+    "safe_report_sha256": "ceae846309ee000cad1666df695ece22c759466af1ba4352e2be1b5a9ff2687e",
+    "second_review_excluded_count": 1,
+    "second_review_label_approved_count": 5,
+    "superseded_mixed_source_count": 1,
     "training_eligible_count": 0,
     "unpermitted_count": 1,
-    "working_copy_count": 5
+    "working_copy_count": 7
   },
   "permission_evidence": "project_owner_attestation_of_friend_permission",
   "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
-  "private_index_sha256": "e2b7f83e66ad99e0ea95535c3aa5c02d96554605fc07c7884bbe74ddde8f1c72",
+  "private_index_sha256": "b8846fc744964c3c8930b01e3f65d09d3e2768ed2db937ddcd9fcbff57e8b501",
   "private_request_sha256": "1ef52b6ef65966b72d5b284e44bf65e354c970ac404c26220578c5e4f502687f",
   "provisional_label_counts": {
     "ambiguous": 1,
@@ -37,7 +60,14 @@
   "public_release_consent": false,
   "raw_images_copied": false,
   "record_count": 10,
-  "safe_report_sha256": "7690ab044fa1e3f92e71fd3ccdea175b28e49ac45d4b168586ee697416f4b86f",
+  "remaining_training_gates": [
+    "deidentified_transcription",
+    "field_annotation",
+    "mask_quality_review",
+    "minimum_group_count_and_class_balance",
+    "group_safe_split_freeze"
+  ],
+  "safe_report_sha256": "0d27c1d7749aa43ed3cfe43cba9dbe24124ff3415f7412f8780ece7693228990",
   "schema_version": "pr16-ghana-private-pilot-evidence-v1",
   "source_group_count": 8,
   "splits_frozen": false,

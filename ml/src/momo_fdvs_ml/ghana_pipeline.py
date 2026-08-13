@@ -27,8 +27,20 @@ WITHDRAWAL_RECEIPT_VERSION: Final = "ghana-withdrawal-receipt-v1"
 EDIT_MANIFEST_VERSION: Final = "ghana-controlled-edit-v1"
 ONLINE_CANDIDATE_INDEX_VERSION: Final = "ghana-online-candidate-index-v1"
 PROVISIONAL_LABELS: Final = frozenset(
-    {"fraud_candidate", "genuine_candidate", "ambiguous", "mixed"}
+    {
+        "fraud_candidate",
+        "genuine_candidate",
+        "suspicious_candidate",
+        "ambiguous",
+        "mixed",
+    }
 )
+SECOND_REVIEW_DECISIONS: Final = frozenset({"approve", "exclude"})
+FINAL_LABELS: Final = {
+    "fraud_candidate": "FRAUDULENT",
+    "genuine_candidate": "GENUINE",
+    "suspicious_candidate": "SUSPICIOUS",
+}
 SENDER_KINDS: Final = frozenset(
     {
         "phone_number",
@@ -144,6 +156,15 @@ class OnlineCandidateOutputs:
 @dataclass(frozen=True)
 class OnlineDeidentificationOutputs:
     """One reviewed online-candidate working derivative."""
+
+    candidate_id: str
+    working_path: Path
+    working_sha256: str
+
+
+@dataclass(frozen=True)
+class ControlledCropOutputs:
+    """One governed crop derived from an already governed online source."""
 
     candidate_id: str
     working_path: Path
@@ -332,6 +353,30 @@ def _redacted_derivative(
     for x, y, width, height in regions:
         draw.rectangle((x, y, x + width - 1, y + height - 1), fill=(32, 32, 32))
     return derivative
+
+
+def _refresh_annotation_report(report_path: Path, records: Sequence[object]) -> None:
+    report = _load_object(report_path)
+    valid_records = [record for record in records if isinstance(record, dict)]
+    annotation_counts = Counter(
+        str(record.get("annotation_state", "unreviewed")) for record in valid_records
+    )
+    report["annotation_state_counts"] = dict(sorted(annotation_counts.items()))
+    report["final_label_counts"] = dict(
+        sorted(
+            Counter(
+                str(annotation.get("label"))
+                for record in valid_records
+                if isinstance((annotation := record.get("final_annotation")), dict)
+                and annotation.get("decision") == "approve"
+            ).items()
+        )
+    )
+    report["training_eligible_count"] = sum(
+        record.get("training_eligible") is True for record in valid_records
+    )
+    report["training_executed"] = False
+    _atomic_json(report_path, report)
 
 
 def _validate_intake_request(value: Mapping[str, object]) -> list[dict[str, object]]:
@@ -868,6 +913,178 @@ def record_provisional_annotation(
     record["annotation_state"] = "needs_second_review"
     record["training_eligible"] = False
     _atomic_json(index_path, index)
+
+
+def record_second_review(
+    *,
+    index_path: Path,
+    report_path: Path,
+    record_id: str,
+    decision: str,
+    reviewer_id: str,
+    reason_code: str,
+) -> None:
+    """Record an independent label review without bypassing later data-quality gates."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    reason = _expect_opaque_id(reason_code, "reason_code")
+    if decision not in SECOND_REVIEW_DECISIONS:
+        raise GhanaPrivateError("second-review decision is invalid")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private annotation records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and record_id in {record.get("image_id"), record.get("candidate_id")}
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private annotation record was not found uniquely")
+    record = matches[0]
+    provisional = record.get("provisional_annotation")
+    if not isinstance(provisional, dict) or record.get("annotation_state") != (
+        "needs_second_review"
+    ):
+        raise GhanaPrivateError("second review requires a provisional annotation")
+    if provisional.get("reviewer_id") == reviewer:
+        raise GhanaPrivateError("second review must use an independent reviewer")
+    provisional_label = provisional.get("label")
+    if decision == "approve":
+        if not isinstance(provisional_label, str) or provisional_label not in FINAL_LABELS:
+            raise GhanaPrivateError("ambiguous or mixed content cannot be approved as a label")
+        final_label: str | None = FINAL_LABELS[provisional_label]
+        annotation_state = "label_approved_pending_field_review"
+    else:
+        final_label = None
+        annotation_state = "excluded_from_training"
+    record["final_annotation"] = {
+        "decision": decision,
+        "label": final_label,
+        "reason_code": reason,
+        "reviewer_id": reviewer,
+        "scope": "internal_model_development",
+    }
+    record["annotation_state"] = annotation_state
+    # Label approval is only one gate. Transcription, field annotation and mask
+    # review must still finish before a record can become training eligible.
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+
+
+def create_controlled_online_crop(
+    *,
+    source_path: Path,
+    index_path: Path,
+    report_path: Path,
+    source_candidate_id: str,
+    candidate_id: str,
+    source_group_id: str,
+    working_root: Path,
+    crop_box: Sequence[int],
+    redaction_regions: Sequence[Sequence[int]],
+    provisional_label: str,
+    sender_kind: str,
+    indicators: Sequence[str],
+    reviewer_id: str,
+    repository_root: Path,
+) -> ControlledCropOutputs:
+    """Create a redacted crop while preserving its source group for later splitting."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    derived_id = _expect_opaque_id(candidate_id, "candidate_id")
+    group_id = _expect_opaque_id(source_group_id, "source_group_id")
+    if provisional_label not in FINAL_LABELS:
+        raise GhanaPrivateError("controlled crop label must be directly reviewable")
+    if sender_kind not in SENDER_KINDS:
+        raise GhanaPrivateError("sender kind is invalid")
+    indicator_set = set(indicators)
+    if not indicator_set or not indicator_set.issubset(FRAUD_INDICATORS):
+        raise GhanaPrivateError("fraud indicators are invalid")
+    _require_outside_repository(working_root, repository_root, "online working images")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("online candidate records are invalid")
+    sources = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("candidate_id") == source_candidate_id
+    ]
+    if len(sources) != 1:
+        raise GhanaPrivateError("controlled crop source was not found uniquely")
+    if any(
+        isinstance(record, dict) and record.get("candidate_id") == derived_id for record in records
+    ):
+        raise GhanaPrivateError("controlled crop candidate_id already exists")
+    source = sources[0]
+    if source.get("rights_state") != "project_owner_attested_permission":
+        raise GhanaPrivateError("controlled crop source permission is not confirmed")
+    if source.get("provisional_annotation", {}).get("label") != "mixed":
+        raise GhanaPrivateError("controlled crop source must be reviewed as mixed")
+    if _sha256_file(source_path) != source.get("source_sha256"):
+        raise GhanaPrivateError("controlled crop source identity changed")
+    image = _decode_private_image(source_path)
+    crop_values = list(crop_box)
+    if len(crop_values) != 4 or any(
+        isinstance(value, bool) or not isinstance(value, int) for value in crop_values
+    ):
+        raise GhanaPrivateError("crop_box must be integer [x, y, width, height]")
+    x, y, width, height = crop_values
+    if (
+        x < 0
+        or y < 0
+        or width < 1
+        or height < 1
+        or x + width > image.width
+        or y + height > image.height
+    ):
+        raise GhanaPrivateError("crop_box is outside the image")
+    cropped = image.crop((x, y, x + width, y + height))
+    regions = _regions(list(map(list, redaction_regions)), width=width, height=height)
+    if not regions:
+        raise GhanaPrivateError("controlled crop requires reviewed redaction regions")
+    derivative = _redacted_derivative(cropped, regions)
+    output_root = working_root.resolve() / "controlled-crops"
+    output_root.mkdir(parents=True, exist_ok=True)
+    output = output_root / f"{derived_id}.png"
+    derivative.save(output, format="PNG", optimize=False)
+    working_hash = _sha256_file(output)
+    source["source_group_id"] = group_id
+    source["annotation_state"] = "superseded_by_controlled_crops"
+    source["training_eligible"] = False
+    records.append(
+        {
+            "candidate_id": derived_id,
+            "derivative_type": "controlled_crop",
+            "source_candidate_id": source_candidate_id,
+            "source_group_id": group_id,
+            "source_sha256": source.get("source_sha256"),
+            "working_relative_path": output.relative_to(working_root.resolve()).as_posix(),
+            "working_sha256": working_hash,
+            "crop_box": crop_values,
+            "redaction_region_count": len(regions),
+            "rights_state": source.get("rights_state"),
+            "permission_reference": source.get("permission_reference"),
+            "permission_scope": source.get("permission_scope"),
+            "deidentification_state": "complete_pending_second_review",
+            "deidentification_reviewer_id": reviewer,
+            "provisional_annotation": {
+                "label": provisional_label,
+                "sender_kind": sender_kind,
+                "indicators": sorted(indicator_set),
+                "reviewer_id": reviewer,
+            },
+            "annotation_state": "needs_second_review",
+            "training_eligible": False,
+            "public_release_eligible": False,
+        }
+    )
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+    return ControlledCropOutputs(derived_id, output, working_hash)
 
 
 def review_online_candidate(
