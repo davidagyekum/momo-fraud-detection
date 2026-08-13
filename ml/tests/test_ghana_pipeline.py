@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -19,12 +20,14 @@ from momo_fdvs_ml.ghana_pipeline import (
     create_controlled_online_crop,
     deidentify_message_text,
     deidentify_online_candidate,
+    export_private_ocr_text_corpus,
     freeze_group_splits,
     index_imazing_messages,
     ingest_private_screenshots,
     initialize_owner_consent,
     load_development_records,
     quarantine_online_candidate,
+    record_private_ocr_ground_truth,
     record_private_qa_annotation,
     record_provisional_annotation,
     record_second_review,
@@ -1088,6 +1091,320 @@ def test_private_qa_can_reject_low_utility_without_advancing_workflow(tmp_path: 
             source_group_id="GHGROUP_OWNER_0036",
             reviewer_id="REVIEWER_STEWARD_003",
             reason_code="SOURCE_GROUP_CONFIRMED_001",
+        )
+
+
+def test_private_ocr_truth_exports_raw_and_deidentified_text_without_image_derivative(
+    tmp_path: Path,
+) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0037",
+        source_path="first.png",
+        participant=_hash("private-ocr-truth"),
+        group="GHGROUP_OWNER_0037",
+        regions=[[2, 3, 20, 10]],
+    )
+    source = _image(tmp_path / "raw/first.png", phase=24, metadata="PRIVATE")
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0037",
+        provisional_label="genuine_candidate",
+        sender_kind="alphanumeric_label",
+        indicators=["normal_transaction_language"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0037",
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    result = record_private_ocr_ground_truth(
+        source_path=source,
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0037",
+        truth_root=tmp_path / "private-truth",
+        transcript="Available Balance GHS 50.00 Transaction ID ABC12345",
+        fields=[
+            {
+                "name": "balance",
+                "raw": "GHS 50.00",
+                "normalized": "50.00",
+                "bbox": [10, 12, 25, 10],
+                "sensitive": True,
+            },
+            {
+                "name": "status",
+                "raw": "Available Balance",
+                "normalized": "available balance",
+                "bbox": [40, 12, 40, 10],
+                "sensitive": False,
+            },
+            {
+                "name": "reference",
+                "raw": "ABC12345",
+                "normalized": "ABC12345",
+                "bbox": [40, 30, 40, 10],
+                "sensitive": True,
+            },
+        ],
+        reviewer_id="REVIEWER_STEWARD_003",
+        repository_root=tmp_path / "repository",
+    )
+    truth = json.loads(result.truth_path.read_text(encoding="utf-8"))
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert truth["full_transcript"].endswith("ABC12345")
+    assert indexed["ocr_ground_truth"]["contains_private_values"] is True
+    assert "full_transcript" not in indexed["ocr_ground_truth"]
+    assert indexed["annotation_state"] == "ocr_truth_pending_second_review"
+    assert indexed["training_eligible"] is False
+    assert "minimal_derivative" not in indexed
+    index_document = json.loads(outputs.index_path.read_text(encoding="utf-8"))
+    index_document["records"].append(
+        {
+            "image_id": "GHIMG_OWNER_0039",
+            "annotation_state": "needs_transcription",
+            "training_eligible": False,
+        }
+    )
+    _write_json(outputs.index_path, index_document)
+    exported = export_private_ocr_text_corpus(
+        index_report_pairs=[(outputs.index_path, outputs.report_path)],
+        truth_root=tmp_path / "private-truth",
+        output_root=tmp_path / "private-text-corpus",
+        reviewer_id="REVIEWER_STEWARD_003",
+        repository_root=tmp_path / "repository",
+    )
+    with exported.raw_csv_path.open(encoding="utf-8", newline="") as stream:
+        raw_row = next(csv.DictReader(stream))
+    with exported.sanitized_csv_path.open(encoding="utf-8", newline="") as stream:
+        sanitized_row = next(csv.DictReader(stream))
+    assert raw_row["raw_ocr_text"].endswith("ABC12345")
+    assert "GHS 50.00" not in sanitized_row["sanitized_text"]
+    assert "ABC12345" not in sanitized_row["sanitized_text"]
+    assert "Available Balance" in sanitized_row["sanitized_text"]
+    assert "[BALANCE_001]" in sanitized_row["sanitized_text"]
+    assert "[REFERENCE_001]" in sanitized_row["sanitized_text"]
+    assert sanitized_row["training_eligible"] == "false"
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert indexed["annotation_state"] == "ocr_text_pending_second_review"
+    assert indexed["image_derivative_policy"] == "excluded_use_private_original_for_ocr_only"
+
+
+def test_private_ocr_text_export_requires_private_roots_and_an_index(tmp_path: Path) -> None:
+    repository_root = tmp_path / "repository"
+    repository_root.mkdir()
+    with pytest.raises(GhanaPrivateError, match="truth must be written outside"):
+        export_private_ocr_text_corpus(
+            index_report_pairs=[],
+            truth_root=repository_root / "truth",
+            output_root=tmp_path / "output",
+            reviewer_id="REVIEWER_STEWARD_003",
+            repository_root=repository_root,
+        )
+    with pytest.raises(GhanaPrivateError, match="CSV corpus must be written outside"):
+        export_private_ocr_text_corpus(
+            index_report_pairs=[],
+            truth_root=tmp_path / "truth",
+            output_root=repository_root / "output",
+            reviewer_id="REVIEWER_STEWARD_003",
+            repository_root=repository_root,
+        )
+    with pytest.raises(GhanaPrivateError, match="requires at least one index"):
+        export_private_ocr_text_corpus(
+            index_report_pairs=[],
+            truth_root=tmp_path / "truth",
+            output_root=tmp_path / "output",
+            reviewer_id="REVIEWER_STEWARD_003",
+            repository_root=repository_root,
+        )
+    with pytest.raises(GhanaPrivateError, match=r"unable to read missing-index\.json"):
+        export_private_ocr_text_corpus(
+            index_report_pairs=[(tmp_path / "missing-index.json", tmp_path / "report.json")],
+            truth_root=tmp_path / "truth",
+            output_root=tmp_path / "output",
+            reviewer_id="REVIEWER_STEWARD_003",
+            repository_root=repository_root,
+        )
+
+
+@pytest.mark.parametrize(
+    ("fields", "message"),
+    [
+        ([], "requires field annotations"),
+        (
+            [
+                {
+                    "name": "unknown",
+                    "raw": "value",
+                    "normalized": "value",
+                    "bbox": [1, 1, 10, 10],
+                    "sensitive": True,
+                }
+            ],
+            "field name",
+        ),
+        (
+            [
+                {
+                    "name": "status",
+                    "raw": "blocked",
+                    "normalized": "blocked",
+                    "bbox": [1, 1, 10, 10],
+                    "sensitive": "yes",
+                }
+            ],
+            "privacy flag",
+        ),
+    ],
+)
+def test_private_ocr_truth_rejects_unsafe_fields(
+    tmp_path: Path, fields: list[dict[str, object]], message: str
+) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0038",
+        source_path="first.png",
+        participant=_hash("private-ocr-invalid"),
+        group="GHGROUP_OWNER_0038",
+    )
+    source = _image(tmp_path / "raw/first.png", phase=25)
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0038",
+        provisional_label="fraud_candidate",
+        sender_kind="phone_number",
+        indicators=["numeric_sender"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0038",
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    with pytest.raises(GhanaPrivateError, match=message):
+        record_private_ocr_ground_truth(
+            source_path=source,
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            record_id="GHIMG_OWNER_0038",
+            truth_root=tmp_path / "private-truth",
+            transcript="Account blocked",
+            fields=fields,
+            reviewer_id="REVIEWER_STEWARD_003",
+            repository_root=tmp_path / "repository",
+        )
+
+
+@pytest.mark.parametrize(
+    ("case", "message"),
+    [
+        ("records_not_list", "index records"),
+        ("record_not_object", "record is invalid"),
+        ("duplicate_id", "identifier is invalid"),
+        ("missing_truth_path", "truth path is invalid"),
+        ("truth_path_escape", "escaped its root"),
+        ("truth_hash_changed", "truth identity changed"),
+        ("truth_content_invalid", "truth content is invalid"),
+        ("no_sensitive_fields", "no de-identification fields"),
+        ("invalid_sensitive_field", "cannot be de-identified"),
+        ("sensitive_value_absent", "absent from its transcript"),
+        ("label_not_approved", "requires approved labels"),
+        ("invalid_label", "label or source group"),
+        ("invalid_indicators", "indicators are invalid"),
+        ("no_ocr_records", "found no OCR truth records"),
+    ],
+)
+def test_private_ocr_text_export_rejects_unsafe_state(
+    tmp_path: Path, case: str, message: str
+) -> None:
+    truth_root = tmp_path / "truth"
+    truth_path = _write_json(
+        truth_root / "GHIMG_OWNER_0040.json",
+        {
+            "full_transcript": "Call 0550000000 now",
+            "fields": [
+                {
+                    "name": "sender_phone",
+                    "raw": "0550000000",
+                    "normalized": "0550000000",
+                    "bbox": [1, 1, 10, 10],
+                    "sensitive": True,
+                }
+            ],
+        },
+    )
+    record: dict[str, object] = {
+        "image_id": "GHIMG_OWNER_0040",
+        "source_group_id": "GHGROUP_OWNER_0040",
+        "final_annotation": {"decision": "approve", "label": "FRAUDULENT"},
+        "provisional_annotation": {"sender_kind": "phone_number", "indicators": ["numeric_sender"]},
+        "ocr_ground_truth": {
+            "truth_relative_path": truth_path.name,
+            "truth_sha256": _hash(truth_path.read_text(encoding="utf-8")),
+        },
+    }
+    records: object = [record]
+    if case == "records_not_list":
+        records = {}
+    elif case == "record_not_object":
+        records = [None]
+    elif case == "duplicate_id":
+        records = [record, dict(record)]
+    elif case == "missing_truth_path":
+        record["ocr_ground_truth"] = {"truth_sha256": _hash("missing")}
+    elif case == "truth_path_escape":
+        record["ocr_ground_truth"] = {
+            "truth_relative_path": "../outside.json",
+            "truth_sha256": _hash("outside"),
+        }
+    elif case == "truth_hash_changed":
+        cast_metadata = record["ocr_ground_truth"]
+        assert isinstance(cast_metadata, dict)
+        cast_metadata["truth_sha256"] = _hash("changed")
+    elif case in {
+        "truth_content_invalid",
+        "no_sensitive_fields",
+        "invalid_sensitive_field",
+        "sensitive_value_absent",
+    }:
+        truth = json.loads(truth_path.read_text(encoding="utf-8"))
+        if case == "truth_content_invalid":
+            truth["fields"] = "invalid"
+        elif case == "no_sensitive_fields":
+            truth["fields"][0]["sensitive"] = False
+        elif case == "invalid_sensitive_field":
+            truth["fields"][0]["name"] = "unknown"
+        else:
+            truth["fields"][0]["raw"] = "0551111111"
+        _write_json(truth_path, truth)
+        cast_metadata = record["ocr_ground_truth"]
+        assert isinstance(cast_metadata, dict)
+        cast_metadata["truth_sha256"] = _hash(truth_path.read_text(encoding="utf-8"))
+    elif case == "label_not_approved":
+        record["final_annotation"] = {"decision": "exclude", "label": "FRAUDULENT"}
+    elif case == "invalid_label":
+        record["final_annotation"] = {"decision": "approve", "label": "UNKNOWN"}
+    elif case == "invalid_indicators":
+        record["provisional_annotation"] = {"indicators": "numeric_sender"}
+    elif case == "no_ocr_records":
+        record.pop("ocr_ground_truth")
+
+    index_path = _write_json(tmp_path / "index.json", {"records": records})
+    with pytest.raises(GhanaPrivateError, match=message):
+        export_private_ocr_text_corpus(
+            index_report_pairs=[(index_path, tmp_path / "report.json")],
+            truth_root=truth_root,
+            output_root=tmp_path / "output",
+            reviewer_id="REVIEWER_STEWARD_003",
+            repository_root=tmp_path / "repository",
         )
 
 

@@ -26,6 +26,8 @@ FROZEN_SPLIT_VERSION: Final = "ghana-private-frozen-split-v1"
 WITHDRAWAL_RECEIPT_VERSION: Final = "ghana-withdrawal-receipt-v1"
 EDIT_MANIFEST_VERSION: Final = "ghana-controlled-edit-v1"
 ONLINE_CANDIDATE_INDEX_VERSION: Final = "ghana-online-candidate-index-v1"
+OCR_GROUND_TRUTH_VERSION: Final = "ghana-private-ocr-ground-truth-v1"
+OCR_TEXT_CORPUS_VERSION: Final = "ghana-private-ocr-text-corpus-v1"
 PROVISIONAL_LABELS: Final = frozenset(
     {
         "fraud_candidate",
@@ -72,6 +74,19 @@ QA_CAPTURE_CHANNELS: Final = frozenset({"sms", "notification", "app_receipt", "h
 QA_OS_FAMILIES: Final = frozenset({"ios", "android", "other"})
 QA_THEMES: Final = frozenset({"light", "dark", "unknown"})
 QA_TRANSCRIPT_QUALITIES: Final = frozenset({"complete", "partial"})
+OCR_FIELD_NAMES: Final = frozenset(
+    {
+        "amount",
+        "balance",
+        "recipient_name",
+        "recipient_wallet",
+        "sender_phone",
+        "reference",
+        "url",
+        "timestamp",
+        "status",
+    }
+)
 OWNER_CONSENT_ACKNOWLEDGEMENT: Final = "I_CONFIRM_OWNER_INTERNAL_RESEARCH_CONSENT"
 ALLOWED_IMAGE_EXTENSIONS: Final = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 ALLOWED_IMAGE_FORMATS: Final = frozenset({"JPEG", "PNG", "WEBP"})
@@ -188,6 +203,26 @@ class PrivateRedactionRevisionOutputs:
 
 
 @dataclass(frozen=True)
+class PrivateOcrTruthOutputs:
+    """Private exact OCR truth recorded without creating an image derivative."""
+
+    record_id: str
+    truth_path: Path
+    truth_sha256: str
+
+
+@dataclass(frozen=True)
+class PrivateTextCorpusOutputs:
+    """Private raw and de-identified OCR CSV corpus locations."""
+
+    raw_csv_path: Path
+    raw_csv_sha256: str
+    sanitized_csv_path: Path
+    sanitized_csv_sha256: str
+    record_count: int
+
+
+@dataclass(frozen=True)
 class OwnerConsentOutputs:
     """Private pseudonymous owner-consent record identifiers."""
 
@@ -225,6 +260,22 @@ def _atomic_json(path: Path, value: object) -> None:
         json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
     )
     os.replace(temporary, path)
+
+
+def _atomic_csv(
+    path: Path, fieldnames: Sequence[str], rows: Sequence[Mapping[str, object]]
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fieldnames, extrasaction="raise")
+            writer.writeheader()
+            writer.writerows(rows)
+        os.replace(temporary, path)
+    except (OSError, csv.Error, ValueError) as exc:
+        temporary.unlink(missing_ok=True)
+        raise GhanaPrivateError(f"unable to write {path.name}") from exc
 
 
 def _require_outside_repository(path: Path, repository_root: Path, label: str) -> None:
@@ -1358,6 +1409,330 @@ def assign_private_source_group(
     record["training_eligible"] = False
     _atomic_json(index_path, index)
     _refresh_annotation_report(report_path, records)
+
+
+def record_private_ocr_ground_truth(
+    *,
+    source_path: Path,
+    index_path: Path,
+    report_path: Path,
+    record_id: str,
+    truth_root: Path,
+    transcript: str,
+    fields: Sequence[Mapping[str, object]],
+    reviewer_id: str,
+    repository_root: Path,
+) -> PrivateOcrTruthOutputs:
+    """Store exact OCR truth privately without modifying or deriving the source image."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    _require_outside_repository(truth_root, repository_root, "private OCR truth")
+    if not isinstance(transcript, str) or not transcript.strip() or len(transcript) > 10_000:
+        raise GhanaPrivateError("private OCR transcript is invalid")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private OCR index records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and record_id in {record.get("image_id"), record.get("candidate_id")}
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private OCR record was not found uniquely")
+    record = matches[0]
+    final_annotation = record.get("final_annotation")
+    if not isinstance(final_annotation, dict) or final_annotation.get("decision") != "approve":
+        raise GhanaPrivateError("private OCR truth requires a label-approved record")
+    expected_source_hash = record.get("original_sha256") or record.get("source_sha256")
+    if record.get("derivative_type") == "controlled_crop":
+        parent_id = record.get("source_candidate_id")
+        parents = [
+            item
+            for item in records
+            if isinstance(item, dict) and item.get("candidate_id") == parent_id
+        ]
+        if len(parents) != 1:
+            raise GhanaPrivateError("private OCR crop parent was not found uniquely")
+        expected_source_hash = parents[0].get("source_sha256")
+    if _sha256_file(source_path) != expected_source_hash:
+        raise GhanaPrivateError("private OCR source identity changed")
+    source_image = _decode_private_image(source_path)
+    crop_box = record.get("crop_box")
+    if crop_box is not None:
+        if (
+            not isinstance(crop_box, list)
+            or len(crop_box) != 4
+            or any(isinstance(value, bool) or not isinstance(value, int) for value in crop_box)
+        ):
+            raise GhanaPrivateError("private OCR crop box is invalid")
+        crop_values = cast(list[int], crop_box)
+        crop_x, crop_y, width, height = crop_values
+        if (
+            crop_x < 0
+            or crop_y < 0
+            or width < 1
+            or height < 1
+            or crop_x + width > source_image.width
+            or crop_y + height > source_image.height
+        ):
+            raise GhanaPrivateError("private OCR crop box is outside the image")
+        image = source_image.crop((crop_x, crop_y, crop_x + width, crop_y + height))
+    else:
+        image = source_image
+    if not fields:
+        raise GhanaPrivateError("private OCR truth requires field annotations")
+    normalized_fields: list[dict[str, object]] = []
+    for field in fields:
+        name = field.get("name")
+        raw = field.get("raw")
+        normalized = field.get("normalized")
+        bbox = field.get("bbox")
+        sensitive = field.get("sensitive")
+        if name not in OCR_FIELD_NAMES:
+            raise GhanaPrivateError("private OCR field name is invalid")
+        if not isinstance(raw, str) or not raw.strip() or len(raw) > 1000:
+            raise GhanaPrivateError("private OCR field raw value is invalid")
+        if not isinstance(normalized, (str, int, float)) or isinstance(normalized, bool):
+            raise GhanaPrivateError("private OCR field normalized value is invalid")
+        if not isinstance(sensitive, bool):
+            raise GhanaPrivateError("private OCR field privacy flag is invalid")
+        region = _regions([bbox], width=image.width, height=image.height)[0]
+        normalized_field = {
+            "name": name,
+            "raw": raw,
+            "normalized": normalized,
+            "bbox": list(region),
+            "sensitive": sensitive,
+        }
+        normalized_fields.append(normalized_field)
+    truth = {
+        "schema_version": OCR_GROUND_TRUTH_VERSION,
+        "pipeline_version": GHANA_PIPELINE_VERSION,
+        "record_id": record_id,
+        "source_sha256": expected_source_hash,
+        "source_resolution": [source_image.width, source_image.height],
+        "annotation_resolution": [image.width, image.height],
+        "crop_box": crop_box,
+        "full_transcript": transcript.strip(),
+        "fields": normalized_fields,
+        "reviewer_id": reviewer,
+        "contains_private_values": True,
+        "training_executed": False,
+    }
+    truth_path = truth_root.resolve() / f"{record_id}.json"
+    _atomic_json(truth_path, truth)
+    truth_hash = _sha256_file(truth_path)
+    record["ocr_ground_truth"] = {
+        "schema_version": OCR_GROUND_TRUTH_VERSION,
+        "truth_relative_path": truth_path.relative_to(truth_root.resolve()).as_posix(),
+        "truth_sha256": truth_hash,
+        "source_sha256": expected_source_hash,
+        "field_count": len(normalized_fields),
+        "sensitive_field_count": sum(field["sensitive"] is True for field in normalized_fields),
+        "reviewer_id": reviewer,
+        "contains_private_values": True,
+        "second_review_required": True,
+    }
+    record.pop("minimal_derivative", None)
+    record["image_derivative_policy"] = "excluded_use_private_original_for_ocr_only"
+    record["annotation_state"] = "ocr_truth_pending_second_review"
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+    return PrivateOcrTruthOutputs(record_id, truth_path, truth_hash)
+
+
+_OCR_PLACEHOLDER_KINDS: Final = {
+    "amount": "AMOUNT",
+    "balance": "BALANCE",
+    "recipient_name": "ENTITY",
+    "recipient_wallet": "PHONE",
+    "sender_phone": "PHONE",
+    "reference": "REFERENCE",
+    "url": "URL",
+    "timestamp": "TIMESTAMP",
+    "status": "STATUS",
+}
+
+
+def _deidentify_ocr_text(
+    transcript: str, fields: Sequence[Mapping[str, object]]
+) -> tuple[str, int]:
+    sensitive: dict[str, str] = {}
+    for field in fields:
+        if field.get("sensitive") is not True:
+            continue
+        name = field.get("name")
+        raw = field.get("raw")
+        if name not in _OCR_PLACEHOLDER_KINDS or not isinstance(raw, str) or not raw.strip():
+            raise GhanaPrivateError("private OCR sensitive field cannot be de-identified")
+        sensitive.setdefault(raw, _OCR_PLACEHOLDER_KINDS[cast(str, name)])
+    if not sensitive:
+        raise GhanaPrivateError("private OCR transcript has no de-identification fields")
+
+    counters: Counter[str] = Counter()
+    sanitized = transcript
+    replacement_count = 0
+    for raw, kind in sorted(sensitive.items(), key=lambda item: len(item[0]), reverse=True):
+        counters[kind] += 1
+        placeholder = f"[{kind}_{counters[kind]:03d}]"
+        sanitized, count = re.subn(re.escape(raw), placeholder, sanitized, flags=re.IGNORECASE)
+        if count == 0:
+            raise GhanaPrivateError("private OCR sensitive value is absent from its transcript")
+        replacement_count += count
+    return sanitized, replacement_count
+
+
+def export_private_ocr_text_corpus(
+    *,
+    index_report_pairs: Sequence[tuple[Path, Path]],
+    truth_root: Path,
+    output_root: Path,
+    reviewer_id: str,
+    repository_root: Path,
+) -> PrivateTextCorpusOutputs:
+    """Export exact private OCR and text-only de-identified CSVs outside Git."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    _require_outside_repository(truth_root, repository_root, "private OCR truth")
+    _require_outside_repository(output_root, repository_root, "private OCR CSV corpus")
+    if not index_report_pairs:
+        raise GhanaPrivateError("private OCR CSV export requires at least one index")
+
+    loaded: list[tuple[Path, Path, dict[str, object], list[object]]] = []
+    raw_rows: list[dict[str, object]] = []
+    sanitized_rows: list[dict[str, object]] = []
+    seen_record_ids: set[str] = set()
+    for index_path, report_path in index_report_pairs:
+        index = _load_object(index_path)
+        records = index.get("records")
+        if not isinstance(records, list):
+            raise GhanaPrivateError("private OCR CSV index records are invalid")
+        loaded.append((index_path, report_path, index, records))
+        for record_object in records:
+            if not isinstance(record_object, dict):
+                raise GhanaPrivateError("private OCR CSV record is invalid")
+            metadata = record_object.get("ocr_ground_truth")
+            if not isinstance(metadata, dict):
+                continue
+            record_id = record_object.get("image_id") or record_object.get("candidate_id")
+            if not isinstance(record_id, str) or record_id in seen_record_ids:
+                raise GhanaPrivateError("private OCR CSV record identifier is invalid")
+            seen_record_ids.add(record_id)
+            relative_path = metadata.get("truth_relative_path")
+            if not isinstance(relative_path, str):
+                raise GhanaPrivateError("private OCR truth path is invalid")
+            truth_path = (truth_root.resolve() / relative_path).resolve()
+            if not truth_path.is_relative_to(truth_root.resolve()):
+                raise GhanaPrivateError("private OCR truth path escaped its root")
+            expected_hash = _expect_sha256(metadata.get("truth_sha256"), "truth_sha256")
+            if _sha256_file(truth_path) != expected_hash:
+                raise GhanaPrivateError("private OCR truth identity changed")
+            truth = _load_object(truth_path)
+            transcript = truth.get("full_transcript")
+            fields = truth.get("fields")
+            if not isinstance(transcript, str) or not isinstance(fields, list):
+                raise GhanaPrivateError("private OCR truth content is invalid")
+            typed_fields = cast(list[Mapping[str, object]], fields)
+            sanitized_text, replacement_count = _deidentify_ocr_text(transcript, typed_fields)
+            final_annotation = record_object.get("final_annotation")
+            if (
+                not isinstance(final_annotation, dict)
+                or final_annotation.get("decision") != "approve"
+            ):
+                raise GhanaPrivateError("private OCR CSV export requires approved labels")
+            label = final_annotation.get("label")
+            group_id = record_object.get("source_group_id")
+            if label not in FINAL_LABELS.values() or not isinstance(group_id, str):
+                raise GhanaPrivateError("private OCR CSV label or source group is invalid")
+            provisional = record_object.get("provisional_annotation")
+            sender_kind = (
+                provisional.get("sender_kind", "unknown")
+                if isinstance(provisional, dict)
+                else "unknown"
+            )
+            indicators = provisional.get("indicators", []) if isinstance(provisional, dict) else []
+            if not isinstance(indicators, list) or not all(
+                isinstance(value, str) for value in indicators
+            ):
+                raise GhanaPrivateError("private OCR CSV indicators are invalid")
+            common = {
+                "record_id": record_id,
+                "source_group_id": group_id,
+                "source_kind": "online_screenshot"
+                if record_object.get("candidate_id")
+                else "consented_screenshot",
+                "label": label,
+                "sender_kind": sender_kind,
+                "indicators": "|".join(sorted(indicators)),
+                "field_count": len(fields),
+                "replacement_count": replacement_count,
+                "training_eligible": "false",
+                "review_state": "ocr_text_pending_second_review",
+            }
+            raw_rows.append(
+                {
+                    **common,
+                    "raw_ocr_text": transcript,
+                    "fields_json": json.dumps(fields, ensure_ascii=False, separators=(",", ":")),
+                }
+            )
+            sanitized_rows.append({**common, "sanitized_text": sanitized_text})
+
+    if not raw_rows:
+        raise GhanaPrivateError("private OCR CSV export found no OCR truth records")
+    raw_rows.sort(key=lambda row: cast(str, row["record_id"]))
+    sanitized_rows.sort(key=lambda row: cast(str, row["record_id"]))
+    common_fields = [
+        "record_id",
+        "source_group_id",
+        "source_kind",
+        "label",
+        "sender_kind",
+        "indicators",
+        "field_count",
+        "replacement_count",
+        "training_eligible",
+        "review_state",
+    ]
+    raw_path = output_root.resolve() / "raw" / "ocr_records.csv"
+    sanitized_path = output_root.resolve() / "deidentified" / "ocr_records.csv"
+    _atomic_csv(raw_path, [*common_fields, "raw_ocr_text", "fields_json"], raw_rows)
+    _atomic_csv(sanitized_path, [*common_fields, "sanitized_text"], sanitized_rows)
+    raw_hash = _sha256_file(raw_path)
+    sanitized_hash = _sha256_file(sanitized_path)
+
+    for index_path, report_path, index, records in loaded:
+        for record_object in records:
+            if not isinstance(record_object, dict) or not isinstance(
+                record_object.get("ocr_ground_truth"), dict
+            ):
+                continue
+            record_object.pop("minimal_derivative", None)
+            record_object["image_derivative_policy"] = "excluded_use_private_original_for_ocr_only"
+            record_object["ocr_text_corpus"] = {
+                "schema_version": OCR_TEXT_CORPUS_VERSION,
+                "raw_csv_sha256": raw_hash,
+                "sanitized_csv_sha256": sanitized_hash,
+                "reviewer_id": reviewer,
+                "second_review_required": True,
+                "contains_raw_values_in_private_csv": True,
+                "contains_raw_values_in_deidentified_csv": False,
+            }
+            record_object["annotation_state"] = "ocr_text_pending_second_review"
+            record_object["training_eligible"] = False
+        _atomic_json(index_path, index)
+        _refresh_annotation_report(report_path, records)
+
+    return PrivateTextCorpusOutputs(
+        raw_path,
+        raw_hash,
+        sanitized_path,
+        sanitized_hash,
+        len(raw_rows),
+    )
 
 
 def review_online_candidate(
