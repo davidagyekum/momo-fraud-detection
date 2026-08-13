@@ -29,7 +29,23 @@ from momo_fdvs_ml.execution import (
     ExecutionProfile,
     require_training_execution,
 )
-from momo_fdvs_ml.governance import GovernanceError, governance_report
+from momo_fdvs_ml.ghana_pipeline import (
+    OWNER_CONSENT_ACKNOWLEDGEMENT,
+    GhanaPrivateError,
+    advance_review,
+    apply_withdrawals,
+    freeze_group_splits,
+    index_imazing_messages,
+    ingest_private_screenshots,
+    initialize_owner_consent,
+    quarantine_online_candidate,
+    review_online_candidate,
+)
+from momo_fdvs_ml.governance import (
+    GovernanceError,
+    governance_report,
+    load_withdrawal_ledger,
+)
 from momo_fdvs_ml.image_model import (
     ImageModelError,
     load_and_verify_image_artifact,
@@ -134,6 +150,96 @@ def build_parser() -> argparse.ArgumentParser:
     derive_transactions.add_argument("--allowed-output-root", type=Path, required=True)
     derive_transactions.add_argument("--output", type=Path, required=True)
     derive_transactions.add_argument("--manifest-output", type=Path, required=True)
+
+    ghana_intake = subparsers.add_parser(
+        "ghana-private-intake",
+        help="create de-identified private working images and a restricted review index",
+    )
+    ghana_intake.add_argument("--request", type=Path, required=True)
+    ghana_intake.add_argument("--raw-root", type=Path, required=True)
+    ghana_intake.add_argument("--working-root", type=Path, required=True)
+    ghana_intake.add_argument("--private-index", type=Path, required=True)
+    ghana_intake.add_argument("--safe-report", type=Path, required=True)
+    ghana_intake.add_argument("--repository-root", type=Path, required=True)
+    ghana_intake.add_argument("--withdrawal-ledger", type=Path)
+
+    ghana_consent = subparsers.add_parser(
+        "ghana-init-owner-consent",
+        help="record restricted self-owner internal-use consent outside the repository",
+    )
+    ghana_consent.add_argument("--governance-root", type=Path, required=True)
+    ghana_consent.add_argument("--repository-root", type=Path, required=True)
+    ghana_consent.add_argument("--withdrawal-operator-id", required=True)
+    ghana_consent.add_argument(
+        "--acknowledgement",
+        metavar="TOKEN",
+        help=f"required exact token: {OWNER_CONSENT_ACKNOWLEDGEMENT}",
+        required=True,
+    )
+
+    ghana_messages = subparsers.add_parser(
+        "ghana-index-imazing",
+        help="create a private de-identified candidate transcript index from an owner export",
+    )
+    ghana_messages.add_argument("--source-csv", type=Path, required=True)
+    ghana_messages.add_argument("--private-index", type=Path, required=True)
+    ghana_messages.add_argument("--safe-report", type=Path, required=True)
+    ghana_messages.add_argument("--repository-root", type=Path, required=True)
+    ghana_messages.add_argument("--participant-id-hash", required=True)
+    ghana_messages.add_argument("--permission-reference", required=True)
+    ghana_messages.add_argument("--text-column")
+    ghana_messages.add_argument("--sender-column")
+
+    ghana_online = subparsers.add_parser(
+        "ghana-quarantine-online-candidate",
+        help="quarantine one manually acquired web image pending rights and content review",
+    )
+    ghana_online.add_argument("--source", type=Path, required=True)
+    ghana_online.add_argument("--source-page-url", required=True)
+    ghana_online.add_argument("--quarantine-root", type=Path, required=True)
+    ghana_online.add_argument("--private-index", type=Path, required=True)
+    ghana_online.add_argument("--safe-report", type=Path, required=True)
+    ghana_online.add_argument("--repository-root", type=Path, required=True)
+    ghana_online.add_argument("--reviewer-id", required=True)
+
+    ghana_review = subparsers.add_parser(
+        "ghana-review-transition", help="apply one auditable private review state transition"
+    )
+    ghana_review.add_argument("--private-index", type=Path, required=True)
+    ghana_review.add_argument("--image-id", required=True)
+    ghana_review.add_argument("--expected-state", required=True)
+    ghana_review.add_argument("--next-state", required=True)
+    ghana_review.add_argument("--reviewer-id", required=True)
+    ghana_review.add_argument("--reason-code", required=True)
+
+    ghana_online_review = subparsers.add_parser(
+        "ghana-review-online-candidate",
+        help="record private content triage without granting rights or training eligibility",
+    )
+    ghana_online_review.add_argument("--private-index", type=Path, required=True)
+    ghana_online_review.add_argument("--safe-report", type=Path, required=True)
+    ghana_online_review.add_argument("--candidate-id", required=True)
+    ghana_online_review.add_argument("--content-class", required=True)
+    ghana_online_review.add_argument("--direct-identifier-state", required=True)
+    ghana_online_review.add_argument("--reviewer-id", required=True)
+
+    ghana_split = subparsers.add_parser(
+        "ghana-freeze-splits", help="freeze approved private records by participant/source group"
+    )
+    ghana_split.add_argument("--private-index", type=Path, required=True)
+    ghana_split.add_argument("--private-manifest", type=Path, required=True)
+    ghana_split.add_argument("--safe-report", type=Path, required=True)
+    ghana_split.add_argument("--seed", type=int, default=20260813)
+
+    ghana_withdraw = subparsers.add_parser(
+        "ghana-apply-withdrawals",
+        help="quarantine withdrawn participant derivatives and record a private receipt",
+    )
+    ghana_withdraw.add_argument("--private-index", type=Path, required=True)
+    ghana_withdraw.add_argument("--withdrawal-ledger", type=Path, required=True)
+    ghana_withdraw.add_argument("--working-root", type=Path, required=True)
+    ghana_withdraw.add_argument("--quarantine-root", type=Path, required=True)
+    ghana_withdraw.add_argument("--receipt", type=Path, required=True)
 
     validate_notebooks = subparsers.add_parser(
         "validate-notebooks",
@@ -391,6 +497,189 @@ def main(argv: Sequence[str] | None = None) -> int:
                         "splits_created": False,
                         "training_executed": False,
                         "promotable_for_training": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-private-intake":
+            withdrawn = (
+                load_withdrawal_ledger(args.withdrawal_ledger)
+                if args.withdrawal_ledger is not None
+                else frozenset()
+            )
+            intake_outputs = ingest_private_screenshots(
+                request_path=args.request,
+                raw_root=args.raw_root,
+                working_root=args.working_root,
+                index_path=args.private_index,
+                report_path=args.safe_report,
+                repository_root=args.repository_root,
+                withdrawn_participants=withdrawn,
+            )
+            print(
+                json.dumps(
+                    {
+                        "record_count": intake_outputs.record_count,
+                        "quarantined_count": intake_outputs.quarantined_count,
+                        "private_index_path": str(intake_outputs.index_path),
+                        "safe_report_path": str(intake_outputs.report_path),
+                        "raw_images_copied": False,
+                        "training_executed": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-init-owner-consent":
+            consent_outputs = initialize_owner_consent(
+                governance_root=args.governance_root,
+                repository_root=args.repository_root,
+                acknowledgement=args.acknowledgement,
+                withdrawal_operator_id=args.withdrawal_operator_id,
+            )
+            print(
+                json.dumps(
+                    {
+                        "record_path": str(consent_outputs.record_path),
+                        "participant_id_hash": consent_outputs.participant_id_hash,
+                        "permission_reference": consent_outputs.permission_reference,
+                        "consent_scope": "internal_only",
+                        "public_release_consent": False,
+                        "training_eligible": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-index-imazing":
+            message_outputs = index_imazing_messages(
+                source_csv=args.source_csv,
+                index_path=args.private_index,
+                report_path=args.safe_report,
+                repository_root=args.repository_root,
+                participant_id_hash=args.participant_id_hash,
+                permission_reference=args.permission_reference,
+                text_column=args.text_column,
+                sender_column=args.sender_column,
+            )
+            print(
+                json.dumps(
+                    {
+                        "message_count": message_outputs.record_count,
+                        "private_index_path": str(message_outputs.index_path),
+                        "safe_report_path": str(message_outputs.report_path),
+                        "training_eligible": False,
+                        "training_executed": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-quarantine-online-candidate":
+            candidate_outputs = quarantine_online_candidate(
+                source_path=args.source,
+                source_page_url=args.source_page_url,
+                quarantine_root=args.quarantine_root,
+                index_path=args.private_index,
+                report_path=args.safe_report,
+                repository_root=args.repository_root,
+                reviewer_id=args.reviewer_id,
+            )
+            print(
+                json.dumps(
+                    {
+                        "candidate_id": candidate_outputs.candidate_id,
+                        "status": candidate_outputs.status,
+                        "private_index_path": str(candidate_outputs.index_path),
+                        "safe_report_path": str(candidate_outputs.report_path),
+                        "training_eligible": False,
+                        "automated_scraping_executed": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-review-transition":
+            advance_review(
+                index_path=args.private_index,
+                image_id=args.image_id,
+                expected_state=args.expected_state,
+                next_state=args.next_state,
+                reviewer_id=args.reviewer_id,
+                reason_code=args.reason_code,
+            )
+            print(json.dumps({"review_transition_applied": True}, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "ghana-review-online-candidate":
+            review_online_candidate(
+                index_path=args.private_index,
+                report_path=args.safe_report,
+                candidate_id=args.candidate_id,
+                content_class=args.content_class,
+                direct_identifier_state=args.direct_identifier_state,
+                reviewer_id=args.reviewer_id,
+            )
+            print(
+                json.dumps(
+                    {
+                        "content_review_recorded": True,
+                        "rights_approved": False,
+                        "training_eligible": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-freeze-splits":
+            split_outputs = freeze_group_splits(
+                index_path=args.private_index,
+                manifest_path=args.private_manifest,
+                report_path=args.safe_report,
+                seed=args.seed,
+            )
+            print(
+                json.dumps(
+                    {
+                        "manifest_sha256": split_outputs.manifest_sha256,
+                        "private_manifest_path": str(split_outputs.manifest_path),
+                        "safe_report_path": str(split_outputs.report_path),
+                        "locked_test": True,
+                        "training_executed": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-apply-withdrawals":
+            affected = apply_withdrawals(
+                index_path=args.private_index,
+                withdrawn_participants=load_withdrawal_ledger(args.withdrawal_ledger),
+                working_root=args.working_root,
+                quarantine_root=args.quarantine_root,
+                receipt_path=args.receipt,
+            )
+            print(
+                json.dumps(
+                    {
+                        "affected_record_count": affected,
+                        "split_rebuild_required": affected > 0,
+                        "dependent_artifacts_invalidated": affected > 0,
                     },
                     indent=2,
                     sort_keys=True,
@@ -668,6 +957,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ColabFoundationError,
         DerivationError,
         ExecutionGuardError,
+        GhanaPrivateError,
         GovernanceError,
         ImageDatasetError,
         ImageModelError,

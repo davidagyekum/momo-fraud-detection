@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/contracts/ghana-online-candidate-index-v1.json",
+  "title": "Restricted online fraud-image candidate quarantine index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pipeline_version", "records"],
+  "properties": {
+    "schema_version": {"const": "ghana-online-candidate-index-v1"},
+    "pipeline_version": {"const": "ghana-private-pipeline-v1"},
+    "records": {"type": "array", "items": {"type": "object"}}
+  }
+}

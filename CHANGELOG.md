@@ -4,6 +4,7 @@ All notable project changes are recorded here. Use semantic sections and link ea
 
 ## Unreleased
 
+- Added the logical PR16 private Ghana screenshot foundation: owner/friend permission-state intake, pseudonymous participant/source groups, metadata-stripped working-copy controls, exact/perceptual duplicate quarantine, staged de-identification, auditable review transitions, withdrawal propagation, group-safe split freezing, online-candidate rights quarantine and an output-free Colab dataset notebook. A private ten-file friend pilot indexed eight conservative groups, quarantined one exact duplicate and wrote no working images while de-identification remains pending; no split or training occurred.
 - Verified the canonical PaySim author listing, CC BY-SA 4.0 licence and Kaggle Version 2/platform conditions, then acquired the official signed-in archive into private Drive storage with exact source/member identity.
 - Registered PaySim in owner-operated Colab after exact identity, schema, row, class, step, duplicate, null, label and amount validation; recorded content-addressed manifest/profile evidence while keeping the dataset disabled and non-promotable. No raw bytes entered Git and no training occurred.
 - Acquired the official Mendeley DOI v1/v2 packages through Chrome into private storage, established exact package/file hashes and version mapping, registered v1 after complete validation, and preserved v2's fail-closed quarantine after the validator found 20 exact duplicate rows. Both remain disabled/non-promotable; no split or training occurred.

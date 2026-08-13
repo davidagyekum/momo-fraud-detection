@@ -7,6 +7,12 @@ from types import SimpleNamespace
 from momo_fdvs_ml import cli
 from momo_fdvs_ml.cli import main
 from momo_fdvs_ml.execution import FULL_TRAINING_ACKNOWLEDGEMENT
+from momo_fdvs_ml.ghana_pipeline import (
+    IntakeOutputs,
+    OnlineCandidateOutputs,
+    OwnerConsentOutputs,
+    SplitOutputs,
+)
 from momo_fdvs_ml.image_model import ImageTrainingOutputs
 from momo_fdvs_ml.smoke import SmokeOutputs
 from momo_fdvs_ml.transaction_model import TransactionTrainingOutputs
@@ -441,3 +447,200 @@ def test_cli_rejects_non_smoke_profile_for_smoke_command(tmp_path: Path, capsys)
         == 1
     )
     assert "requires --profile smoke" in capsys.readouterr().out
+
+
+def test_cli_dispatches_private_ghana_pipeline_without_training(
+    tmp_path: Path, capsys, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    intake = IntakeOutputs(tmp_path / "index.json", tmp_path / "report.json", 3, 1)
+    candidate = OnlineCandidateOutputs(
+        "GHCAND_ABCDEF0123456789ABCDEF01",
+        "quarantined_pending_rights_review",
+        tmp_path / "online-index.json",
+        tmp_path / "online-report.json",
+    )
+    split = SplitOutputs(tmp_path / "split.json", tmp_path / "split-report.json", "a" * 64)
+    consent = OwnerConsentOutputs(tmp_path / "consent.json", "b" * 64, "PERMISSION_OWNER_001")
+    monkeypatch.setattr(cli, "load_withdrawal_ledger", lambda _path: frozenset({"b" * 64}))
+    monkeypatch.setattr(cli, "ingest_private_screenshots", lambda **_kwargs: intake)
+    monkeypatch.setattr(cli, "index_imazing_messages", lambda **_kwargs: intake)
+    monkeypatch.setattr(cli, "quarantine_online_candidate", lambda **_kwargs: candidate)
+    monkeypatch.setattr(cli, "advance_review", lambda **_kwargs: None)
+    monkeypatch.setattr(cli, "freeze_group_splits", lambda **_kwargs: split)
+    monkeypatch.setattr(cli, "apply_withdrawals", lambda **_kwargs: 2)
+    monkeypatch.setattr(cli, "initialize_owner_consent", lambda **_kwargs: consent)
+    monkeypatch.setattr(cli, "review_online_candidate", lambda **_kwargs: None)
+
+    assert (
+        main(
+            [
+                "ghana-init-owner-consent",
+                "--governance-root",
+                str(tmp_path / "governance"),
+                "--repository-root",
+                str(tmp_path / "repository"),
+                "--withdrawal-operator-id",
+                "OPERATOR_OWNER_001",
+                "--acknowledgement",
+                "I_CONFIRM_OWNER_INTERNAL_RESEARCH_CONSENT",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["public_release_consent"] is False
+
+    assert (
+        main(
+            [
+                "ghana-private-intake",
+                "--request",
+                str(tmp_path / "request.json"),
+                "--raw-root",
+                str(tmp_path / "raw"),
+                "--working-root",
+                str(tmp_path / "working"),
+                "--private-index",
+                str(tmp_path / "index.json"),
+                "--safe-report",
+                str(tmp_path / "report.json"),
+                "--repository-root",
+                str(tmp_path / "repository"),
+                "--withdrawal-ledger",
+                str(tmp_path / "withdrawals.json"),
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["training_executed"] is False
+
+    assert (
+        main(
+            [
+                "ghana-index-imazing",
+                "--source-csv",
+                str(tmp_path / "messages.csv"),
+                "--private-index",
+                str(tmp_path / "messages-index.json"),
+                "--safe-report",
+                str(tmp_path / "messages-report.json"),
+                "--repository-root",
+                str(tmp_path / "repository"),
+                "--participant-id-hash",
+                "b" * 64,
+                "--permission-reference",
+                "PERMISSION_OWNER_001",
+                "--text-column",
+                "Text",
+                "--sender-column",
+                "Sender",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["training_eligible"] is False
+
+    assert (
+        main(
+            [
+                "ghana-quarantine-online-candidate",
+                "--source",
+                str(tmp_path / "download.png"),
+                "--source-page-url",
+                "https://example.test/report",
+                "--quarantine-root",
+                str(tmp_path / "quarantine"),
+                "--private-index",
+                str(tmp_path / "online-index.json"),
+                "--safe-report",
+                str(tmp_path / "online-report.json"),
+                "--repository-root",
+                str(tmp_path / "repository"),
+                "--reviewer-id",
+                "REVIEWER_OWNER_001",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["automated_scraping_executed"] is False
+
+    assert (
+        main(
+            [
+                "ghana-review-online-candidate",
+                "--private-index",
+                str(tmp_path / "online-index.json"),
+                "--safe-report",
+                str(tmp_path / "online-report.json"),
+                "--candidate-id",
+                "GHCAND_ABCDEF0123456789ABCDEF01",
+                "--content-class",
+                "primary_ghana_momo_fraud",
+                "--direct-identifier-state",
+                "present",
+                "--reviewer-id",
+                "REVIEWER_OWNER_001",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["rights_approved"] is False
+
+    assert (
+        main(
+            [
+                "ghana-review-transition",
+                "--private-index",
+                str(tmp_path / "index.json"),
+                "--image-id",
+                "GHIMG_OWNER_0001",
+                "--expected-state",
+                "ingested",
+                "--next-state",
+                "needs_deidentification",
+                "--reviewer-id",
+                "REVIEWER_OWNER_001",
+                "--reason-code",
+                "INTAKE_CHECKED_001",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["review_transition_applied"] is True
+
+    assert (
+        main(
+            [
+                "ghana-freeze-splits",
+                "--private-index",
+                str(tmp_path / "index.json"),
+                "--private-manifest",
+                str(tmp_path / "split.json"),
+                "--safe-report",
+                str(tmp_path / "split-report.json"),
+                "--seed",
+                "42",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["locked_test"] is True
+
+    assert (
+        main(
+            [
+                "ghana-apply-withdrawals",
+                "--private-index",
+                str(tmp_path / "index.json"),
+                "--withdrawal-ledger",
+                str(tmp_path / "withdrawals.json"),
+                "--working-root",
+                str(tmp_path / "working"),
+                "--quarantine-root",
+                str(tmp_path / "withdrawn"),
+                "--receipt",
+                str(tmp_path / "receipt.json"),
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["affected_record_count"] == 2

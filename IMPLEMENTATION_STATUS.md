@@ -6,7 +6,7 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p15-transaction-models`
+- Current work branch: `codex/p16-ghana-screenshot-dataset`
 - Base SHA: `f4862e32756a9b9ebde106a2eaf4993ba875b33a`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-13`
-- CI status: `Logical PR15 implementation gate passes locally with 391 tests at 90.98% branch-aware coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- CI status: `Logical PR16 implementation gate passes locally with 424 tests at 90.83% branch-aware coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR15 transaction model training, calibration and export — Complete`
-- Next exact task: `Begin logical PR16 by implementing and validating the private Ghana screenshot intake pilot: consent-state validation, pseudonymous IDs, de-identification, duplicate detection, withdrawal propagation and group-safe split generation. Keep the owner's message export and all acquired images outside Git.`
+- Current phase: `Logical PR16 private Ghana screenshot dataset — In Progress`
+- Next exact task: `Complete manual de-identification and field/content annotation for the nine unique friend-supplied pilot screenshots, preserving sender-kind and spelling signals without retaining direct identifiers; keep the six online downloads quarantined until exact source-page/rights evidence is recorded.`
 
 ## PR10-PR13 reconciliation status
 
@@ -68,6 +68,14 @@
 - Colab evidence: the owner-authorised PaySim run completed at immutable code SHA `38e5a8c1…` after 7h29m and selected a random forest with tuning average precision `0.37612244`; the MoMTSim v1 run completed after 8h13m and selected XGBoost with tuning average precision `0.35126485`. Both used independent chronological isotonic calibration, completed all 14 configured fits, passed trusted reload parity over 128 rows and produced content-hashed inactive bundles. These are synthetic tuning/calibration results, not final or real-world metrics.
 - Deferred source: the optional MoMTSim v2-derivative stress run repeatedly lost its free Colab runtime during the first full-data logistic fit. Exactly one dummy-prior checkpoint exists; no completed bundle, report, model card or registry payload exists, and the locked test remained sealed. The blueprint permits this transparent deferral. A retry requires a paid/long-running runtime or a separately versioned bounded configuration.
 - Verification: the implementation gate passes formatting, Ruff, strict mypy, 391 tests at 90.98% branch-aware coverage, governance, lock, notebook and controlled-data checks; the secret/prohibited-artifact scan passes 517 candidates. Exact PaySim, MoMTSim v1 and deferred-v2 evidence is recorded in `docs/evidence/PR15_TRANSACTION_TRAINING_COLAB.json`; final evaluation remains reserved for PR20.
+
+## Logical PR16 private Ghana screenshot dataset
+
+- Foundation: strict private intake, pseudonymous IDs, staged de-identification, metadata stripping, exact/perceptual duplicate quarantine, auditable annotation transitions, withdrawal propagation, group-safe split freezing and locked-test exclusion are implemented with private indexes outside Git.
+- Message boundary: the owner's 2,654-message iMazing export is indexed privately with sender kind and tokenised candidate text; manual identity review remains required and the export is not training eligible.
+- Online boundary: browser-acquired images remain in a rights-review-only quarantine; content triage cannot grant training eligibility and no scraper or bulk network acquisition client exists.
+- Friend pilot: the project owner attested permission for ten newly supplied friend screenshots. Private intake produced ten records across eight conservative participant/source groups, quarantined one exact duplicate, left nine records pending de-identification and wrote zero working copies. Direct contributor forms were not supplied, so the evidence remains internal-only and non-training.
+- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 424 tests at 90.83% branch-aware coverage, governance, lock, notebook and controlled-data checks. No split, model fitting, metric or promotion claim is made.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -142,7 +150,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
 | PR15-MOMTSIM-V2-RUNTIME | Logical PR15 optional stress run | Repeated free-Colab backend disconnections prevented the first full-data logistic fit from completing; only the dummy-prior checkpoint was atomically saved. | No MoMTSim v2 model bundle or completed-run comparison exists. | Preserve the incomplete checkpoint and explicit deferral; rely only on the completed PaySim and MoMTSim v1 synthetic evidence. | Project owner supplies a paid/long-running runtime if the optional retry is desired. | Retry unchanged on a durable runtime, or introduce and document a separately versioned bounded configuration; never relabel the partial run as complete. |
-| PR16-GHANA-PRIVATE | Logical PR16 | The owner message export is available outside Git, but no private consent/index/de-identification pipeline has ingested it and controlled screenshot groups are not yet supplied. | Ghana image/OCR adaptation cannot start until private intake, review, deduplication and withdrawal controls pass. | Keep Ghana-private disabled/not acquired; keep raw exports and images outside Git. | Project owner confirms consent scope and supplies controlled screenshots at the PR16 intake checkpoint; Codex builds and validates the private pipeline. | Implement the PR16 pipeline and validated pilot, then admit only reviewed, rights-cleared records. |
+| PR16-GHANA-PRIVATE | Logical PR16 | The private pipeline and initial friend pilot pass, but nine unique screenshots still require de-identification/content review and direct contributor forms were not supplied. Six online downloads also lack exact source-page rights evidence. | Ghana image/OCR adaptation and split freezing cannot start yet. | Keep Ghana-private disabled/non-training; retain raw screenshots, permission attestation and indexes outside Git; create no identifier-bearing working copies. | Project owner may later supply direct contributor/source evidence; Codex can perform de-identification and annotation now. | Produce reviewed de-identified derivatives, adjudicate ambiguous labels, then freeze groups only after training eligibility is explicitly approved. |
 
 ## Active known limitations
 
@@ -157,7 +165,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-13-PR15-transaction-training-completion.md`
+- Handoff file: `docs/handoffs/2026-08-13-PR16-ghana-private-pilot.md`
 - Summary: `Completed and evidenced the PaySim and MoMTSim v1 PR15 source-specific training/calibration/export runs, transparently deferred the incomplete v2 stress run after repeated free-Colab disconnections, and preserved every locked test for PR20.`
 
 ## Next session startup

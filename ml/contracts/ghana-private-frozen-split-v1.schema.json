@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/contracts/ghana-private-frozen-split-v1.json",
+  "title": "Restricted Ghana private frozen split v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pipeline_version", "seed", "locked_test", "records", "manifest_sha256"],
+  "properties": {
+    "schema_version": {"const": "ghana-private-frozen-split-v1"},
+    "pipeline_version": {"const": "ghana-private-pipeline-v1"},
+    "seed": {"type": "integer", "minimum": 0},
+    "locked_test": {"const": true},
+    "records": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

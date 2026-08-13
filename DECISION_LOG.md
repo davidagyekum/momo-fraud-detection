@@ -360,3 +360,14 @@ The exact pinned archive was subsequently acquired into restricted private stora
 - **Consequences:** PR15 can follow the stronger calibration discipline without silently breaking the fixed public taxonomy. Existing clients and persisted three-class evidence are unchanged. Source-specific bundle identity, PR14 preprocessor/split hashes, selected seed/configuration, calibration method and thresholds remain reconstructable. Cross-source results are research/domain-shift evidence only; no source calibration transfers automatically. The product must return an explicit unavailable/partial state rather than substitute this binary artifact where a compatible public probability vector is mandatory.
 - **Related requirements/phases:** Logical PR15, PR19 and PR20; FR-ML-001, FR-ML-002, FR-ML-005, FR-ML-006, NFR-AUD-001; ADR-019 and ADR-031.
 - **Supersedes:** None; this is the required compatibility decision before implementing the blueprint's binary transaction candidate.
+
+## ADR-033 — Admit friend screenshots as an internal non-training permission-attested pilot
+
+- **Date:** 2026-08-13
+- **Status:** Accepted
+- **Decision owners:** Project owner and Codex/data steward under the logical PR16 blueprint
+- **Context:** The project owner supplied ten screenshots received from friends and explicitly attested that permission to use them was obtained. The files contain direct identifiers, one exact duplicate and one related-variant family. Direct contributor consent artifacts, contributor-to-file identity mapping and public-release permission were not supplied.
+- **Decision:** Record the ten files outside Git as project-owner-attested friend permission, internal-only, with pseudonymous permission/participant references, controlled-derivative permission, public release false and training eligibility false. Use conservative file/source groups, keep the known related variants together, quarantine exact/perceptual duplicates and write no ML working copy until de-identification is reviewed. Treat the six earlier internet downloads separately as rights-review-only candidates. Do not freeze splits or train until consent/provenance, de-identification and independent content review gates pass.
+- **Consequences:** PR16 can validate its real private-data pipeline without claiming direct signed consent, publication rights, representative coverage, final labels or model readiness. Withdrawal can be propagated through the private index, but contributor mapping should be refined if direct forms become available. The owner-attested status cannot silently become release-approved or training-eligible.
+- **Related requirements/phases:** Logical PR16-PR20, NFR-DATA-001, NFR-PRIV-001, NFR-AUD-001, ADR-019, ADR-021.
+- **Supersedes:** None.

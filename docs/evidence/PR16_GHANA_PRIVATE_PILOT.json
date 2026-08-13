@@ -1,0 +1,26 @@
+{
+  "dataset_id": "ghana-private",
+  "deidentification_pending_count": 10,
+  "direct_contributor_consent_artifacts_supplied": false,
+  "direct_identifiers_written": false,
+  "exact_duplicate_count": 1,
+  "network_acquisition_executed": false,
+  "permission_evidence": "project_owner_attestation_of_friend_permission",
+  "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
+  "private_index_sha256": "7d1bf3b10a9381d82ff77b8e87f79c23c18524948c61a6f2d02865f00dc69e6c",
+  "private_request_sha256": "caafbe052a2fa2782af153455d553f44151270547a2a689ef439f268de6cb33d",
+  "public_release_consent": false,
+  "raw_images_copied": false,
+  "record_count": 10,
+  "safe_report_sha256": "e47e29487d6f9d7b3bd8f5f0fa01c1a3837d0b4a7b6b62e80aeb39dc162a7290",
+  "schema_version": "pr16-ghana-private-pilot-evidence-v1",
+  "source_group_count": 8,
+  "splits_frozen": false,
+  "training_eligible_count": 0,
+  "training_executed": false,
+  "working_copy_count": 0,
+  "workflow_state_counts": {
+    "needs_deidentification": 9,
+    "quarantined": 1
+  }
+}
