@@ -65,6 +65,13 @@ FRAUD_INDICATORS: Final = frozenset(
         "cropped_context",
     }
 )
+QA_FIELD_NAMES: Final = frozenset(
+    {"amount", "recipient_name", "recipient_wallet", "reference", "timestamp", "status", "sender"}
+)
+QA_CAPTURE_CHANNELS: Final = frozenset({"sms", "notification", "app_receipt", "history", "other"})
+QA_OS_FAMILIES: Final = frozenset({"ios", "android", "other"})
+QA_THEMES: Final = frozenset({"light", "dark", "unknown"})
+QA_TRANSCRIPT_QUALITIES: Final = frozenset({"complete", "partial"})
 OWNER_CONSENT_ACKNOWLEDGEMENT: Final = "I_CONFIRM_OWNER_INTERNAL_RESEARCH_CONSENT"
 ALLOWED_IMAGE_EXTENSIONS: Final = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 ALLOWED_IMAGE_FORMATS: Final = frozenset({"JPEG", "PNG", "WEBP"})
@@ -167,6 +174,15 @@ class ControlledCropOutputs:
     """One governed crop derived from an already governed online source."""
 
     candidate_id: str
+    working_path: Path
+    working_sha256: str
+
+
+@dataclass(frozen=True)
+class PrivateRedactionRevisionOutputs:
+    """One audited replacement of a private working derivative."""
+
+    image_id: str
     working_path: Path
     working_sha256: str
 
@@ -349,6 +365,9 @@ def _redacted_derivative(
     image: Image.Image, regions: Sequence[tuple[int, int, int, int]]
 ) -> Image.Image:
     derivative = image.copy()
+    # Pixel/color conversion is preserved, but source metadata (including ICC
+    # blobs that may fingerprint an originating device/tool) is not.
+    derivative.info.clear()
     draw = ImageDraw.Draw(derivative)
     for x, y, width, height in regions:
         draw.rectangle((x, y, x + width - 1, y + height - 1), fill=(32, 32, 32))
@@ -1087,6 +1106,260 @@ def create_controlled_online_crop(
     return ControlledCropOutputs(derived_id, output, working_hash)
 
 
+def revise_private_redaction(
+    *,
+    source_path: Path,
+    index_path: Path,
+    report_path: Path,
+    image_id: str,
+    working_root: Path,
+    redaction_regions: Sequence[Sequence[int]],
+    reviewer_id: str,
+    reason_code: str,
+    repository_root: Path,
+) -> PrivateRedactionRevisionOutputs:
+    """Replace one friend/owner derivative after a failed utility or privacy mask review."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    reason = _expect_opaque_id(reason_code, "reason_code")
+    _require_outside_repository(working_root, repository_root, "private working images")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private index records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("image_id") == image_id
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private image record was not found uniquely")
+    record = matches[0]
+    if record.get("workflow_state") in {"quarantined", "withdrawn"}:
+        raise GhanaPrivateError("quarantined private record cannot be re-masked")
+    if _sha256_file(source_path) != record.get("original_sha256"):
+        raise GhanaPrivateError("private redaction source identity changed")
+    relative = record.get("working_relative_path")
+    if not isinstance(relative, str) or not relative:
+        raise GhanaPrivateError("private record has no working derivative")
+    output = (working_root.resolve() / relative).resolve()
+    if not output.is_relative_to(working_root.resolve()):
+        raise GhanaPrivateError("private working path escapes the approved root")
+    previous_size: tuple[int, int] | None = None
+    previous_pixels: bytes | None = None
+    if output.is_file():
+        previous = _decode_private_image(output)
+        previous_size = previous.size
+        previous_pixels = previous.tobytes()
+    image = _decode_private_image(source_path)
+    regions = _regions(list(map(list, redaction_regions)), width=image.width, height=image.height)
+    if not regions:
+        raise GhanaPrivateError("private redaction revision requires reviewed regions")
+    derivative = _redacted_derivative(image, regions)
+    pixels_changed = previous_size != derivative.size or previous_pixels != derivative.tobytes()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    derivative.save(output, format="PNG", optimize=False)
+    working_hash = _sha256_file(output)
+    history = record.setdefault("redaction_revision_history", [])
+    if not isinstance(history, list):
+        raise GhanaPrivateError("private redaction revision history is invalid")
+    history.append(
+        {
+            "reason_code": reason,
+            "reviewer_id": reviewer,
+            "working_sha256": working_hash,
+            "redaction_region_count": len(regions),
+            "pixels_changed": pixels_changed,
+        }
+    )
+    record["working_sha256"] = working_hash
+    record["redaction_region_count"] = len(regions)
+    private_qa = record.get("private_qa")
+    if isinstance(private_qa, dict) and not pixels_changed:
+        mask_review = private_qa.get("mask_review")
+        if isinstance(mask_review, dict):
+            mask_review["metadata_stripped"] = True
+        record["deidentification_status"] = "complete_qa_reviewed"
+    elif isinstance(private_qa, dict):
+        record.pop("private_qa")
+        record["annotation_state"] = "label_approved_pending_field_review"
+        if record.get("workflow_state") == "approved_internal":
+            record["workflow_state"] = "needs_mask_review"
+        record["deidentification_status"] = "complete_pending_qa"
+    else:
+        record["deidentification_status"] = "complete_pending_qa"
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+    return PrivateRedactionRevisionOutputs(image_id, output, working_hash)
+
+
+def record_private_qa_annotation(
+    *,
+    index_path: Path,
+    report_path: Path,
+    record_id: str,
+    working_root: Path,
+    transcript: str,
+    fields_present: Sequence[str],
+    provider_family: str,
+    template_family: str,
+    capture_channel: str,
+    device_family: str,
+    os_family: str,
+    theme: str,
+    transcript_quality: str,
+    label_cues_preserved: bool,
+    reviewer_id: str,
+    repository_root: Path,
+) -> None:
+    """Record private transcription, field and mask QA without enabling training."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    _require_outside_repository(working_root, repository_root, "private working images")
+    if not isinstance(transcript, str) or not transcript.strip() or len(transcript) > 5000:
+        raise GhanaPrivateError("private QA transcript is invalid")
+    field_set = set(fields_present)
+    if not field_set or not field_set.issubset(QA_FIELD_NAMES):
+        raise GhanaPrivateError("private QA fields are invalid")
+    if capture_channel not in QA_CAPTURE_CHANNELS:
+        raise GhanaPrivateError("private QA capture channel is invalid")
+    if os_family not in QA_OS_FAMILIES:
+        raise GhanaPrivateError("private QA OS family is invalid")
+    if theme not in QA_THEMES:
+        raise GhanaPrivateError("private QA theme is invalid")
+    if transcript_quality not in QA_TRANSCRIPT_QUALITIES:
+        raise GhanaPrivateError("private QA transcript quality is invalid")
+    if not isinstance(label_cues_preserved, bool):
+        raise GhanaPrivateError("private QA label-cue decision is invalid")
+    for value, label in (
+        (provider_family, "provider family"),
+        (template_family, "template family"),
+        (device_family, "device family"),
+    ):
+        if not isinstance(value, str) or not value.strip() or len(value) > 80:
+            raise GhanaPrivateError(f"private QA {label} is invalid")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private annotation records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and record_id in {record.get("image_id"), record.get("candidate_id")}
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private annotation record was not found uniquely")
+    record = matches[0]
+    if record.get("annotation_state") != "label_approved_pending_field_review":
+        raise GhanaPrivateError("private QA requires an approved label")
+    provisional = record.get("provisional_annotation")
+    if not isinstance(provisional, dict) or provisional.get("reviewer_id") == reviewer:
+        raise GhanaPrivateError("private QA requires an independent reviewer")
+    relative = record.get("working_relative_path")
+    expected_hash = record.get("working_sha256")
+    if not isinstance(relative, str) or not relative or not isinstance(expected_hash, str):
+        raise GhanaPrivateError("private QA requires a working derivative")
+    working_path = (working_root.resolve() / relative).resolve()
+    if not working_path.is_relative_to(working_root.resolve()) or not working_path.is_file():
+        raise GhanaPrivateError("private QA working derivative is unavailable")
+    if _sha256_file(working_path) != expected_hash:
+        raise GhanaPrivateError("private QA working derivative identity changed")
+    image = _decode_private_image(working_path)
+    if image.info:
+        raise GhanaPrivateError("private QA working derivative retains source metadata")
+    safe_transcript, replacements = deidentify_message_text(transcript)
+    if not safe_transcript:
+        raise GhanaPrivateError("private QA transcript is empty after de-identification")
+    record["private_qa"] = {
+        "deidentified_transcript": safe_transcript,
+        "replacement_counts": replacements,
+        "fields_present": sorted(field_set),
+        "provider_family": provider_family.strip(),
+        "template_family": template_family.strip(),
+        "capture_channel": capture_channel,
+        "device_family": device_family.strip(),
+        "os_family": os_family,
+        "theme": theme,
+        "resolution": [image.width, image.height],
+        "transcript_quality": transcript_quality,
+        "mask_review": {
+            "identifiers_removed": True,
+            "metadata_stripped": True,
+            "label_cues_preserved": label_cues_preserved,
+            "reviewer_id": reviewer,
+        },
+    }
+    record["annotation_state"] = (
+        "qa_approved_pending_dataset_minimum" if label_cues_preserved else "qa_rejected_low_utility"
+    )
+    record["training_eligible"] = False
+    if label_cues_preserved and record.get("workflow_state") == "needs_transcription":
+        history = record.get("review_history")
+        if not isinstance(history, list):
+            raise GhanaPrivateError("private review history is invalid")
+        for from_state, to_state, reason in (
+            ("needs_transcription", "needs_field_annotation", "TRANSCRIPTION_QA_COMPLETE_001"),
+            ("needs_field_annotation", "needs_mask_review", "FIELD_QA_COMPLETE_001"),
+            ("needs_mask_review", "needs_second_annotation", "MASK_QA_COMPLETE_001"),
+            ("needs_second_annotation", "approved_internal", "LABEL_QA_COMPLETE_001"),
+        ):
+            history.append(
+                {
+                    "from": from_state,
+                    "to": to_state,
+                    "reviewer_id": reviewer,
+                    "reason_code": reason,
+                }
+            )
+        record["workflow_state"] = "approved_internal"
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+
+
+def assign_private_source_group(
+    *,
+    index_path: Path,
+    report_path: Path,
+    record_id: str,
+    source_group_id: str,
+    reviewer_id: str,
+    reason_code: str,
+) -> None:
+    """Bind a QA-approved private candidate to an immutable leakage-control group."""
+
+    group_id = _expect_opaque_id(source_group_id, "source_group_id")
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    reason = _expect_opaque_id(reason_code, "reason_code")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private annotation records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and record_id in {record.get("image_id"), record.get("candidate_id")}
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private annotation record was not found uniquely")
+    record = matches[0]
+    if record.get("annotation_state") != "qa_approved_pending_dataset_minimum":
+        raise GhanaPrivateError("source grouping requires a QA-approved private record")
+    existing = record.get("source_group_id")
+    if existing is not None and existing != group_id:
+        raise GhanaPrivateError("private source group is immutable")
+    record["source_group_id"] = group_id
+    record["source_group_review"] = {
+        "reason_code": reason,
+        "reviewer_id": reviewer,
+    }
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+
+
 def review_online_candidate(
     *,
     index_path: Path,
@@ -1227,7 +1500,13 @@ def _quota(total: int, ratios: Sequence[float]) -> tuple[int, ...]:
 
 
 def freeze_group_splits(
-    *, index_path: Path, manifest_path: Path, report_path: Path, seed: int = 20260813
+    *,
+    index_path: Path,
+    manifest_path: Path,
+    report_path: Path,
+    seed: int = 20260813,
+    minimum_controlled_groups: int = 30,
+    minimum_synthetic_groups: int = 20,
 ) -> SplitOutputs:
     """Freeze approved records by participant/source group before later preprocessing."""
 
@@ -1238,10 +1517,12 @@ def freeze_group_splits(
     approved = [
         record
         for record in records
-        if isinstance(record, dict) and record.get("workflow_state") in APPROVED_STATES
+        if isinstance(record, dict)
+        and record.get("workflow_state") in APPROVED_STATES
+        and record.get("training_eligible") is True
     ]
     if not approved:
-        raise GhanaPrivateError("no approved private records are available for splitting")
+        raise GhanaPrivateError("no training-eligible approved private records are available")
     group_records: dict[str, list[dict[str, object]]] = {}
     for record in approved:
         if record.get("working_sha256") is None:
@@ -1263,6 +1544,10 @@ def freeze_group_splits(
         ),
         key=lambda key: hashlib.sha256(f"{seed}:{key}".encode()).hexdigest(),
     )
+    if len(controlled_groups) < minimum_controlled_groups:
+        raise GhanaPrivateError("controlled-real group count is below the split minimum")
+    if len(synthetic_groups) < minimum_synthetic_groups:
+        raise GhanaPrivateError("synthetic-clean group count is below the split minimum")
     assignments: dict[str, str] = {}
     for groups, ratios in (
         (controlled_groups, (0.70, 0.15, 0.15)),

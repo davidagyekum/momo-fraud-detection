@@ -59,15 +59,15 @@
 
 - Pipeline/model/rule/template versions: `ghana-private-pipeline-v1`; no model version created
 - Dataset/split/artifact hashes: safe pilot evidence in `docs/evidence/PR16_GHANA_PRIVATE_PILOT.json`; no split/artifact exists
-- Metrics actually measured: 10 friend records across 8 conservative groups with 1 exact duplicate; 9 friend working copies, 5 permitted-online whole-image working copies and 2 controlled crops; 13 label approvals (10 fraud, 2 genuine, 1 suspicious), 2 ambiguous exclusions and 0 training-eligible records
-- Limitations: permission is project-owner-attested; direct contributor forms are not supplied; online permission covers images 1-5 but not image 6; label approval is complete but transcription, field annotation and mask-quality review are not; the batch is small, class-imbalanced and non-representative
+- Metrics actually measured: 13 label-approved records received private transcription/field/mask QA; 12 passed (9 `FRAUDULENT`, 2 `GENUINE`, 1 `SUSPICIOUS`) across 10 source groups and 1 failed low-utility review. Two ambiguous records remain excluded, one exact duplicate remains quarantined and 0 records are training eligible.
+- Limitations: permission is project-owner-attested; direct contributor forms are not supplied; online permission covers images 1-5 but not image 6; the 10-group QA set is below the 30 controlled-real/20 synthetic-clean pilot minimum and has weak genuine/suspicious coverage
 - No fabricated or unavailable evidence: no split, model fit, accuracy, F1, deployment or promotion claim
 
 ## Security/privacy
 
 - Access-control impact: private artifacts stay outside Git under the owner-controlled backup root
-- Private-data impact: original screenshots remain private; consent/permission references are pseudonymous; 14 metadata-stripped/masked derivatives were reviewed for exposed phone/name/reference and sensitive balance values
-- Upload/storage impact: private only; approved labels remain blocked from training pending transcription, field/mask review, minimum-group sufficiency and split freezing
+- Private-data impact: original screenshots and de-identified transcripts remain private; consent/permission references are pseudonymous; two derivatives were re-masked after visual QA and all nine friend PNGs were regenerated with empty metadata while preserving reviewed pixels
+- Upload/storage impact: private only; 12 QA-approved records remain blocked from training pending minimum-group/class sufficiency and split freezing
 - Audit events: private review history and withdrawal receipts are supported by the pipeline
 - Security checks: hostile path/image validation, filename PII rejection, exact/perceptual duplicate quarantine, secret/prohibited artifact scan and registered ML gate
 
@@ -75,8 +75,9 @@
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 438 tests; 90.50% branch-aware coverage; governance/lock/notebook/data gates; no training | 102.8 s |
+| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 450 tests; 90.07% branch-aware coverage; governance/lock/notebook/data gates; no training | 96.1 s |
 | Private second review and controlled crop pass | PASS | 16 working derivatives including 2 same-group crops; 13 labels approved; 2 ambiguous records excluded; 1 friend duplicate retained; 0 training eligible; 0 splits/training | Deterministic execution plus visual privacy review |
+| Private transcription/field/mask QA | PASS WITH EXCLUSION | 13 reviewed; 12 accepted across 10 groups; 1 excluded for low utility; 0 metadata failures; 0 training eligible; 0 splits/training | Deterministic private QA plus repeated visual review |
 
 Skipped/blocked checks and reason: no model training, split freezing or locked-test evaluation is authorised at this stage. The secret/prohibited-artifact scan passed 526 candidates. Repository `--quick` is environment-blocked because the active Node/npm versions are not the pinned versions; `--security` additionally reports the already-documented unregistered security marker. Hosted GitHub Actions remain blocked by B-CI-001.
 
@@ -84,7 +85,7 @@ Skipped/blocked checks and reason: no model training, split freezing or locked-t
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR16-GHANA-PRIVATE | High | Label review is complete, but de-identified transcription, field annotation, mask-quality review and minimum class-balanced source groups remain incomplete | Cannot freeze splits or train | Keep all eligibility false and continue only private preparation | Data steward/project owner | Complete the remaining review stages and expand independent genuine/suspicious/fraud groups |
+| PR16-GHANA-PRIVATE | High | QA passed for 12 records across 10 groups, below the enforced 30 controlled-real/20 synthetic-clean pilot minimum; genuine/suspicious coverage is weak | Cannot freeze splits or train | Keep all eligibility false and continue only private preparation | Data steward/project owner | Add at least 20 controlled-real and 20 synthetic-clean groups, improve class coverage and repeat QA |
 | PR16-ONLINE-RIGHTS | High | Image 6 remains unpermitted and the two ambiguous records are explicitly excluded | These sources cannot enter training | Preserve their private quarantine/exclusion state | Project owner/data steward | Do not use them unless new rights evidence and a fresh review are recorded |
 | B-CI-001 | Medium | GitHub Actions account billing lock prevents runner allocation | Hosted CI unavailable | Preserve passing local gate evidence | Repository owner | Resolve the account lock and rerun CI |
 
@@ -106,4 +107,4 @@ push output: recorded in final task report
 
 ## Next exact task
 
-Create de-identified transcriptions and structured field annotations for the 13 label-approved records, then complete mask-quality review. Keep image 6 rights-blocked, retain the friend duplicate quarantine and preserve all source groups. Do not freeze splits or start Colab training until enough independent groups exist for every class.
+Expand the QA-approved pilot from 10 to at least 30 controlled-real source groups and add 20 synthetic-clean groups, prioritising independent `GENUINE` and `SUSPICIOUS` coverage. Keep image 6 rights-blocked and the duplicate quarantined. Only after repeated QA should records be explicitly enabled and group-safe splits frozen; stop before Colab training.

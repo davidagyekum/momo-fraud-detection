@@ -12,6 +12,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     IntakeOutputs,
     advance_review,
     apply_withdrawals,
+    assign_private_source_group,
     attest_online_candidate_permission,
     changed_pixels_are_masked,
     create_controlled_edit,
@@ -24,9 +25,11 @@ from momo_fdvs_ml.ghana_pipeline import (
     initialize_owner_consent,
     load_development_records,
     quarantine_online_candidate,
+    record_private_qa_annotation,
     record_provisional_annotation,
     record_second_review,
     review_online_candidate,
+    revise_private_redaction,
     safe_intake_summary,
 )
 
@@ -160,7 +163,7 @@ def test_private_intake_redacts_strips_metadata_and_quarantines_exact_and_withdr
     working = tmp_path / "working/images/GHIMG_OWNER_0001.png"
     with Image.open(working) as image:
         assert image.getpixel((3, 4)) == (32, 32, 32)
-        assert "private_note" not in image.info
+        assert not image.info
 
 
 def test_owner_consent_record_is_private_pseudonymous_internal_only_and_idempotent(
@@ -852,6 +855,242 @@ def test_controlled_online_crops_preserve_group_and_redact(tmp_path: Path) -> No
     assert all(record["training_eligible"] is False for record in derived)
 
 
+def test_private_redaction_revision_is_audited_and_identity_bound(tmp_path: Path) -> None:
+    source = _image(tmp_path / "raw/first.png", phase=19)
+    record = _record(
+        image_id="GHIMG_OWNER_0033",
+        source_path="first.png",
+        participant=_hash("redaction-revision"),
+        group="GHGROUP_OWNER_0033",
+    )
+    outputs = _ingest(tmp_path, [record])
+    before = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0][
+        "working_sha256"
+    ]
+    revised = revise_private_redaction(
+        source_path=source,
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        image_id="GHIMG_OWNER_0033",
+        working_root=tmp_path / "working",
+        redaction_regions=[[8, 9, 25, 12]],
+        reviewer_id="REVIEWER_STEWARD_003",
+        reason_code="MASK_PRIVACY_UTILITY_REVISION_001",
+        repository_root=tmp_path / "repository",
+    )
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert revised.working_sha256 != before
+    assert indexed["working_sha256"] == revised.working_sha256
+    assert indexed["redaction_revision_history"][0]["reason_code"] == (
+        "MASK_PRIVACY_UTILITY_REVISION_001"
+    )
+    changed = _image(tmp_path / "changed.png", phase=20)
+    with pytest.raises(GhanaPrivateError, match="identity changed"):
+        revise_private_redaction(
+            source_path=changed,
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            image_id="GHIMG_OWNER_0033",
+            working_root=tmp_path / "working",
+            redaction_regions=[[8, 9, 25, 12]],
+            reviewer_id="REVIEWER_STEWARD_003",
+            reason_code="MASK_PRIVACY_UTILITY_REVISION_001",
+            repository_root=tmp_path / "repository",
+        )
+
+
+def test_private_qa_records_tokenized_fields_and_keeps_training_closed(tmp_path: Path) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0034",
+        source_path="first.png",
+        participant=_hash("private-qa"),
+        group="GHGROUP_OWNER_0034",
+    )
+    _image(tmp_path / "raw/first.png", phase=21)
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0034",
+        provisional_label="genuine_candidate",
+        sender_kind="alphanumeric_label",
+        indicators=["normal_transaction_language"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0034",
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    record_private_qa_annotation(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0034",
+        working_root=tmp_path / "working",
+        transcript="GHS 50.00 received from 0241234567",
+        fields_present=["amount", "sender"],
+        provider_family="mtn_momo",
+        template_family="ios_sms",
+        capture_channel="sms",
+        device_family="iphone",
+        os_family="ios",
+        theme="light",
+        transcript_quality="complete",
+        label_cues_preserved=True,
+        reviewer_id="REVIEWER_STEWARD_003",
+        repository_root=tmp_path / "repository",
+    )
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert indexed["private_qa"]["deidentified_transcript"] == (
+        "AMOUNT_TOKEN received from PHONE_TOKEN"
+    )
+    assert indexed["private_qa"]["fields_present"] == ["amount", "sender"]
+    assert indexed["private_qa"]["resolution"] == [96, 64]
+    assert indexed["private_qa"]["mask_review"]["metadata_stripped"] is True
+    assert indexed["workflow_state"] == "approved_internal"
+    assert indexed["annotation_state"] == "qa_approved_pending_dataset_minimum"
+    assert indexed["training_eligible"] is False
+    assign_private_source_group(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0034",
+        source_group_id="GHGROUP_OWNER_0034",
+        reviewer_id="REVIEWER_STEWARD_003",
+        reason_code="SOURCE_GROUP_CONFIRMED_001",
+    )
+    with pytest.raises(GhanaPrivateError, match="immutable"):
+        assign_private_source_group(
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            record_id="GHIMG_OWNER_0034",
+            source_group_id="GHGROUP_OWNER_DIFFERENT_0034",
+            reviewer_id="REVIEWER_STEWARD_003",
+            reason_code="SOURCE_GROUP_CONFIRMED_001",
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"transcript": ""}, "transcript is invalid"),
+        ({"fields_present": []}, "fields are invalid"),
+        ({"capture_channel": "email"}, "capture channel"),
+        ({"os_family": "windows"}, "OS family"),
+        ({"theme": "blue"}, "theme"),
+        ({"transcript_quality": "unusable"}, "transcript quality"),
+        ({"label_cues_preserved": "yes"}, "label-cue decision"),
+        ({"provider_family": ""}, "provider family"),
+    ],
+)
+def test_private_qa_rejects_invalid_review_values(
+    tmp_path: Path, mutation: dict[str, object], message: str
+) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0035",
+        source_path="first.png",
+        participant=_hash("private-qa-invalid"),
+        group="GHGROUP_OWNER_0035",
+    )
+    _image(tmp_path / "raw/first.png", phase=22)
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0035",
+        provisional_label="fraud_candidate",
+        sender_kind="phone_number",
+        indicators=["numeric_sender"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0035",
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    arguments: dict[str, object] = {
+        "index_path": outputs.index_path,
+        "report_path": outputs.report_path,
+        "record_id": "GHIMG_OWNER_0035",
+        "working_root": tmp_path / "working",
+        "transcript": "Account blocked",
+        "fields_present": ["status"],
+        "provider_family": "mtn_momo",
+        "template_family": "ios_sms",
+        "capture_channel": "sms",
+        "device_family": "iphone",
+        "os_family": "ios",
+        "theme": "light",
+        "transcript_quality": "complete",
+        "label_cues_preserved": True,
+        "reviewer_id": "REVIEWER_STEWARD_003",
+        "repository_root": tmp_path / "repository",
+    }
+    arguments.update(mutation)
+    with pytest.raises(GhanaPrivateError, match=message):
+        record_private_qa_annotation(**arguments)  # type: ignore[arg-type]
+
+
+def test_private_qa_can_reject_low_utility_without_advancing_workflow(tmp_path: Path) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0036",
+        source_path="first.png",
+        participant=_hash("private-qa-utility"),
+        group="GHGROUP_OWNER_0036",
+    )
+    _image(tmp_path / "raw/first.png", phase=23)
+    outputs = _ingest(tmp_path, [record])
+    record_provisional_annotation(
+        index_path=outputs.index_path,
+        record_id="GHIMG_OWNER_0036",
+        provisional_label="fraud_candidate",
+        sender_kind="cropped_unknown",
+        indicators=["cropped_context"],
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0036",
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_002",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    record_private_qa_annotation(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_OWNER_0036",
+        working_root=tmp_path / "working",
+        transcript="Payment received",
+        fields_present=["status"],
+        provider_family="unknown",
+        template_family="cropped_sms",
+        capture_channel="sms",
+        device_family="unknown_phone",
+        os_family="other",
+        theme="light",
+        transcript_quality="partial",
+        label_cues_preserved=False,
+        reviewer_id="REVIEWER_STEWARD_003",
+        repository_root=tmp_path / "repository",
+    )
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert indexed["annotation_state"] == "qa_rejected_low_utility"
+    assert indexed["workflow_state"] == "needs_transcription"
+    with pytest.raises(GhanaPrivateError, match="QA-approved"):
+        assign_private_source_group(
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            record_id="GHIMG_OWNER_0036",
+            source_group_id="GHGROUP_OWNER_0036",
+            reviewer_id="REVIEWER_STEWARD_003",
+            reason_code="SOURCE_GROUP_CONFIRMED_001",
+        )
+
+
 def test_review_workflow_is_ordered_auditable_and_fail_closed(tmp_path: Path) -> None:
     index_path = _write_json(
         tmp_path / "index.json",
@@ -907,6 +1146,7 @@ def _approved_record(position: int) -> dict[str, object]:
         "working_sha256": _hash(f"image-{position}"),
         "consent_scope": "internal_only",
         "workflow_state": "approved_internal",
+        "training_eligible": True,
     }
 
 
@@ -920,11 +1160,15 @@ def test_group_split_is_deterministic_leakage_safe_and_test_sealed(tmp_path: Pat
         index_path=index_path,
         manifest_path=tmp_path / "split.json",
         report_path=tmp_path / "split-report.json",
+        minimum_controlled_groups=20,
+        minimum_synthetic_groups=0,
     )
     second = freeze_group_splits(
         index_path=index_path,
         manifest_path=tmp_path / "split-2.json",
         report_path=tmp_path / "split-report-2.json",
+        minimum_controlled_groups=20,
+        minimum_synthetic_groups=0,
     )
     report = json.loads(first.report_path.read_text(encoding="utf-8"))
     development = load_development_records(first.manifest_path)
@@ -941,11 +1185,11 @@ def test_group_split_is_deterministic_leakage_safe_and_test_sealed(tmp_path: Pat
 
 def test_split_rejects_empty_unapproved_and_missing_working_image(tmp_path: Path) -> None:
     for name, records, message in (
-        ("none", [], "no approved"),
+        ("none", [], "no training-eligible"),
         (
             "pending",
             [{**_approved_record(1), "workflow_state": "needs_deidentification"}],
-            "no approved",
+            "no training-eligible",
         ),
         ("missing", [{**_approved_record(2), "working_sha256": None}], "missing"),
     ):
@@ -958,7 +1202,24 @@ def test_split_rejects_empty_unapproved_and_missing_working_image(tmp_path: Path
                 index_path=index_path,
                 manifest_path=tmp_path / f"{name}-split.json",
                 report_path=tmp_path / f"{name}-report.json",
+                minimum_controlled_groups=0,
+                minimum_synthetic_groups=0,
             )
+
+
+def test_split_enforces_pilot_group_minimums(tmp_path: Path) -> None:
+    index_path = _write_json(
+        tmp_path / "minimum.json",
+        {"schema_version": "ghana-private-index-v1", "records": [_approved_record(1)]},
+    )
+    with pytest.raises(GhanaPrivateError, match="controlled-real group count"):
+        freeze_group_splits(
+            index_path=index_path,
+            manifest_path=tmp_path / "minimum-split.json",
+            report_path=tmp_path / "minimum-report.json",
+            minimum_controlled_groups=2,
+            minimum_synthetic_groups=0,
+        )
 
 
 def test_withdrawal_quarantines_derivative_and_requires_split_rebuild(tmp_path: Path) -> None:

@@ -1,7 +1,7 @@
 {
   "dataset_id": "ghana-private",
   "deidentification_pending_count": 0,
-  "deidentification_plan_sha256": "f7621a00c6de8e3ad1979d6c0985cad07a502dd09d61c325075ff33fbd0611f0",
+  "deidentification_plan_sha256": "9089c61c8b7ec14c5fadea9788a6dd11eabcf0d48f6b3c50f8c33a04fe0a336b",
   "direct_contributor_consent_artifacts_supplied": false,
   "direct_identifiers_written": false,
   "excluded_from_training_count": 2,
@@ -11,7 +11,21 @@
     "GENUINE": 2,
     "SUSPICIOUS": 1
   },
-  "label_approved_pending_field_review_count": 13,
+  "second_review_label_approved_count": 13,
+  "private_qa": {
+    "deidentified_transcription_count": 13,
+    "field_annotation_count": 13,
+    "independent_mask_review_count": 13,
+    "metadata_stripped_failure_count": 0,
+    "qa_approved_count": 12,
+    "qa_approved_source_group_count": 10,
+    "qa_approved_label_counts": {
+      "FRAUDULENT": 9,
+      "GENUINE": 2,
+      "SUSPICIOUS": 1
+    },
+    "qa_rejected_low_utility_count": 1
+  },
   "network_acquisition_executed": false,
   "online_candidate_pilot": {
     "ambiguous_requires_adjudication_count": 1,
@@ -39,8 +53,8 @@
     },
     "perceptual_duplicate_count": 0,
     "primary_ghana_momo_fraud_count": 3,
-    "private_index_sha256": "93a44dfa0960658340a207274c07bbab4b7b21335292e223e5afaf9198bb6b7c",
-    "safe_report_sha256": "ceae846309ee000cad1666df695ece22c759466af1ba4352e2be1b5a9ff2687e",
+    "private_index_sha256": "7275fbe55441144432e56ed414230fb4c2d246b20d5c1c2ba1079df2021eb3fe",
+    "safe_report_sha256": "1735e1ddebd9fecf06cae9cf05c096bb2e65232629eed22bf7f81558e4d462e8",
     "second_review_excluded_count": 1,
     "second_review_label_approved_count": 5,
     "superseded_mixed_source_count": 1,
@@ -50,7 +64,7 @@
   },
   "permission_evidence": "project_owner_attestation_of_friend_permission",
   "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
-  "private_index_sha256": "b8846fc744964c3c8930b01e3f65d09d3e2768ed2db937ddcd9fcbff57e8b501",
+  "private_index_sha256": "4216d0a3ce38d4895893653c850157b9e55868541d631267e660f91290fb0eb6",
   "private_request_sha256": "1ef52b6ef65966b72d5b284e44bf65e354c970ac404c26220578c5e4f502687f",
   "provisional_label_counts": {
     "ambiguous": 1,
@@ -61,9 +75,6 @@
   "raw_images_copied": false,
   "record_count": 10,
   "remaining_training_gates": [
-    "deidentified_transcription",
-    "field_annotation",
-    "mask_quality_review",
     "minimum_group_count_and_class_balance",
     "group_safe_split_freeze"
   ],
@@ -75,7 +86,8 @@
   "training_executed": false,
   "working_copy_count": 9,
   "workflow_state_counts": {
-    "needs_transcription": 9,
+    "approved_internal": 7,
+    "needs_transcription": 2,
     "quarantined": 1
   }
 }
