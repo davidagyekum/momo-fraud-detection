@@ -59,15 +59,15 @@
 
 - Pipeline/model/rule/template versions: `ghana-private-pipeline-v1`; no model version created
 - Dataset/split/artifact hashes: safe pilot evidence in `docs/evidence/PR16_GHANA_PRIVATE_PILOT.json`; no split/artifact exists
-- Metrics actually measured: 10 private records, 8 conservative groups, 1 exact duplicate, 9 unique records pending de-identification, 0 working copies, 0 training-eligible records
+- Metrics actually measured: 10 friend records across 8 conservative groups with 1 exact duplicate; 9 friend plus 5 permitted-online metadata-stripped working copies; provisional labels total 10 fraud candidates, 1 genuine candidate, 2 ambiguous and 1 mixed; 0 training-eligible records
 - Limitations: permission is project-owner-attested; direct contributor forms are not supplied; online permission covers images 1-5 but not image 6; only images 1, 2 and 4 have a strong whole-image fraud triage; labels are not independently adjudicated; the batch is small and non-representative
 - No fabricated or unavailable evidence: no split, model fit, accuracy, F1, deployment or promotion claim
 
 ## Security/privacy
 
 - Access-control impact: private artifacts stay outside Git under the owner-controlled backup root
-- Private-data impact: original screenshots remain private; consent/permission references are pseudonymous; no identifier-bearing working image was written
-- Upload/storage impact: private only; metadata-stripped derivatives are blocked until de-identification is marked complete
+- Private-data impact: original screenshots remain private; consent/permission references are pseudonymous; 14 metadata-stripped/masked derivatives were reviewed for exposed phone/name/reference and sensitive balance values
+- Upload/storage impact: private only; every derivative and provisional label remains blocked pending independent second review
 - Audit events: private review history and withdrawal receipts are supported by the pipeline
 - Security checks: hostile path/image validation, filename PII rejection, exact/perceptual duplicate quarantine, secret/prohibited artifact scan and registered ML gate
 
@@ -75,8 +75,8 @@
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 428 tests; 90.78% branch-aware coverage; governance/lock/notebook/data gates; no training | 114.9 s |
-| Private friend intake | PASS | 10 records; 8 groups; 1 exact duplicate; 9 pending de-identification; 0 working copies; 0 training | under 1 s |
+| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 435 tests; 90.78% branch-aware coverage; governance/lock/notebook/data gates; no training | 109.4 s |
+| Private friend/online de-identification | PASS | 14 working copies; 1 friend duplicate retained; 14 provisional annotations; 0 training eligible; 0 splits/training | 3 deterministic passes plus visual mask review |
 
 Skipped/blocked checks and reason: no model training, split freezing or locked-test evaluation is authorised at this stage. Hosted GitHub Actions remain blocked by B-CI-001.
 
@@ -84,8 +84,8 @@ Skipped/blocked checks and reason: no model training, split freezing or locked-t
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR16-GHANA-PRIVATE | High | Nine unique friend images still contain direct identifiers and labels have not been independently reviewed | Cannot freeze splits or train | Keep originals private and working-copy count zero | Codex/data steward; project owner if contributor/source mapping is refined | Produce reviewed de-identified derivatives and adjudicate labels |
-| PR16-ONLINE-REVIEW | High | Permission covers images 1-5, but image 3 is ambiguous, image 5 is mixed and all permitted images require de-identification/independent label review; image 6 is unpermitted | Candidates cannot yet become training eligible | Keep them outside training; use only reviewed de-identified crops/derivatives | Data steward/source reviewer | De-identify images 1-5, admit 1/2/4 for independent review, crop/adjudicate 3/5, exclude image 6 |
+| PR16-GHANA-PRIVATE | High | Fourteen masked derivatives and provisional annotations require an independent second review | Cannot freeze splits or train | Keep originals private and all eligibility false | Independent data steward/reviewer | Inspect masks and confirm/reject provisional labels |
+| PR16-ONLINE-REVIEW | High | Permission covers images 1-5, but image 3 is ambiguous, image 5 is mixed and image 6 is unpermitted | Those records cannot become training eligible as-is | Keep them outside training; use only adjudicated crops/derivatives | Data steward/source reviewer | Crop/adjudicate 3/5 and exclude image 6 |
 | B-CI-001 | Medium | GitHub Actions account billing lock prevents runner allocation | Hosted CI unavailable | Preserve passing local gate evidence | Repository owner | Resolve the account lock and rerun CI |
 
 ## Documentation updated
@@ -106,4 +106,4 @@ push output: recorded in final task report
 
 ## Next exact task
 
-Create reviewed de-identified derivatives for the nine unique friend records and permitted online images 1-5, retaining non-identifying sender-kind/spelling/layout signals. Add content/field annotations and second-review/adjudication evidence; only images 1/2/4 are current whole-image fraud candidates. Crop/adjudicate images 3/5, keep image 6 rights-blocked, keep the duplicate quarantined and preserve the `images 10/12` family.
+Independently review the 14 masked derivatives and their provisional annotations. Resolve the two ambiguous and one mixed record, crop online images 3/5 where a defensible sub-image label is possible, keep image 6 rights-blocked, retain the friend duplicate quarantine and preserve the `images 10/12` family before any group-safe split is frozen.

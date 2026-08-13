@@ -1,6 +1,7 @@
 {
   "dataset_id": "ghana-private",
-  "deidentification_pending_count": 10,
+  "deidentification_pending_count": 0,
+  "deidentification_plan_sha256": "f7621a00c6de8e3ad1979d6c0985cad07a502dd09d61c325075ff33fbd0611f0",
   "direct_contributor_consent_artifacts_supplied": false,
   "direct_identifiers_written": false,
   "exact_duplicate_count": 1,
@@ -11,29 +12,40 @@
     "exact_duplicate_count": 0,
     "mixed_authenticity_thread_count": 2,
     "owner_attested_permission_count": 5,
+    "provisional_label_counts": {
+      "ambiguous": 1,
+      "fraud_candidate": 3,
+      "mixed": 1
+    },
     "perceptual_duplicate_count": 0,
     "primary_ghana_momo_fraud_count": 3,
-    "private_index_sha256": "d020a7b10f4520e06cf09f313fbbf42fe0c16a968a485ae5581461eff608c391",
+    "private_index_sha256": "6b42ec8300fe53c3796ab81baf54de29745c8cea9d01ebd5df81ec3045279415",
     "safe_report_sha256": "cc668193aa63aef886ed6d412d3b0e998129b1a8e6f1338ef84e7c09549608bb",
     "training_eligible_count": 0,
-    "unpermitted_count": 1
+    "unpermitted_count": 1,
+    "working_copy_count": 5
   },
   "permission_evidence": "project_owner_attestation_of_friend_permission",
   "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
-  "private_index_sha256": "7d1bf3b10a9381d82ff77b8e87f79c23c18524948c61a6f2d02865f00dc69e6c",
-  "private_request_sha256": "caafbe052a2fa2782af153455d553f44151270547a2a689ef439f268de6cb33d",
+  "private_index_sha256": "e2b7f83e66ad99e0ea95535c3aa5c02d96554605fc07c7884bbe74ddde8f1c72",
+  "private_request_sha256": "1ef52b6ef65966b72d5b284e44bf65e354c970ac404c26220578c5e4f502687f",
+  "provisional_label_counts": {
+    "ambiguous": 1,
+    "fraud_candidate": 7,
+    "genuine_candidate": 1
+  },
   "public_release_consent": false,
   "raw_images_copied": false,
   "record_count": 10,
-  "safe_report_sha256": "e47e29487d6f9d7b3bd8f5f0fa01c1a3837d0b4a7b6b62e80aeb39dc162a7290",
+  "safe_report_sha256": "7690ab044fa1e3f92e71fd3ccdea175b28e49ac45d4b168586ee697416f4b86f",
   "schema_version": "pr16-ghana-private-pilot-evidence-v1",
   "source_group_count": 8,
   "splits_frozen": false,
   "training_eligible_count": 0,
   "training_executed": false,
-  "working_copy_count": 0,
+  "working_copy_count": 9,
   "workflow_state_counts": {
-    "needs_deidentification": 9,
+    "needs_transcription": 9,
     "quarantined": 1
   }
 }

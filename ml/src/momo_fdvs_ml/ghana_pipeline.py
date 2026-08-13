@@ -26,6 +26,33 @@ FROZEN_SPLIT_VERSION: Final = "ghana-private-frozen-split-v1"
 WITHDRAWAL_RECEIPT_VERSION: Final = "ghana-withdrawal-receipt-v1"
 EDIT_MANIFEST_VERSION: Final = "ghana-controlled-edit-v1"
 ONLINE_CANDIDATE_INDEX_VERSION: Final = "ghana-online-candidate-index-v1"
+PROVISIONAL_LABELS: Final = frozenset(
+    {"fraud_candidate", "genuine_candidate", "ambiguous", "mixed"}
+)
+SENDER_KINDS: Final = frozenset(
+    {
+        "phone_number",
+        "alphanumeric_label",
+        "shortcode",
+        "cropped_unknown",
+        "notification_label",
+        "unknown",
+    }
+)
+FRAUD_INDICATORS: Final = frozenset(
+    {
+        "numeric_sender",
+        "account_blocked_claim",
+        "reversal_lure",
+        "grammar_or_spelling_errors",
+        "malformed_balance_or_reference",
+        "suspicious_link_or_call_to_action",
+        "branded_sender_context",
+        "normal_transaction_language",
+        "mixed_message_context",
+        "cropped_context",
+    }
+)
 OWNER_CONSENT_ACKNOWLEDGEMENT: Final = "I_CONFIRM_OWNER_INTERNAL_RESEARCH_CONSENT"
 ALLOWED_IMAGE_EXTENSIONS: Final = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 ALLOWED_IMAGE_FORMATS: Final = frozenset({"JPEG", "PNG", "WEBP"})
@@ -112,6 +139,15 @@ class OnlineCandidateOutputs:
     status: str
     index_path: Path
     report_path: Path
+
+
+@dataclass(frozen=True)
+class OnlineDeidentificationOutputs:
+    """One reviewed online-candidate working derivative."""
+
+    candidate_id: str
+    working_path: Path
+    working_sha256: str
 
 
 @dataclass(frozen=True)
@@ -356,7 +392,11 @@ def ingest_private_screenshots(
         deidentification_status = raw_record.get("deidentification_status")
         if deidentification_status not in {"pending", "complete"}:
             raise GhanaPrivateError("deidentification_status must be pending or complete")
-        state = "needs_deidentification"
+        state = (
+            "needs_transcription"
+            if deidentification_status == "complete"
+            else "needs_deidentification"
+        )
         quarantine_reason: str | None = None
         if participant in withdrawn_participants:
             state = "withdrawn"
@@ -723,6 +763,111 @@ def attest_online_candidate_permission(
         "training_executed": False,
     }
     _atomic_json(report_path, report)
+
+
+def deidentify_online_candidate(
+    *,
+    source_path: Path,
+    index_path: Path,
+    candidate_id: str,
+    working_root: Path,
+    redaction_regions: Sequence[Sequence[int]],
+    repository_root: Path,
+    reviewer_id: str,
+) -> OnlineDeidentificationOutputs:
+    """Create one metadata-stripped online working copy after scoped permission review."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    _require_outside_repository(working_root, repository_root, "online working images")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("online candidate records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("candidate_id") == candidate_id
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("online candidate was not found uniquely")
+    record = matches[0]
+    if record.get("rights_state") != "project_owner_attested_permission":
+        raise GhanaPrivateError("online candidate permission is not confirmed")
+    if _sha256_file(source_path) != record.get("source_sha256"):
+        raise GhanaPrivateError("online candidate source identity changed")
+    image = _decode_private_image(source_path)
+    regions = _regions(list(map(list, redaction_regions)), width=image.width, height=image.height)
+    if not regions:
+        raise GhanaPrivateError("online candidate requires reviewed redaction regions")
+    derivative = _redacted_derivative(image, regions)
+    output_root = working_root.resolve() / "online-images"
+    output_root.mkdir(parents=True, exist_ok=True)
+    output = output_root / f"{candidate_id}.png"
+    derivative.save(output, format="PNG", optimize=False)
+    working_hash = _sha256_file(output)
+    record.update(
+        {
+            "working_relative_path": output.relative_to(working_root.resolve()).as_posix(),
+            "working_sha256": working_hash,
+            "redaction_region_count": len(regions),
+            "deidentification_state": "complete_pending_second_review",
+            "deidentification_reviewer_id": reviewer,
+            "training_eligible": False,
+        }
+    )
+    _atomic_json(index_path, index)
+    return OnlineDeidentificationOutputs(candidate_id, output, working_hash)
+
+
+def record_provisional_annotation(
+    *,
+    index_path: Path,
+    record_id: str,
+    provisional_label: str,
+    sender_kind: str,
+    indicators: Sequence[str],
+    reviewer_id: str,
+) -> None:
+    """Record privacy-safe first-pass content features without approving training use."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    if provisional_label not in PROVISIONAL_LABELS:
+        raise GhanaPrivateError("provisional label is invalid")
+    if sender_kind not in SENDER_KINDS:
+        raise GhanaPrivateError("sender kind is invalid")
+    indicator_set = set(indicators)
+    if not indicator_set or not indicator_set.issubset(FRAUD_INDICATORS):
+        raise GhanaPrivateError("fraud indicators are invalid")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private annotation records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict)
+        and record_id in {record.get("image_id"), record.get("candidate_id")}
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private annotation record was not found uniquely")
+    record = matches[0]
+    if record.get("workflow_state") in {"quarantined", "withdrawn"}:
+        raise GhanaPrivateError("quarantined private record cannot be annotated")
+    has_friend_derivative = record.get("working_sha256") is not None
+    has_online_derivative = record.get("deidentification_state") == (
+        "complete_pending_second_review"
+    )
+    if not has_friend_derivative and not has_online_derivative:
+        raise GhanaPrivateError("private annotation requires a de-identified working copy")
+    record["provisional_annotation"] = {
+        "label": provisional_label,
+        "sender_kind": sender_kind,
+        "indicators": sorted(indicator_set),
+        "reviewer_id": reviewer,
+    }
+    record["annotation_state"] = "needs_second_review"
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
 
 
 def review_online_candidate(

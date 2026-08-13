@@ -16,12 +16,14 @@ from momo_fdvs_ml.ghana_pipeline import (
     changed_pixels_are_masked,
     create_controlled_edit,
     deidentify_message_text,
+    deidentify_online_candidate,
     freeze_group_splits,
     index_imazing_messages,
     ingest_private_screenshots,
     initialize_owner_consent,
     load_development_records,
     quarantine_online_candidate,
+    record_provisional_annotation,
     review_online_candidate,
     safe_intake_summary,
 )
@@ -145,7 +147,7 @@ def test_private_intake_redacts_strips_metadata_and_quarantines_exact_and_withdr
     assert outputs.record_count == 3
     assert outputs.quarantined_count == 1
     assert [record["workflow_state"] for record in index["records"]] == [
-        "needs_deidentification",
+        "needs_transcription",
         "quarantined",
         "withdrawn",
     ]
@@ -570,6 +572,132 @@ def test_online_permission_attestation_does_not_bypass_training_gates(tmp_path: 
             reviewer_id="REVIEWER_OWNER_002",
             permission_scope="public_release",
         )
+
+
+def test_online_deidentification_requires_permission_identity_and_regions(tmp_path: Path) -> None:
+    source = _image(tmp_path / "permission.png", phase=12, metadata="PRIVATE")
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    arguments = {
+        "source_path": source,
+        "index_path": outputs.index_path,
+        "candidate_id": outputs.candidate_id,
+        "working_root": tmp_path / "working",
+        "redaction_regions": [[2, 3, 20, 10]],
+        "repository_root": tmp_path / "repository",
+        "reviewer_id": "REVIEWER_OWNER_002",
+    }
+    with pytest.raises(GhanaPrivateError, match="permission"):
+        deidentify_online_candidate(**arguments)
+    attest_online_candidate_permission(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        permission_reference="PERMISSION_SITE_20260813",
+        reviewer_id="REVIEWER_OWNER_002",
+        permission_scope="internal_model_development",
+    )
+    derivative = deidentify_online_candidate(**arguments)
+    record = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    with Image.open(derivative.working_path) as image:
+        assert image.getpixel((3, 4)) == (32, 32, 32)
+        assert "private_note" not in image.info
+    assert record["deidentification_state"] == "complete_pending_second_review"
+    assert record["training_eligible"] is False
+    with pytest.raises(GhanaPrivateError, match="redaction regions"):
+        deidentify_online_candidate(**{**arguments, "redaction_regions": []})
+    changed = _image(tmp_path / "changed.png", phase=13)
+    with pytest.raises(GhanaPrivateError, match="identity changed"):
+        deidentify_online_candidate(**{**arguments, "source_path": changed})
+
+
+def test_provisional_annotation_requires_derivative_and_never_approves_training(
+    tmp_path: Path,
+) -> None:
+    source = _image(tmp_path / "permission.png", phase=14)
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    arguments = {
+        "index_path": outputs.index_path,
+        "record_id": outputs.candidate_id,
+        "provisional_label": "fraud_candidate",
+        "sender_kind": "phone_number",
+        "indicators": ["numeric_sender", "grammar_or_spelling_errors"],
+        "reviewer_id": "REVIEWER_OWNER_002",
+    }
+    with pytest.raises(GhanaPrivateError, match="de-identified"):
+        record_provisional_annotation(**arguments)
+    attest_online_candidate_permission(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        permission_reference="PERMISSION_SITE_20260813",
+        reviewer_id="REVIEWER_OWNER_002",
+        permission_scope="internal_model_development",
+    )
+    deidentify_online_candidate(
+        source_path=source,
+        index_path=outputs.index_path,
+        candidate_id=outputs.candidate_id,
+        working_root=tmp_path / "working",
+        redaction_regions=[[1, 1, 10, 10]],
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_002",
+    )
+    record_provisional_annotation(**arguments)
+
+    record = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert record["provisional_annotation"]["label"] == "fraud_candidate"
+    assert record["annotation_state"] == "needs_second_review"
+    assert record["training_eligible"] is False
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"provisional_label": "fraud"}, "provisional label"),
+        ({"sender_kind": "mobile"}, "sender kind"),
+        ({"indicators": []}, "fraud indicators"),
+        ({"indicators": ["guess"]}, "fraud indicators"),
+        ({"record_id": "MISSING_RECORD_001"}, "not found"),
+    ],
+)
+def test_provisional_annotation_rejects_invalid_values(
+    tmp_path: Path, mutation: dict[str, object], message: str
+) -> None:
+    record = _record(
+        image_id="GHIMG_OWNER_0030",
+        source_path="first.png",
+        participant=_hash("annotation"),
+        group="GHGROUP_OWNER_0030",
+    )
+    _image(tmp_path / "raw/first.png", phase=15)
+    outputs = _ingest(tmp_path, [record])
+    arguments: dict[str, object] = {
+        "index_path": outputs.index_path,
+        "record_id": "GHIMG_OWNER_0030",
+        "provisional_label": "fraud_candidate",
+        "sender_kind": "phone_number",
+        "indicators": ["numeric_sender"],
+        "reviewer_id": "REVIEWER_OWNER_002",
+    }
+    arguments.update(mutation)
+    with pytest.raises(GhanaPrivateError, match=message):
+        record_provisional_annotation(**arguments)  # type: ignore[arg-type]
 
 
 def test_review_workflow_is_ordered_auditable_and_fail_closed(tmp_path: Path) -> None:
