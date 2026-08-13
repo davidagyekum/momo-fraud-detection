@@ -34,6 +34,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     GhanaPrivateError,
     advance_review,
     apply_withdrawals,
+    attest_online_candidate_permission,
     freeze_group_splits,
     index_imazing_messages,
     ingest_private_screenshots,
@@ -195,7 +196,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="quarantine one manually acquired web image pending rights and content review",
     )
     ghana_online.add_argument("--source", type=Path, required=True)
-    ghana_online.add_argument("--source-page-url", required=True)
+    ghana_online.add_argument(
+        "--source-page-url",
+        help=(
+            "exact HTTPS source page; omit only to retain a non-training missing-source quarantine"
+        ),
+    )
     ghana_online.add_argument("--quarantine-root", type=Path, required=True)
     ghana_online.add_argument("--private-index", type=Path, required=True)
     ghana_online.add_argument("--safe-report", type=Path, required=True)
@@ -222,6 +228,19 @@ def build_parser() -> argparse.ArgumentParser:
     ghana_online_review.add_argument("--content-class", required=True)
     ghana_online_review.add_argument("--direct-identifier-state", required=True)
     ghana_online_review.add_argument("--reviewer-id", required=True)
+
+    ghana_online_permission = subparsers.add_parser(
+        "ghana-attest-online-permission",
+        help="record project-owner permission while preserving de-identification/training gates",
+    )
+    ghana_online_permission.add_argument("--private-index", type=Path, required=True)
+    ghana_online_permission.add_argument("--safe-report", type=Path, required=True)
+    ghana_online_permission.add_argument("--candidate-id", required=True)
+    ghana_online_permission.add_argument("--permission-reference", required=True)
+    ghana_online_permission.add_argument(
+        "--permission-scope", choices=("internal_model_development",), required=True
+    )
+    ghana_online_permission.add_argument("--reviewer-id", required=True)
 
     ghana_split = subparsers.add_parser(
         "ghana-freeze-splits", help="freeze approved private records by participant/source group"
@@ -636,6 +655,28 @@ def main(argv: Sequence[str] | None = None) -> int:
                     {
                         "content_review_recorded": True,
                         "rights_approved": False,
+                        "training_eligible": False,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        if args.command == "ghana-attest-online-permission":
+            attest_online_candidate_permission(
+                index_path=args.private_index,
+                report_path=args.safe_report,
+                candidate_id=args.candidate_id,
+                permission_reference=args.permission_reference,
+                reviewer_id=args.reviewer_id,
+                permission_scope=args.permission_scope,
+            )
+            print(
+                json.dumps(
+                    {
+                        "permission_attestation_recorded": True,
+                        "permission_scope": args.permission_scope,
                         "training_eligible": False,
                     },
                     indent=2,

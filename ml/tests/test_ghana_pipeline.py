@@ -12,6 +12,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     IntakeOutputs,
     advance_review,
     apply_withdrawals,
+    attest_online_candidate_permission,
     changed_pixels_are_masked,
     create_controlled_edit,
     deidentify_message_text,
@@ -425,6 +426,59 @@ def test_online_candidate_is_private_rights_review_quarantine_and_deduplicated(
     assert report["training_eligible_count"] == 0
 
 
+def test_online_candidate_without_source_page_is_retained_non_training(tmp_path: Path) -> None:
+    source = _image(tmp_path / "download.png", phase=9)
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+
+    index = json.loads(outputs.index_path.read_text(encoding="utf-8"))
+    report = json.loads(outputs.report_path.read_text(encoding="utf-8"))
+    record = index["records"][0]
+    assert outputs.status == "quarantined_missing_source_page"
+    assert record["source_page_url"] is None
+    assert record["source_domain"] is None
+    assert record["rights_state"] == "source_page_missing"
+    assert record["training_eligible"] is False
+    assert report["missing_source_page_count"] == 1
+
+
+@pytest.mark.parametrize(
+    "content_class", ["ambiguous_requires_adjudication", "mixed_authenticity_thread"]
+)
+def test_online_content_review_accepts_non_binary_triage_classes(
+    tmp_path: Path, content_class: str
+) -> None:
+    source = _image(tmp_path / f"{content_class}.png", phase=10)
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    review_online_candidate(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        content_class=content_class,
+        direct_identifier_state="present",
+        reviewer_id="REVIEWER_OWNER_002",
+    )
+
+    record = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert record["content_state"] == content_class
+    assert record["training_eligible"] is False
+
+
 @pytest.mark.parametrize(
     "url", ["http://example.test/image", "https://user:pass@example.test/image", "not-a-url"]
 )
@@ -477,6 +531,44 @@ def test_online_content_review_never_grants_rights_or_training_eligibility(tmp_p
             content_class="fraud",
             direct_identifier_state="present",
             reviewer_id="REVIEWER_OWNER_002",
+        )
+
+
+def test_online_permission_attestation_does_not_bypass_training_gates(tmp_path: Path) -> None:
+    source = _image(tmp_path / "permission.png", phase=11)
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    attest_online_candidate_permission(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        permission_reference="PERMISSION_SITE_20260813",
+        reviewer_id="REVIEWER_OWNER_002",
+        permission_scope="internal_model_development",
+    )
+
+    record = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    report = json.loads(outputs.report_path.read_text(encoding="utf-8"))
+    assert record["rights_state"] == "project_owner_attested_permission"
+    assert record["permission_scope"] == "internal_model_development"
+    assert record["training_eligible"] is False
+    assert report["owner_attested_permission_count"] == 1
+    assert report["missing_source_page_count"] == 1
+    with pytest.raises(GhanaPrivateError, match="permission scope"):
+        attest_online_candidate_permission(
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            candidate_id=outputs.candidate_id,
+            permission_reference="PERMISSION_SITE_20260813",
+            reviewer_id="REVIEWER_OWNER_002",
+            permission_scope="public_release",
         )
 
 

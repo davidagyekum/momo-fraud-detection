@@ -574,7 +574,7 @@ def index_imazing_messages(
 def quarantine_online_candidate(
     *,
     source_path: Path,
-    source_page_url: str,
+    source_page_url: str | None,
     quarantine_root: Path,
     index_path: Path,
     report_path: Path,
@@ -584,9 +584,16 @@ def quarantine_online_candidate(
     """Admit one manually acquired web image to a rights-review-only private quarantine."""
 
     reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
-    parsed = urlparse(source_page_url)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise GhanaPrivateError("online candidate requires a credential-free HTTPS source page")
+    source_domain: str | None = None
+    rights_state = "source_page_missing"
+    status = "quarantined_missing_source_page"
+    if source_page_url is not None:
+        parsed = urlparse(source_page_url)
+        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+            raise GhanaPrivateError("online candidate requires a credential-free HTTPS source page")
+        source_domain = parsed.hostname.casefold()
+        rights_state = "unreviewed"
+        status = "quarantined_pending_rights_review"
     _require_outside_repository(quarantine_root, repository_root, "online quarantine")
     _require_outside_repository(index_path, repository_root, "online candidate index")
     image = _decode_private_image(source_path)
@@ -627,16 +634,16 @@ def quarantine_online_candidate(
                 "quarantine_sha256": _sha256_file(output_path),
                 "perceptual_dhash": _dhash(image),
                 "source_page_url": source_page_url,
-                "source_domain": parsed.hostname.casefold(),
+                "source_domain": source_domain,
+                "source_page_state": "recorded" if source_page_url is not None else "missing",
                 "reviewer_id": reviewer,
-                "rights_state": "unreviewed",
+                "rights_state": rights_state,
                 "content_state": "unreviewed",
                 "deidentification_state": "not_started",
                 "training_eligible": False,
-                "status": "quarantined_pending_rights_review",
+                "status": status,
             }
         )
-        status = "quarantined_pending_rights_review"
         _atomic_json(index_path, index)
     state_counts = Counter(
         str(record.get("status")) for record in records if isinstance(record, dict)
@@ -647,6 +654,12 @@ def quarantine_online_candidate(
         "candidate_count": len(records),
         "status_counts": dict(sorted(state_counts.items())),
         "rights_review_complete_count": 0,
+        "missing_source_page_count": sum(
+            record.get("source_page_state") == "missing"
+            or ("source_page_state" not in record and record.get("source_page_url") is None)
+            for record in records
+            if isinstance(record, dict)
+        ),
         "training_eligible_count": 0,
         "network_acquisition_executed": False,
         "automated_scraping_executed": False,
@@ -654,6 +667,62 @@ def quarantine_online_candidate(
     }
     _atomic_json(report_path, report)
     return OnlineCandidateOutputs(candidate_id, status, index_path, report_path)
+
+
+def attest_online_candidate_permission(
+    *,
+    index_path: Path,
+    report_path: Path,
+    candidate_id: str,
+    permission_reference: str,
+    reviewer_id: str,
+    permission_scope: str,
+) -> None:
+    """Record project-owner permission attestation without bypassing later ML gates."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    permission = _expect_opaque_id(permission_reference, "permission_reference")
+    if permission_scope != "internal_model_development":
+        raise GhanaPrivateError("online candidate permission scope is invalid")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("online candidate records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("candidate_id") == candidate_id
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("online candidate was not found uniquely")
+    record = matches[0]
+    record["rights_state"] = "project_owner_attested_permission"
+    record["permission_reference"] = permission
+    record["permission_scope"] = permission_scope
+    record["rights_reviewer_id"] = reviewer
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    report = {
+        "schema_version": "ghana-online-candidate-report-v1",
+        "pipeline_version": GHANA_PIPELINE_VERSION,
+        "candidate_count": len(records),
+        "owner_attested_permission_count": sum(
+            item.get("rights_state") == "project_owner_attested_permission"
+            for item in records
+            if isinstance(item, dict)
+        ),
+        "missing_source_page_count": sum(
+            item.get("source_page_state") == "missing"
+            or ("source_page_state" not in item and item.get("source_page_url") is None)
+            for item in records
+            if isinstance(item, dict)
+        ),
+        "training_eligible_count": 0,
+        "network_acquisition_executed": False,
+        "automated_scraping_executed": False,
+        "training_executed": False,
+    }
+    _atomic_json(report_path, report)
 
 
 def review_online_candidate(
@@ -672,6 +741,8 @@ def review_online_candidate(
         "primary_ghana_momo_fraud",
         "adjacent_financial_phishing",
         "awareness_composite",
+        "ambiguous_requires_adjudication",
+        "mixed_authenticity_thread",
         "not_relevant",
     }:
         raise GhanaPrivateError("online candidate content class is invalid")
@@ -707,6 +778,17 @@ def review_online_candidate(
         "content_state_counts": dict(sorted(content_counts.items())),
         "rights_review_complete_count": sum(
             item.get("rights_state") in {"permission_confirmed", "licence_confirmed"}
+            for item in records
+            if isinstance(item, dict)
+        ),
+        "missing_source_page_count": sum(
+            item.get("source_page_state") == "missing"
+            or ("source_page_state" not in item and item.get("source_page_url") is None)
+            for item in records
+            if isinstance(item, dict)
+        ),
+        "owner_attested_permission_count": sum(
+            item.get("rights_state") == "project_owner_attested_permission"
             for item in records
             if isinstance(item, dict)
         ),

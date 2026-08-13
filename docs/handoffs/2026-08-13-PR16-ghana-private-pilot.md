@@ -60,7 +60,7 @@
 - Pipeline/model/rule/template versions: `ghana-private-pipeline-v1`; no model version created
 - Dataset/split/artifact hashes: safe pilot evidence in `docs/evidence/PR16_GHANA_PRIVATE_PILOT.json`; no split/artifact exists
 - Metrics actually measured: 10 private records, 8 conservative groups, 1 exact duplicate, 9 unique records pending de-identification, 0 working copies, 0 training-eligible records
-- Limitations: permission is project-owner-attested; direct contributor forms and exact online source-page rights evidence are not supplied; labels are not adjudicated; the batch is small and non-representative
+- Limitations: permission is project-owner-attested; direct contributor forms are not supplied; online permission covers images 1-5 but not image 6; only images 1, 2 and 4 have a strong whole-image fraud triage; labels are not independently adjudicated; the batch is small and non-representative
 - No fabricated or unavailable evidence: no split, model fit, accuracy, F1, deployment or promotion claim
 
 ## Security/privacy
@@ -75,7 +75,7 @@
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 424 tests; 90.83% branch-aware coverage; governance/lock/notebook/data gates; no training | 106.4 s |
+| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | Ruff format/lint; strict mypy; 428 tests; 90.78% branch-aware coverage; governance/lock/notebook/data gates; no training | 114.9 s |
 | Private friend intake | PASS | 10 records; 8 groups; 1 exact duplicate; 9 pending de-identification; 0 working copies; 0 training | under 1 s |
 
 Skipped/blocked checks and reason: no model training, split freezing or locked-test evaluation is authorised at this stage. Hosted GitHub Actions remain blocked by B-CI-001.
@@ -85,7 +85,7 @@ Skipped/blocked checks and reason: no model training, split freezing or locked-t
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
 | PR16-GHANA-PRIVATE | High | Nine unique friend images still contain direct identifiers and labels have not been independently reviewed | Cannot freeze splits or train | Keep originals private and working-copy count zero | Codex/data steward; project owner if contributor/source mapping is refined | Produce reviewed de-identified derivatives and adjudicate labels |
-| PR16-ONLINE-RIGHTS | Medium | Six inbox downloads lack exact source-page/rights records | Online candidates cannot become training eligible | Keep them outside training in rights quarantine | Project owner/source reviewer | Record exact source URLs and permission/licence evidence or exclude them |
+| PR16-ONLINE-REVIEW | High | Permission covers images 1-5, but image 3 is ambiguous, image 5 is mixed and all permitted images require de-identification/independent label review; image 6 is unpermitted | Candidates cannot yet become training eligible | Keep them outside training; use only reviewed de-identified crops/derivatives | Data steward/source reviewer | De-identify images 1-5, admit 1/2/4 for independent review, crop/adjudicate 3/5, exclude image 6 |
 | B-CI-001 | Medium | GitHub Actions account billing lock prevents runner allocation | Hosted CI unavailable | Preserve passing local gate evidence | Repository owner | Resolve the account lock and rerun CI |
 
 ## Documentation updated
@@ -106,4 +106,4 @@ push output: recorded in final task report
 
 ## Next exact task
 
-Create reviewed de-identified derivatives for the nine unique friend records, retaining non-identifying sender-kind/spelling/layout signals; add content/field annotations and second-review/adjudication evidence. Keep the duplicate quarantined, the `images 10/12` family together and all online candidates non-training until exact rights provenance is recorded.
+Create reviewed de-identified derivatives for the nine unique friend records and permitted online images 1-5, retaining non-identifying sender-kind/spelling/layout signals. Add content/field annotations and second-review/adjudication evidence; only images 1/2/4 are current whole-image fraud candidates. Crop/adjudicate images 3/5, keep image 6 rights-blocked, keep the duplicate quarantined and preserve the `images 10/12` family.
