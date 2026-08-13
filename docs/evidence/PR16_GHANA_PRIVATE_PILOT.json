@@ -27,6 +27,28 @@
     "qa_rejected_low_utility_count": 1
   },
   "network_acquisition_executed": false,
+  "owner_message_text_corpus": {
+    "deduplicated_category_counts": {
+      "official_service_message": 90,
+      "transaction_confirmation": 140
+    },
+    "deduplicated_csv_sha256": "3c6e2d0ceaf76e23df139e7eb8877c8c51854b2e9db44390a80fd930867b1a21",
+    "deduplicated_record_count": 230,
+    "exact_duplicate_occurrence_count": 2424,
+    "message_index_sha256": "427ecc2122be0758166ea6b5e04a8c91214b6381905a3eb55502664374d38643",
+    "message_report_sha256": "eb6fb153c0915d38628c9264fa1e38751d353740a57dca1c2aa161ff04a38d17",
+    "pending_second_review_count": 230,
+    "raw_category_counts": {
+      "official_service_message": 204,
+      "transaction_confirmation": 2450
+    },
+    "raw_csv_sha256": "b85048ecccf233202bbdd124845464a4cd26344f29745bdf0cdd435f32cb0e00",
+    "raw_record_count": 2654,
+    "residual_direct_identifier_pattern_hits": 0,
+    "source_group_policy": "template_family_plus_owner_train_only_pending_review",
+    "template_group_count": 167,
+    "training_eligible_count": 0
+  },
   "ocr_text_corpus": {
     "deidentified_csv_sha256": "bd2e357118f94ecf8495839b9ca9ab315bbdc5ed18cc9d82f045da7747b377f8",
     "deidentified_row_count": 13,

@@ -22,11 +22,11 @@
 - PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
-- Last updated: `2026-08-13`
-- CI status: `Logical PR16 implementation gate passes locally with 469 tests at 90% branch-aware coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
+- Last updated: `2026-08-14`
+- CI status: `Logical PR16 implementation gate passes locally with 478 tests at 90.08% branch-aware coverage; hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue`
 - Deployment status: `Not deployed`
 - Current phase: `Logical PR16 private Ghana screenshot dataset — In Progress`
-- Next exact task: `Perform independent privacy/label review over the 14 de-identified working copies, crop/adjudicate online images 3 and 5, and resolve the two ambiguous plus one mixed record. Keep image 6 rights-blocked and do not freeze splits until review passes.`
+- Next exact task: `Independently review the 230 deduplicated owner-message rows and 13 screenshot OCR rows, approve or exclude each text record, then add synthetic-clean groups for class balance. Keep all records non-training and do not freeze splits or enter Colab training until review and minimum-group gates pass.`
 
 ## PR10-PR13 reconciliation status
 
@@ -72,12 +72,12 @@
 ## Logical PR16 private Ghana screenshot dataset
 
 - Foundation: strict private intake, pseudonymous IDs, staged de-identification, metadata stripping, exact/perceptual duplicate quarantine, auditable annotation transitions, withdrawal propagation, group-safe split freezing and locked-test exclusion are implemented with private indexes outside Git.
-- Message boundary: the owner's 2,654-message iMazing export is indexed privately with sender kind and tokenised candidate text; manual identity review remains required and the export is not training eligible.
+- Message boundary: the owner's exact 2,654-message iMazing export is verified as incoming SMS from the authentic `MobileMoney` sender in the owner-iPhone backup. It is exported outside Git to a raw private CSV and 230 exact-deduplicated, text-only de-identified review rows across 167 template families. The raw corpus contains 2,450 transaction confirmations and 204 official-service messages. Automated QA found zero residual phone, email, URL, amount, long-reference or unmasked `to/from` entity-pattern hits. All rows require second review, remain non-training and must be treated as one owner lineage even though template groups also prevent format leakage.
 - Online boundary: six manually acquired images are privately indexed with zero exact/perceptual duplicates. Project-owner permission is attested for images 1-5; image 6 remains unpermitted. Second review approved three whole-image fraud labels, excluded one ambiguous image and superseded the mixed image with one suspicious and one genuine controlled crop. The five approved text records are bound to four immutable source groups. No scraper or bulk network acquisition client exists.
 - Friend pilot: the project owner attested permission for ten newly supplied friend screenshots. Private intake produced ten records across eight conservative participant/source groups and quarantined one exact duplicate. Second review approved seven fraud and one genuine labels and excluded one ambiguous record. Seven approved records passed private QA; one label-approved record remains excluded for low visual utility after privacy masking. Direct contributor forms were not supplied.
 - OCR/text boundary: all 13 label-approved screenshot records now have exact, human-corrected OCR truth stored privately. A raw 13-row CSV preserves the exact transcript and field annotations; a matching de-identified CSV replaces exact sensitive values with typed text placeholders. An automated cross-check found zero exact sensitive-field values remaining in the de-identified rows. Image derivatives, including the earlier masks, are excluded from training; private originals are evidence/OCR sources only. Both CSV layers remain outside Git and pending independent second review.
-- QA/split boundary: all 13 OCR text records remain explicitly non-training. Split freezing still requires explicit training eligibility plus at least 30 controlled-real and 20 synthetic-clean groups, so the current pilot remains non-training and unfrozen.
-- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 469 tests at 90% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 526 candidates. The repository quick gate remains environment-blocked by inactive pinned Node/npm versions, and the security suite remains an already-documented unregistered marker. No split, model fitting, metric or promotion claim is made.
+- QA/split boundary: all 13 OCR text rows and 230 deduplicated owner-message rows remain explicitly non-training. Split freezing still requires explicit training eligibility plus at least 30 controlled-real and 20 synthetic-clean groups; the owner corpus is one participant lineage, so it cannot supply independent evaluation groups. The current pilot remains non-training and unfrozen.
+- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 478 tests at 90.08% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 526 candidates. The repository quick gate remains environment-blocked by inactive pinned Node/npm versions, and the security suite remains an already-documented unregistered marker. No split, model fitting, metric or promotion claim is made.
 
 ## Logical PR10 evidence/execution foundation
 

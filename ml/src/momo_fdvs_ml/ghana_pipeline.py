@@ -10,7 +10,7 @@ import re
 import shutil
 import uuid
 from collections import Counter
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +28,7 @@ EDIT_MANIFEST_VERSION: Final = "ghana-controlled-edit-v1"
 ONLINE_CANDIDATE_INDEX_VERSION: Final = "ghana-online-candidate-index-v1"
 OCR_GROUND_TRUTH_VERSION: Final = "ghana-private-ocr-ground-truth-v1"
 OCR_TEXT_CORPUS_VERSION: Final = "ghana-private-ocr-text-corpus-v1"
+MESSAGE_TEXT_CORPUS_VERSION: Final = "ghana-private-message-text-corpus-v1"
 PROVISIONAL_LABELS: Final = frozenset(
     {
         "fraud_candidate",
@@ -220,6 +221,18 @@ class PrivateTextCorpusOutputs:
     sanitized_csv_path: Path
     sanitized_csv_sha256: str
     record_count: int
+
+
+@dataclass(frozen=True)
+class PrivateMessageCorpusOutputs:
+    """Private owner-message raw and de-identified CSV corpus locations."""
+
+    raw_csv_path: Path
+    raw_csv_sha256: str
+    sanitized_csv_path: Path
+    sanitized_csv_sha256: str
+    raw_record_count: int
+    deduplicated_record_count: int
 
 
 @dataclass(frozen=True)
@@ -724,6 +737,265 @@ def index_imazing_messages(
     }
     _atomic_json(report_path, report)
     return IntakeOutputs(index_path, report_path, len(indexed), 0)
+
+
+_MESSAGE_ENTITY = re.compile(
+    r"(?i)(\b(?:to|from)\s+)(.+?)(?=(?:\s*[.,])?\s+(?:current\s+balance|"
+    r"available\s+balance|balance|transaction\s+id|fee\s+charged|token\b|"
+    r"thank\s+you\b|on\s+(?:mtn|mobilemoney)\b))"
+)
+_MESSAGE_TRANSACTION_CUES: Final = (
+    "payment made",
+    "payment received",
+    "payment for",
+    "cash out",
+    "cash in",
+    "money transfer",
+    "airtime recharge",
+    "successfully purchased",
+    "transaction id",
+    "fee charged",
+    "reversal",
+)
+
+
+def _deidentify_owner_message(value: str) -> tuple[str, list[dict[str, str]]]:
+    text = value.replace("\x00", " ").strip()
+    fields: list[dict[str, str]] = []
+    placeholders: dict[tuple[str, str], str] = {}
+    counters: Counter[str] = Counter()
+
+    def placeholder(kind: str, raw: str) -> str:
+        key = (kind, raw.casefold())
+        if key not in placeholders:
+            counters[kind] += 1
+            placeholders[key] = f"[{kind}_{counters[kind]:03d}]"
+            fields.append({"name": kind.casefold(), "raw": raw, "placeholder": placeholders[key]})
+        return placeholders[key]
+
+    def replace_entity(match: re.Match[str]) -> str:
+        raw = match.group(2).strip()
+        return match.group(1) + placeholder("ENTITY", raw)
+
+    def replacement(kind: str) -> Callable[[re.Match[str]], str]:
+        def replace(match: re.Match[str]) -> str:
+            return placeholder(kind, match.group(0))
+
+        return replace
+
+    text = _MESSAGE_ENTITY.sub(replace_entity, text)
+    for kind, pattern in (
+        ("URL", _URL),
+        ("EMAIL", _EMAIL),
+        ("PHONE", _PHONE),
+        ("AMOUNT", _MONEY),
+        ("REFERENCE", _LONG_REFERENCE),
+    ):
+        text = pattern.sub(replacement(kind), text)
+    for field in sorted(fields, key=lambda item: len(item["raw"]), reverse=True):
+        if len(field["raw"].strip()) < 3:
+            continue
+        text = re.sub(re.escape(field["raw"]), field["placeholder"], text, flags=re.IGNORECASE)
+        if field["raw"].casefold() in text.casefold():
+            raise GhanaPrivateError("owner message de-identification left an exact sensitive value")
+    return text, fields
+
+
+def _message_template_group(sanitized_text: str) -> str:
+    template = re.sub(
+        r"\[(?:ENTITY|URL|EMAIL|PHONE|AMOUNT|REFERENCE)_\d{3}\]", "[VALUE]", sanitized_text
+    )
+    template = re.sub(r"\b\d+\b", "[NUMBER]", template.casefold())
+    template = " ".join(template.split())
+    return "GHMSGGROUP_" + _sha256_bytes(template.encode())[:24].upper()
+
+
+def export_private_imazing_genuine_corpus(
+    *,
+    source_csv: Path,
+    index_path: Path,
+    report_path: Path,
+    output_root: Path,
+    repository_root: Path,
+    reviewer_id: str,
+    expected_sender_label: str = "MobileMoney",
+) -> PrivateMessageCorpusOutputs:
+    """Export owner-authentic messages to raw and deduplicated private text CSVs."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    _require_outside_repository(output_root, repository_root, "private message CSV corpus")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list) or not all(isinstance(record, dict) for record in records):
+        raise GhanaPrivateError("private message index records are invalid")
+    expected_source_hash = _expect_sha256(index.get("source_sha256"), "source_sha256")
+    if _sha256_file(source_csv) != expected_source_hash:
+        raise GhanaPrivateError("private message source identity changed")
+    indexed_by_row: dict[int, dict[str, object]] = {}
+    for record_object in records:
+        record = cast(dict[str, object], record_object)
+        row_number = record.get("source_row_number")
+        if (
+            isinstance(row_number, bool)
+            or not isinstance(row_number, int)
+            or row_number in indexed_by_row
+        ):
+            raise GhanaPrivateError("private message source-row mapping is invalid")
+        indexed_by_row[row_number] = record
+
+    raw_rows: list[dict[str, object]] = []
+    sanitized_by_hash: dict[str, dict[str, object]] = {}
+    category_counts: Counter[str] = Counter()
+    group_counts: Counter[str] = Counter()
+    try:
+        stream = source_csv.open("r", encoding="utf-8-sig", newline="")
+    except OSError as exc:
+        raise GhanaPrivateError("private message source could not be opened") from exc
+    with stream:
+        reader = csv.DictReader(stream)
+        headers = reader.fieldnames or []
+        required = {
+            "sender_identifier",
+            "service",
+            "direction",
+            "sent_at_utc",
+            "message_body",
+            "source_provenance",
+        }
+        if not required.issubset(headers):
+            raise GhanaPrivateError("private message source schema is invalid")
+        for row_number, row in enumerate(reader, start=2):
+            raw_text = row.get("message_body", "")
+            if not raw_text or not raw_text.strip():
+                continue
+            indexed = indexed_by_row.get(row_number)
+            if indexed is None:
+                raise GhanaPrivateError("private message row is absent from its index")
+            if (
+                row.get("sender_identifier", "").strip().casefold()
+                != expected_sender_label.casefold()
+                or row.get("service") != "SMS"
+                or row.get("direction") != "incoming"
+                or row.get("source_provenance") != "owner_iphone_local_backup"
+            ):
+                raise GhanaPrivateError("private message authenticity boundary changed")
+            sanitized, fields = _deidentify_owner_message(raw_text)
+            category = (
+                "transaction_confirmation"
+                if any(cue in sanitized.casefold() for cue in _MESSAGE_TRANSACTION_CUES)
+                else "official_service_message"
+            )
+            category_counts[category] += 1
+            group_id = _message_template_group(sanitized)
+            group_counts[group_id] += 1
+            sanitized_hash = _sha256_bytes(sanitized.casefold().encode())
+            record_id = indexed.get("message_id")
+            if not isinstance(record_id, str):
+                raise GhanaPrivateError("private message identifier is invalid")
+            raw_rows.append(
+                {
+                    "record_id": record_id,
+                    "source_row_number": row_number,
+                    "sent_at_utc": row.get("sent_at_utc", ""),
+                    "source_group_id": group_id,
+                    "label": "GENUINE",
+                    "message_category": category,
+                    "raw_message_text": raw_text.strip(),
+                    "fields_json": json.dumps(fields, ensure_ascii=False, separators=(",", ":")),
+                    "sanitized_sha256": sanitized_hash,
+                    "training_eligible": "false",
+                    "review_state": "owner_message_text_pending_second_review",
+                }
+            )
+            existing = sanitized_by_hash.get(sanitized_hash)
+            if existing is None:
+                sanitized_by_hash[sanitized_hash] = {
+                    "record_id": record_id,
+                    "source_group_id": group_id,
+                    "label": "GENUINE",
+                    "sender_kind": "alphanumeric_label",
+                    "message_category": category,
+                    "sanitized_text": sanitized,
+                    "duplicate_occurrences": 1,
+                    "training_eligible": "false",
+                    "review_state": "owner_message_text_pending_second_review",
+                }
+            else:
+                existing["duplicate_occurrences"] = cast(int, existing["duplicate_occurrences"]) + 1
+
+    if len(raw_rows) != len(records):
+        raise GhanaPrivateError("private message source/index row counts differ")
+    sanitized_rows = sorted(sanitized_by_hash.values(), key=lambda row: cast(str, row["record_id"]))
+    raw_rows.sort(key=lambda row: cast(int, row["source_row_number"]))
+    raw_fields = [
+        "record_id",
+        "source_row_number",
+        "sent_at_utc",
+        "source_group_id",
+        "label",
+        "message_category",
+        "raw_message_text",
+        "fields_json",
+        "sanitized_sha256",
+        "training_eligible",
+        "review_state",
+    ]
+    sanitized_fields = [
+        "record_id",
+        "source_group_id",
+        "label",
+        "sender_kind",
+        "message_category",
+        "sanitized_text",
+        "duplicate_occurrences",
+        "training_eligible",
+        "review_state",
+    ]
+    raw_path = output_root.resolve() / "raw" / "owner_messages.csv"
+    sanitized_path = output_root.resolve() / "deidentified" / "owner_messages.csv"
+    _atomic_csv(raw_path, raw_fields, raw_rows)
+    _atomic_csv(sanitized_path, sanitized_fields, sanitized_rows)
+    raw_hash = _sha256_file(raw_path)
+    sanitized_hash = _sha256_file(sanitized_path)
+    for record_object in records:
+        record = cast(dict[str, object], record_object)
+        record["workflow_state"] = "needs_second_annotation"
+        record["training_eligible"] = False
+        record["text_corpus"] = {
+            "schema_version": MESSAGE_TEXT_CORPUS_VERSION,
+            "raw_csv_sha256": raw_hash,
+            "sanitized_csv_sha256": sanitized_hash,
+            "reviewer_id": reviewer,
+            "second_review_required": True,
+        }
+    _atomic_json(index_path, index)
+    report = _load_object(report_path)
+    report.update(
+        {
+            "schema_version": "ghana-message-intake-report-v1",
+            "text_corpus_schema_version": MESSAGE_TEXT_CORPUS_VERSION,
+            "raw_record_count": len(raw_rows),
+            "deduplicated_record_count": len(sanitized_rows),
+            "exact_duplicate_occurrence_count": len(raw_rows) - len(sanitized_rows),
+            "template_group_count": len(group_counts),
+            "message_category_counts": dict(sorted(category_counts.items())),
+            "raw_csv_sha256": raw_hash,
+            "sanitized_csv_sha256": sanitized_hash,
+            "second_review_required": True,
+            "training_eligible": False,
+            "splits_frozen": False,
+            "training_executed": False,
+        }
+    )
+    _atomic_json(report_path, report)
+    return PrivateMessageCorpusOutputs(
+        raw_path,
+        raw_hash,
+        sanitized_path,
+        sanitized_hash,
+        len(raw_rows),
+        len(sanitized_rows),
+    )
 
 
 def quarantine_online_candidate(

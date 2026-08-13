@@ -20,6 +20,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     create_controlled_online_crop,
     deidentify_message_text,
     deidentify_online_candidate,
+    export_private_imazing_genuine_corpus,
     export_private_ocr_text_corpus,
     freeze_group_splits,
     index_imazing_messages,
@@ -387,6 +388,202 @@ def test_message_index_rejects_missing_file_columns_and_bad_identity(tmp_path: P
             participant_id_hash=_hash("owner"),
             permission_reference="PERMISSION_OWNER_001",
             repository_root=tmp_path / "repository",
+        )
+
+
+def test_owner_message_corpus_deidentifies_deduplicates_and_groups_templates(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "owner-messages.csv"
+    headers = [
+        "sender_identifier",
+        "service",
+        "direction",
+        "sent_at_utc",
+        "message_body",
+        "source_provenance",
+    ]
+    rows = [
+        {
+            "sender_identifier": "MobileMoney",
+            "service": "SMS",
+            "direction": "incoming",
+            "sent_at_utc": "2026-01-01T00:00:00+00:00",
+            "message_body": (
+                "Payment made for GHS 20.00 to PRIVATE PERSON. "
+                "Current Balance GHS 80.00. Transaction ID: 12345678901"
+            ),
+            "source_provenance": "owner_iphone_local_backup",
+        },
+        {
+            "sender_identifier": "MobileMoney",
+            "service": "SMS",
+            "direction": "incoming",
+            "sent_at_utc": "2026-01-02T00:00:00+00:00",
+            "message_body": (
+                "Payment made for GHS 30.00 to PRIVATE PERSON. "
+                "Current Balance GHS 50.00. Transaction ID: 22345678901"
+            ),
+            "source_provenance": "owner_iphone_local_backup",
+        },
+        {
+            "sender_identifier": "MobileMoney",
+            "service": "SMS",
+            "direction": "incoming",
+            "sent_at_utc": "2026-01-03T00:00:00+00:00",
+            "message_body": "Keep your account secure and never share your PIN.",
+            "source_provenance": "owner_iphone_local_backup",
+        },
+    ]
+    with source.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(rows)
+    index_path = tmp_path / "message-index.json"
+    report_path = tmp_path / "message-report.json"
+    index_imazing_messages(
+        source_csv=source,
+        index_path=index_path,
+        report_path=report_path,
+        participant_id_hash=_hash("owner"),
+        permission_reference="PERMISSION_OWNER_001",
+        repository_root=tmp_path / "repository",
+        text_column="message_body",
+        sender_column="sender_identifier",
+    )
+    outputs = export_private_imazing_genuine_corpus(
+        source_csv=source,
+        index_path=index_path,
+        report_path=report_path,
+        output_root=tmp_path / "private-corpus",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_STEWARD_003",
+    )
+    assert outputs.raw_record_count == 3
+    assert outputs.deduplicated_record_count == 2
+    with outputs.raw_csv_path.open(encoding="utf-8", newline="") as stream:
+        raw_rows = list(csv.DictReader(stream))
+    with outputs.sanitized_csv_path.open(encoding="utf-8", newline="") as stream:
+        sanitized_rows = list(csv.DictReader(stream))
+    assert "PRIVATE PERSON" in raw_rows[0]["raw_message_text"]
+    transaction = next(
+        row for row in sanitized_rows if row["message_category"] == "transaction_confirmation"
+    )
+    assert "PRIVATE PERSON" not in transaction["sanitized_text"]
+    assert "[ENTITY_001]" in transaction["sanitized_text"]
+    assert "[AMOUNT_001]" in transaction["sanitized_text"]
+    assert "[REFERENCE_001]" in transaction["sanitized_text"]
+    assert transaction["duplicate_occurrences"] == "2"
+    assert transaction["training_eligible"] == "false"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["raw_record_count"] == 3
+    assert report["deduplicated_record_count"] == 2
+    assert report["template_group_count"] == 2
+    assert report["splits_frozen"] is False
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    assert all(record["workflow_state"] == "needs_second_annotation" for record in index["records"])
+    assert all(record["training_eligible"] is False for record in index["records"])
+
+
+def test_owner_message_corpus_rejects_changed_source_and_authenticity(tmp_path: Path) -> None:
+    source = tmp_path / "owner-messages.csv"
+    source.write_text(
+        "sender_identifier,service,direction,sent_at_utc,message_body,source_provenance\n"
+        "MobileMoney,SMS,incoming,2026-01-01T00:00:00+00:00,Account notice,"
+        "owner_iphone_local_backup\n",
+        encoding="utf-8",
+    )
+    index_path = tmp_path / "index.json"
+    report_path = tmp_path / "report.json"
+    index_imazing_messages(
+        source_csv=source,
+        index_path=index_path,
+        report_path=report_path,
+        participant_id_hash=_hash("owner"),
+        permission_reference="PERMISSION_OWNER_001",
+        repository_root=tmp_path / "repository",
+        text_column="message_body",
+        sender_column="sender_identifier",
+    )
+    source.write_text(source.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    with pytest.raises(GhanaPrivateError, match="source identity changed"):
+        export_private_imazing_genuine_corpus(
+            source_csv=source,
+            index_path=index_path,
+            report_path=report_path,
+            output_root=tmp_path / "output",
+            repository_root=tmp_path / "repository",
+            reviewer_id="REVIEWER_STEWARD_003",
+        )
+
+
+@pytest.mark.parametrize(
+    ("case", "message"),
+    [
+        ("invalid_records", "index records are invalid"),
+        ("duplicate_row", "source-row mapping is invalid"),
+        ("missing_row", "absent from its index"),
+        ("changed_sender", "authenticity boundary changed"),
+        ("invalid_message_id", "identifier is invalid"),
+        ("extra_index_record", "row counts differ"),
+        ("bad_schema", "source schema is invalid"),
+    ],
+)
+def test_owner_message_corpus_rejects_unsafe_private_state(
+    tmp_path: Path, case: str, message: str
+) -> None:
+    source = tmp_path / "owner-messages.csv"
+    source.write_text(
+        "sender_identifier,service,direction,sent_at_utc,message_body,source_provenance\n"
+        "MobileMoney,SMS,incoming,2026-01-01T00:00:00+00:00,Account notice,"
+        "owner_iphone_local_backup\n",
+        encoding="utf-8",
+    )
+    index_path = tmp_path / "index.json"
+    report_path = tmp_path / "report.json"
+    index_imazing_messages(
+        source_csv=source,
+        index_path=index_path,
+        report_path=report_path,
+        participant_id_hash=_hash("owner"),
+        permission_reference="PERMISSION_OWNER_001",
+        repository_root=tmp_path / "repository",
+        text_column="message_body",
+        sender_column="sender_identifier",
+    )
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    if case == "invalid_records":
+        index["records"] = [None]
+    elif case == "duplicate_row":
+        index["records"].append(dict(index["records"][0]))
+    elif case == "missing_row":
+        index["records"][0]["source_row_number"] = 3
+    elif case == "changed_sender":
+        source.write_text(
+            source.read_text(encoding="utf-8").replace("MobileMoney", "Other"), encoding="utf-8"
+        )
+        index["source_sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+    elif case == "invalid_message_id":
+        index["records"][0]["message_id"] = None
+    elif case == "extra_index_record":
+        extra = dict(index["records"][0])
+        extra["source_row_number"] = 3
+        extra["message_id"] = "GHMSG_EXTRA_RECORD_0001"
+        index["records"].append(extra)
+    else:
+        source.write_text(
+            "sender_identifier,message_body\nMobileMoney,Account notice\n", encoding="utf-8"
+        )
+        index["source_sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+    _write_json(index_path, index)
+    with pytest.raises(GhanaPrivateError, match=message):
+        export_private_imazing_genuine_corpus(
+            source_csv=source,
+            index_path=index_path,
+            report_path=report_path,
+            output_root=tmp_path / "output",
+            repository_root=tmp_path / "repository",
+            reviewer_id="REVIEWER_STEWARD_003",
         )
     source = tmp_path / "messages.csv"
     source.write_text("Date,Value\nnow,test\n", encoding="utf-8")
