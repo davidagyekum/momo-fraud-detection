@@ -1,5 +1,7 @@
 # PR17 Measurement Contract Repair Implementation Plan
 
+> 2026-08-15 owner-run correction: the governed OCR truth schema is an ordered list and permits repeated field annotations. The first v3 run therefore proved Step 1's conflicting-duplicate rejection incompatible with the existing private archive and historical scorer. Follow-up commit `a4dc60d0d4ada44c7c5bad4fe3103f0964ead4eb` restores the established first-non-empty occurrence as primary; missing parser fields and inconsistent availability states remain fail-closed.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make parser exact scoring, availability classification, warning attribution, and recipient subtype reporting use one explicit name-or-wallet comparison contract without changing parser behavior.
