@@ -252,6 +252,17 @@ class ReviewedTextCorpusOutputs:
 
 
 @dataclass(frozen=True)
+class TextSplitReadinessOutputs:
+    """Safe text-corpus readiness report without creating or exposing a split."""
+
+    report_path: Path
+    report_sha256: str
+    ready_to_freeze: bool
+    controlled_real_group_count: int
+    synthetic_clean_group_count: int
+
+
+@dataclass(frozen=True)
 class SyntheticCleanTextOutputs:
     """Private deterministic synthetic-clean text pilot locations."""
 
@@ -1526,6 +1537,68 @@ def deidentify_online_candidate(
     return OnlineDeidentificationOutputs(candidate_id, output, working_hash)
 
 
+def prepare_online_candidate_text_only_review(
+    *,
+    index_path: Path,
+    report_path: Path,
+    candidate_id: str,
+    source_group_id: str,
+    provisional_label: str,
+    sender_kind: str,
+    indicators: Sequence[str],
+    reviewer_id: str,
+) -> None:
+    """Prepare a permitted online candidate for OCR-first review without an image derivative."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    group_id = _expect_opaque_id(source_group_id, "source_group_id")
+    if provisional_label not in PROVISIONAL_LABELS:
+        raise GhanaPrivateError("provisional label is invalid")
+    if sender_kind not in SENDER_KINDS:
+        raise GhanaPrivateError("sender kind is invalid")
+    indicator_set = set(indicators)
+    if not indicator_set or not indicator_set.issubset(FRAUD_INDICATORS):
+        raise GhanaPrivateError("fraud indicators are invalid")
+    index = _load_object(index_path)
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("online candidate records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("candidate_id") == candidate_id
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("online candidate was not found uniquely")
+    record = matches[0]
+    if record.get("rights_state") != "project_owner_attested_permission":
+        raise GhanaPrivateError("online candidate permission is not confirmed")
+    if record.get("content_state") in {None, "unreviewed", "not_relevant"}:
+        raise GhanaPrivateError("online candidate content triage is incomplete")
+    if record.get("direct_identifier_state") not in {"present", "none_visible", "uncertain"}:
+        raise GhanaPrivateError("online candidate identifier review is incomplete")
+    existing_group = record.get("source_group_id")
+    if existing_group is not None and existing_group != group_id:
+        raise GhanaPrivateError("online candidate source group is immutable")
+    record["source_group_id"] = group_id
+    record["source_group_review"] = {
+        "reason_code": "CONSERVATIVE_BATCH_LINEAGE_001",
+        "reviewer_id": reviewer,
+    }
+    record["provisional_annotation"] = {
+        "label": provisional_label,
+        "sender_kind": sender_kind,
+        "indicators": sorted(indicator_set),
+        "reviewer_id": reviewer,
+    }
+    record["image_derivative_policy"] = "excluded_use_private_original_for_ocr_only"
+    record["deidentification_state"] = "text_only_ocr_pending_label_review"
+    record["annotation_state"] = "needs_second_review"
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+
+
 def record_provisional_annotation(
     *,
     index_path: Path,
@@ -2507,6 +2580,113 @@ def review_private_text_corpora(
     )
 
 
+def assess_private_text_split_readiness(
+    *,
+    reviewed_csv_path: Path,
+    review_manifest_path: Path,
+    report_path: Path,
+    repository_root: Path,
+    minimum_controlled_groups: int = 30,
+    minimum_synthetic_groups: int = 20,
+) -> TextSplitReadinessOutputs:
+    """Fail closed on group minimums while publishing only aggregate text-corpus evidence."""
+
+    _require_outside_repository(report_path, repository_root, "private text readiness report")
+    if minimum_controlled_groups < 1 or minimum_synthetic_groups < 1:
+        raise GhanaPrivateError("private text readiness minimums are invalid")
+    manifest = _load_object(review_manifest_path)
+    if manifest.get("schema_version") != REVIEWED_TEXT_CORPUS_VERSION:
+        raise GhanaPrivateError("private text review manifest is unsupported")
+    expected_hash = _expect_sha256(manifest.get("reviewed_csv_sha256"), "reviewed_csv_sha256")
+    if _sha256_file(reviewed_csv_path) != expected_hash:
+        raise GhanaPrivateError("private reviewed text corpus identity changed")
+    if manifest.get("training_eligible") is not False or manifest.get("splits_frozen") is not False:
+        raise GhanaPrivateError("private reviewed text corpus bypassed its readiness gate")
+
+    bucket_sources = {
+        "controlled_real": frozenset({"screenshot_ocr"}),
+        "synthetic_clean": frozenset({"synthetic_clean"}),
+        "owner_train_only": frozenset({"owner_iphone_messages", "owner_android_messages"}),
+    }
+    groups: dict[str, set[str]] = {bucket: set() for bucket in bucket_sources}
+    label_counts: dict[str, Counter[str]] = {bucket: Counter() for bucket in bucket_sources}
+    record_counts: Counter[str] = Counter()
+    group_buckets: dict[str, str] = {}
+    seen_ids: set[str] = set()
+    try:
+        stream = reviewed_csv_path.open("r", encoding="utf-8-sig", newline="")
+    except OSError as exc:
+        raise GhanaPrivateError("private reviewed text corpus could not be opened") from exc
+    with stream:
+        for row in csv.DictReader(stream):
+            record_id = _expect_opaque_id(row.get("record_id"), "record_id")
+            if record_id in seen_ids:
+                raise GhanaPrivateError("private reviewed text record is duplicated")
+            seen_ids.add(record_id)
+            if row.get("review_decision") != "approve" or row.get("training_eligible") != "false":
+                raise GhanaPrivateError("private reviewed text row bypassed its approval gate")
+            source = row.get("source_corpus")
+            bucket = next(
+                (name for name, source_names in bucket_sources.items() if source in source_names),
+                None,
+            )
+            if bucket is None:
+                raise GhanaPrivateError("private reviewed text source corpus is unsupported")
+            group_id = _expect_opaque_id(row.get("source_group_id"), "source_group_id")
+            prior_bucket = group_buckets.setdefault(group_id, bucket)
+            if prior_bucket != bucket:
+                raise GhanaPrivateError("private reviewed text group crosses source buckets")
+            label = row.get("label")
+            if label not in set(FINAL_LABELS.values()):
+                raise GhanaPrivateError("private reviewed text label is invalid")
+            groups[bucket].add(group_id)
+            label_counts[bucket][cast(str, label)] += 1
+            record_counts[bucket] += 1
+    if len(seen_ids) != manifest.get("approved_record_count"):
+        raise GhanaPrivateError("private reviewed text manifest count does not match its corpus")
+
+    blockers: list[str] = []
+    if len(groups["controlled_real"]) < minimum_controlled_groups:
+        blockers.append("controlled_real_group_minimum")
+    if len(groups["synthetic_clean"]) < minimum_synthetic_groups:
+        blockers.append("synthetic_clean_group_minimum")
+    if set(label_counts["controlled_real"]) != set(FINAL_LABELS.values()):
+        blockers.append("controlled_real_class_coverage")
+    report = {
+        "schema_version": "ghana-private-text-split-readiness-v1",
+        "pipeline_version": GHANA_PIPELINE_VERSION,
+        "reviewed_csv_sha256": expected_hash,
+        "record_counts": dict(sorted(record_counts.items())),
+        "group_counts": {
+            "controlled_real": len(groups["controlled_real"]),
+            "synthetic_clean": len(groups["synthetic_clean"]),
+            "owner_train_only_template_groups": len(groups["owner_train_only"]),
+            "owner_participant_lineages": 1,
+        },
+        "label_counts": {
+            bucket: dict(sorted(values.items())) for bucket, values in sorted(label_counts.items())
+        },
+        "minimum_controlled_real_groups": minimum_controlled_groups,
+        "minimum_synthetic_clean_groups": minimum_synthetic_groups,
+        "owner_accounts_one_participant_lineage": True,
+        "owner_records_train_only_candidates": True,
+        "blockers": blockers,
+        "ready_to_freeze": not blockers,
+        "splits_frozen": False,
+        "training_eligible": False,
+        "training_executed": False,
+    }
+    _atomic_json(report_path, report)
+    report_hash = _sha256_file(report_path)
+    return TextSplitReadinessOutputs(
+        report_path,
+        report_hash,
+        not blockers,
+        len(groups["controlled_real"]),
+        len(groups["synthetic_clean"]),
+    )
+
+
 def generate_private_synthetic_clean_text_corpus(
     *,
     output_root: Path,
@@ -2522,7 +2702,12 @@ def generate_private_synthetic_clean_text_corpus(
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise GhanaPrivateError("synthetic-clean seed is invalid")
 
-    actions = ("Payment received", "Cash In received", "Payment made", "Transfer received")
+    actions = (
+        ("Payment received", "from"),
+        ("Cash In received", "from"),
+        ("Payment made", "to"),
+        ("Transfer received", "from"),
+    )
     official_endings = (
         "Thank you for using MobileMoney.",
         "Fee charged: [AMOUNT_003].",
@@ -2545,32 +2730,92 @@ def generate_private_synthetic_clean_text_corpus(
         "Reply urgently if this was not you.",
         "Contact [PHONE_002] to keep the transfer active.",
     )
+    genuine_leads = ("Confirmed:", "MobileMoney notice:", "Receipt:", "Transaction alert:")
+    balance_phrases = (
+        "Current Balance",
+        "Available Balance",
+        "Wallet Balance",
+        "Balance after transaction",
+        "New Balance",
+    )
+    reference_phrases = ("Transaction ID:", "Reference:", "Receipt ID:", "Transaction ref:")
+    fraud_leads = ("MobileMoney", "MoMo Alert", "Account Notice", "Transaction Alert")
+    fraud_balances = (
+        "Avialable balance",
+        "Current ballance",
+        "Avaliable balance",
+        "Balance available",
+    )
+    fraud_subjects = ("Your account has", "Your wallet has", "This MoMo account has")
+    suspicious_leads = (
+        "MobileMoney alert:",
+        "MoMo notice:",
+        "Transaction notice:",
+        "Wallet alert:",
+    )
+    suspicious_references = ("Reference", "Transaction ID", "Receipt ID", "Transaction ref")
+    suspicious_endings = (
+        "Verify the sender context.",
+        "Check your official transaction history.",
+        "Treat this message with caution.",
+    )
+    genuine_variants = [
+        (action, preposition, lead, balance, reference, ending)
+        for action, preposition in actions
+        for lead in genuine_leads
+        for balance in balance_phrases
+        for reference in reference_phrases
+        for ending in official_endings
+    ]
+    fraud_variants = [
+        (receipt_word, blocked_phrase, urgent, lead, balance, subject)
+        for receipt_word, blocked_phrase in fraud_phrases
+        for urgent in urgent_actions
+        for lead in fraud_leads
+        for balance in fraud_balances
+        for subject in fraud_subjects
+    ]
+    suspicious_variants = [
+        (action, lead, reference, suspicious, ending)
+        for action, _ in actions
+        for lead in suspicious_leads
+        for reference in suspicious_references
+        for suspicious in suspicious_actions
+        for ending in suspicious_endings
+    ]
     rows: list[dict[str, object]] = []
+    variant_step = 31
     for position in range(source_group_count):
         number = position + 1
         group_id = f"GHSYN_GROUP_{number:04d}"
-        action = actions[(position + seed) % len(actions)]
-        ending = official_endings[(position + seed // 3) % len(official_endings)]
-        receipt_word, blocked_phrase = fraud_phrases[(position + seed // 5) % len(fraud_phrases)]
-        urgent = urgent_actions[(position + seed // 7) % len(urgent_actions)]
-        suspicious = suspicious_actions[(position + seed // 11) % len(suspicious_actions)]
+        action, preposition, lead, balance, reference, ending = genuine_variants[
+            (position * variant_step + seed) % len(genuine_variants)
+        ]
+        receipt_word, blocked_phrase, urgent, fraud_lead, fraud_balance, fraud_subject = (
+            fraud_variants[(position * variant_step + seed) % len(fraud_variants)]
+        )
+        suspicious_action, suspicious_lead, suspicious_reference, suspicious, suspicious_ending = (
+            suspicious_variants[(position * variant_step + seed) % len(suspicious_variants)]
+        )
         examples = (
             (
                 "GENUINE",
                 "alphanumeric_label",
-                f"{action} for [AMOUNT_001] from [ENTITY_001]. Current Balance "
-                f"[BALANCE_001]. Transaction ID: [REFERENCE_001]. {ending}",
+                f"{lead} {action} for [AMOUNT_001] {preposition} [ENTITY_001]. {balance} "
+                f"[BALANCE_001]. {reference} [REFERENCE_001]. {ending}",
             ),
             (
                 "FRAUDULENT",
                 "phone_number",
-                f"[PHONE_001] Cash In {receipt_word} for [AMOUNT_001] from [ENTITY_001]. "
-                f"Avialable balance [BALANCE_001]. Your account has {blocked_phrase}. {urgent}",
+                f"[PHONE_001] {fraud_lead}: Cash In {receipt_word} for [AMOUNT_001] "
+                f"from [ENTITY_001]. {fraud_balance} [BALANCE_001]. {fraud_subject} "
+                f"{blocked_phrase}. {urgent}",
             ),
             (
                 "SUSPICIOUS",
                 "phone_number",
-                f"[PHONE_001] {action} for [AMOUNT_001]. Reference [REFERENCE_001]. {suspicious}",
+                f"[PHONE_001] {suspicious_lead} {suspicious_action} for [AMOUNT_001]. "
+                f"{suspicious_reference} [REFERENCE_001]. {suspicious} {suspicious_ending}",
             ),
         )
         for label, sender_kind, text in examples:
@@ -2579,6 +2824,8 @@ def generate_private_synthetic_clean_text_corpus(
                     "record_id": f"GHSYN_{number:04d}_{label}",
                     "source_group_id": group_id,
                     "provenance": "synthetic_clean",
+                    "source_kind": "synthetic_clean",
+                    "provider_family": "CONTROLLED_SYNTHETIC",
                     "label": label,
                     "sender_kind": sender_kind,
                     "sanitized_text": text,
@@ -2595,6 +2842,8 @@ def generate_private_synthetic_clean_text_corpus(
             "record_id",
             "source_group_id",
             "provenance",
+            "source_kind",
+            "provider_family",
             "label",
             "sender_kind",
             "sanitized_text",

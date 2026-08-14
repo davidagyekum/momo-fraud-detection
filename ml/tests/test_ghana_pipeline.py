@@ -13,6 +13,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     IntakeOutputs,
     advance_review,
     apply_withdrawals,
+    assess_private_text_split_readiness,
     assign_private_source_group,
     attest_online_candidate_permission,
     changed_pixels_are_masked,
@@ -29,6 +30,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     initialize_owner_consent,
     load_development_records,
     normalize_android_sms_backups,
+    prepare_online_candidate_text_only_review,
     quarantine_online_candidate,
     record_private_ocr_ground_truth,
     record_private_qa_annotation,
@@ -1129,6 +1131,66 @@ def test_online_deidentification_requires_permission_identity_and_regions(tmp_pa
         deidentify_online_candidate(**{**arguments, "source_path": changed})
 
 
+def test_online_text_only_review_requires_permission_and_skips_image_derivative(
+    tmp_path: Path,
+) -> None:
+    source = _image(tmp_path / "text-only.png", phase=31)
+    outputs = quarantine_online_candidate(
+        source_path=source,
+        source_page_url=None,
+        quarantine_root=tmp_path / "online-quarantine",
+        index_path=tmp_path / "online-index.json",
+        report_path=tmp_path / "online-report.json",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_OWNER_001",
+    )
+    review_online_candidate(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        content_class="primary_ghana_momo_fraud",
+        direct_identifier_state="present",
+        reviewer_id="REVIEWER_OWNER_002",
+    )
+    arguments = {
+        "index_path": outputs.index_path,
+        "report_path": outputs.report_path,
+        "candidate_id": outputs.candidate_id,
+        "source_group_id": "GHGROUP_ONLINE_BATCH_001",
+        "provisional_label": "fraud_candidate",
+        "sender_kind": "phone_number",
+        "indicators": ["numeric_sender", "grammar_or_spelling_errors"],
+        "reviewer_id": "REVIEWER_OWNER_003",
+    }
+    with pytest.raises(GhanaPrivateError, match="permission"):
+        prepare_online_candidate_text_only_review(**arguments)
+    attest_online_candidate_permission(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        candidate_id=outputs.candidate_id,
+        permission_reference="PERMISSION_SITE_20260814",
+        reviewer_id="REVIEWER_OWNER_002",
+        permission_scope="internal_model_development",
+    )
+    prepare_online_candidate_text_only_review(**arguments)
+    record = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert record["source_group_id"] == "GHGROUP_ONLINE_BATCH_001"
+    assert record["annotation_state"] == "needs_second_review"
+    assert record["image_derivative_policy"] == "excluded_use_private_original_for_ocr_only"
+    assert "working_sha256" not in record
+    assert record["training_eligible"] is False
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id=outputs.candidate_id,
+        decision="approve",
+        reviewer_id="REVIEWER_OWNER_004",
+        reason_code="SECOND_REVIEW_CONFIRMED_001",
+    )
+    record = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert record["final_annotation"]["label"] == "FRAUDULENT"
+
+
 def test_provisional_annotation_requires_derivative_and_never_approves_training(
     tmp_path: Path,
 ) -> None:
@@ -1860,10 +1922,233 @@ def test_synthetic_clean_text_pilot_is_balanced_deterministic_and_non_training(
         "SUSPICIOUS": 30,
     }
     assert len({row["source_group_id"] for row in rows}) == 30
+    assert len({row["sanitized_text"] for row in rows}) == 90
+    assert all(row["source_kind"] == "synthetic_clean" for row in rows)
+    assert all(row["provider_family"] == "CONTROLLED_SYNTHETIC" for row in rows)
+    assert all(
+        "Payment made" not in row["sanitized_text"] or " to [ENTITY_001]" in row["sanitized_text"]
+        for row in rows
+        if row["label"] == "GENUINE"
+    )
+    assert {
+        action
+        for action in ("Payment received", "Cash In received", "Payment made", "Transfer received")
+        if any(action in row["sanitized_text"] for row in rows if row["label"] == "GENUINE")
+    } == {"Payment received", "Cash In received", "Payment made", "Transfer received"}
     assert all(row["fictitious_values_only"] == "true" for row in rows)
     assert all(row["training_eligible"] == "false" for row in rows)
     assert manifest["second_review_required"] is True
     assert manifest["splits_frozen"] is False
+
+
+def test_private_text_split_readiness_counts_groups_and_fails_closed(
+    tmp_path: Path,
+) -> None:
+    reviewed = tmp_path / "private" / "reviewed.csv"
+    reviewed.parent.mkdir(parents=True)
+    fields = [
+        "record_id",
+        "source_group_id",
+        "source_corpus",
+        "label",
+        "review_decision",
+        "training_eligible",
+    ]
+    labels = ("FRAUDULENT", "GENUINE", "SUSPICIOUS")
+    rows: list[dict[str, str]] = []
+    for number in range(12):
+        rows.append(
+            {
+                "record_id": f"GHCONTROLLED_{number:04d}",
+                "source_group_id": f"GHGROUP_CONTROLLED_{number:04d}",
+                "source_corpus": "screenshot_ocr",
+                "label": labels[number % len(labels)],
+                "review_decision": "approve",
+                "training_eligible": "false",
+            }
+        )
+    for number in range(30):
+        rows.append(
+            {
+                "record_id": f"GHSYNTHETIC_{number:04d}",
+                "source_group_id": f"GHGROUP_SYNTHETIC_{number:04d}",
+                "source_corpus": "synthetic_clean",
+                "label": labels[number % len(labels)],
+                "review_decision": "approve",
+                "training_eligible": "false",
+            }
+        )
+    rows.append(
+        {
+            "record_id": "GHOWNER_RECORD_0001",
+            "source_group_id": "GHGROUP_OWNER_LINEAGE_0001",
+            "source_corpus": "owner_iphone_messages",
+            "label": "GENUINE",
+            "review_decision": "approve",
+            "training_eligible": "false",
+        }
+    )
+    with reviewed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    reviewed_hash = hashlib.sha256(reviewed.read_bytes()).hexdigest()
+    manifest = _write_json(
+        tmp_path / "private" / "review-manifest.json",
+        {
+            "schema_version": "ghana-private-reviewed-text-corpus-v1",
+            "reviewed_csv_sha256": reviewed_hash,
+            "approved_record_count": len(rows),
+            "training_eligible": False,
+            "splits_frozen": False,
+        },
+    )
+
+    outputs = assess_private_text_split_readiness(
+        reviewed_csv_path=reviewed,
+        review_manifest_path=manifest,
+        report_path=tmp_path / "private" / "readiness.json",
+        repository_root=tmp_path / "repository",
+    )
+    report = json.loads(outputs.report_path.read_text(encoding="utf-8"))
+    assert outputs.ready_to_freeze is False
+    assert outputs.controlled_real_group_count == 12
+    assert outputs.synthetic_clean_group_count == 30
+    assert report["blockers"] == ["controlled_real_group_minimum"]
+    assert report["record_counts"] == {
+        "controlled_real": 12,
+        "owner_train_only": 1,
+        "synthetic_clean": 30,
+    }
+    assert report["splits_frozen"] is False
+    assert report["training_eligible"] is False
+
+    ready = assess_private_text_split_readiness(
+        reviewed_csv_path=reviewed,
+        review_manifest_path=manifest,
+        report_path=tmp_path / "private" / "ready.json",
+        repository_root=tmp_path / "repository",
+        minimum_controlled_groups=12,
+    )
+    assert ready.ready_to_freeze is True
+
+
+@pytest.mark.parametrize("case", ["minimum", "schema", "hash", "manifest_gate"])
+def test_private_text_split_readiness_rejects_invalid_contracts(tmp_path: Path, case: str) -> None:
+    reviewed = tmp_path / "private" / "reviewed.csv"
+    reviewed.parent.mkdir(parents=True)
+    reviewed.write_text(
+        "record_id,source_group_id,source_corpus,label,review_decision,training_eligible\n"
+        "GHCONTROLLED_0001,GHGROUP_CONTROLLED_0001,screenshot_ocr,FRAUDULENT,approve,false\n",
+        encoding="utf-8",
+    )
+    manifest_value = {
+        "schema_version": "ghana-private-reviewed-text-corpus-v1",
+        "reviewed_csv_sha256": hashlib.sha256(reviewed.read_bytes()).hexdigest(),
+        "approved_record_count": 1,
+        "training_eligible": False,
+        "splits_frozen": False,
+    }
+    if case == "schema":
+        manifest_value["schema_version"] = "unknown"
+    elif case == "hash":
+        manifest_value["reviewed_csv_sha256"] = _hash("changed")
+    elif case == "manifest_gate":
+        manifest_value["training_eligible"] = True
+    manifest = _write_json(tmp_path / "private" / "manifest.json", manifest_value)
+    with pytest.raises(GhanaPrivateError):
+        assess_private_text_split_readiness(
+            reviewed_csv_path=reviewed,
+            review_manifest_path=manifest,
+            report_path=tmp_path / "private" / "readiness.json",
+            repository_root=tmp_path / "repository",
+            minimum_controlled_groups=0 if case == "minimum" else 30,
+        )
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["duplicate", "approval_gate", "source", "cross_bucket", "label", "count", "blockers"],
+)
+def test_private_text_split_readiness_rejects_malformed_rows_and_reports_blockers(
+    tmp_path: Path, case: str
+) -> None:
+    reviewed = tmp_path / "private" / "reviewed.csv"
+    reviewed.parent.mkdir(parents=True)
+    fields = [
+        "record_id",
+        "source_group_id",
+        "source_corpus",
+        "label",
+        "review_decision",
+        "training_eligible",
+    ]
+    rows = [
+        {
+            "record_id": "GHCONTROLLED_0001",
+            "source_group_id": "GHGROUP_CONTROLLED_0001",
+            "source_corpus": "screenshot_ocr",
+            "label": "FRAUDULENT",
+            "review_decision": "approve",
+            "training_eligible": "false",
+        }
+    ]
+    if case == "duplicate":
+        rows.append({**rows[0], "source_group_id": "GHGROUP_CONTROLLED_0002"})
+    elif case == "approval_gate":
+        rows[0]["review_decision"] = "exclude"
+    elif case == "source":
+        rows[0]["source_corpus"] = "unsupported_source"
+    elif case == "cross_bucket":
+        rows.append(
+            {
+                **rows[0],
+                "record_id": "GHSYNTHETIC_0001",
+                "source_corpus": "synthetic_clean",
+            }
+        )
+    elif case == "label":
+        rows[0]["label"] = "UNKNOWN"
+    elif case == "blockers":
+        rows.append(
+            {
+                **rows[0],
+                "record_id": "GHSYNTHETIC_0001",
+                "source_group_id": "GHGROUP_SYNTHETIC_0001",
+                "source_corpus": "synthetic_clean",
+            }
+        )
+    with reviewed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    manifest = _write_json(
+        tmp_path / "private" / "manifest.json",
+        {
+            "schema_version": "ghana-private-reviewed-text-corpus-v1",
+            "reviewed_csv_sha256": hashlib.sha256(reviewed.read_bytes()).hexdigest(),
+            "approved_record_count": len(rows) + (1 if case == "count" else 0),
+            "training_eligible": False,
+            "splits_frozen": False,
+        },
+    )
+    arguments = {
+        "reviewed_csv_path": reviewed,
+        "review_manifest_path": manifest,
+        "report_path": tmp_path / "private" / "readiness.json",
+        "repository_root": tmp_path / "repository",
+    }
+    if case == "blockers":
+        outputs = assess_private_text_split_readiness(**arguments)
+        report = json.loads(outputs.report_path.read_text(encoding="utf-8"))
+        assert report["blockers"] == [
+            "controlled_real_group_minimum",
+            "synthetic_clean_group_minimum",
+            "controlled_real_class_coverage",
+        ]
+    else:
+        with pytest.raises(GhanaPrivateError):
+            assess_private_text_split_readiness(**arguments)
 
 
 def test_synthetic_clean_text_pilot_enforces_private_root_and_group_minimum(

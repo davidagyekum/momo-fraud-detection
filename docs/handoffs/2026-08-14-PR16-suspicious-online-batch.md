@@ -1,5 +1,7 @@
 # Codex Session Handoff
 
+> Superseded by `2026-08-14-PR16-permitted-batch-text-review.md` after the project owner granted permission for the 11-image batch.
+
 ## Session identity
 
 - Date: 2026-08-14, Africa/Lagos
