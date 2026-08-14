@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-14`
-- CI status: `Logical PR17 ML gate passes locally with 591 tests at 90.00% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 540 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
+- CI status: `Logical PR17 dependency-repair ML gate passes locally with 595 tests at 90.02% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 542 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
 - Deployment status: `Not deployed`
 - Current phase: `Logical PR17 OCR benchmark/parser — Colab execution pending`
-- Next exact task: `Commit and push the PR17 foundation, upload the exact private development ZIP to the restricted Drive governance path, pin the notebook to the pushed SHA and run ml/notebooks/colab/06_benchmark_ocr.ipynb. Use only 25 train and 33 validation screenshot records; the five controlled-real test records must remain absent and inaccessible.`
+- Next exact task: `Push the PR17 NumPy/PaddleX dependency repair, reopen ml/notebooks/colab/06_benchmark_ocr.ipynb at the repaired immutable SHA and rerun from a fresh Colab runtime. The first attempt failed at pip resolution before private-bundle extraction. Use only 25 train and 33 validation screenshot records; the five controlled-real test records must remain absent and inaccessible.`
 
 ## PR10-PR13 reconciliation status
 
@@ -91,6 +91,7 @@
 - Private-data boundary: a verified archive outside Git contains 58 development records (25 train, 33 validation), including only two explicitly governed crop derivatives. Its manifest SHA-256 is `1ba8c58e…` and archive SHA-256 is `3370f7d3…`. The five controlled-real test records are not packaged; raw images, OCR truth and values remain private.
 - Colab boundary: `ml/notebooks/colab/06_benchmark_ocr.ipynb` is output-free, installs the dedicated four-lock dependency contract, verifies the immutable checkout/private archive/config identities and prohibits recognizer training, locked-test access and promotion. Model weights are cached only in restricted Drive storage.
 - Honesty boundary: preparation evidence explicitly records `benchmark_executed=false`, `training_executed=false`, `locked_test_accessed=false`, `metrics=null` and `selection_bundle_created=false`. The current run can measure only clean validation; no approved tampered-image derivative slice exists, so robustness selection remains blocked rather than estimated.
+- First Colab attempt: pip resolution failed before engine initialisation or private archive extraction because NumPy 2.5.2 violated PaddleX 3.7.0's `>=1.24,<2.4` requirement. The repaired runtime pin is NumPy 2.3.5, and the executable lock contract now rejects recurrence. No data, benchmark or test record was accessed by the failed attempt.
 - Verification: the registered ML gate passes formatting, Ruff, strict mypy, 591 tests at 90.00% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 540 candidate files.
 
 ## Logical PR10 evidence/execution foundation
@@ -183,8 +184,8 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-14-PR17-ocr-benchmark-preparation.md`
-- Summary: `Prepared a test-excluding private OCR development archive and a pinned three-engine Colab benchmark/parser foundation. No benchmark, training, locked-test access or metric has occurred.`
+- Handoff file: `docs/handoffs/2026-08-14-PR17-colab-dependency-repair.md`
+- Summary: `Diagnosed the first Colab failure as a NumPy/PaddleX resolver conflict, pinned NumPy 2.3.5, added an executable compatibility regression gate and preserved the failure as pre-data/pre-benchmark evidence.`
 
 ## Next session startup
 

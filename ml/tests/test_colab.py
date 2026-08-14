@@ -504,6 +504,47 @@ def test_lock_contract_rejects_unpinned_or_empty_files(tmp_path: Path) -> None:
         install_lock_contract(tmp_path)
 
 
+def test_lock_contract_rejects_numpy_incompatible_with_paddleocr(tmp_path: Path) -> None:
+    ml_root = tmp_path / "ml"
+    ml_root.mkdir()
+    (ml_root / "requirements-runtime.lock").write_text("numpy==2.5.2\n", encoding="utf-8")
+    (ml_root / "requirements-ocr.lock").write_text(
+        "-r requirements-runtime.lock\neasyocr==1.7.2\npaddleocr==3.7.0\npaddlepaddle==3.3.1\n",
+        encoding="utf-8",
+    )
+    for name in ("training", "dev"):
+        (ml_root / f"requirements-{name}.lock").write_text("package==1\n", encoding="utf-8")
+
+    with pytest.raises(ColabFoundationError, match=r"PaddleOCR requires numpy<2\.4"):
+        install_lock_contract(tmp_path)
+
+
+@pytest.mark.parametrize("numpy_requirement", ["", "numpy==not-a-version\n"])
+def test_lock_contract_requires_numeric_numpy_for_paddleocr(
+    tmp_path: Path, numpy_requirement: str
+) -> None:
+    ml_root = tmp_path / "ml"
+    ml_root.mkdir()
+    (ml_root / "requirements-runtime.lock").write_text(
+        numpy_requirement or "package==1\n", encoding="utf-8"
+    )
+    (ml_root / "requirements-ocr.lock").write_text("paddleocr==3.7.0\n", encoding="utf-8")
+    for name in ("training", "dev"):
+        (ml_root / f"requirements-{name}.lock").write_text("package==1\n", encoding="utf-8")
+
+    with pytest.raises(ColabFoundationError, match="numeric pinned numpy"):
+        install_lock_contract(tmp_path)
+
+
+def test_lock_contract_does_not_apply_paddle_constraint_without_paddleocr(tmp_path: Path) -> None:
+    ml_root = tmp_path / "ml"
+    ml_root.mkdir()
+    for name in ("runtime", "ocr", "training", "dev"):
+        (ml_root / f"requirements-{name}.lock").write_text("package==1\n", encoding="utf-8")
+
+    assert len(install_lock_contract(tmp_path)["locks"]) == 4  # type: ignore[arg-type]
+
+
 def test_preflight_records_clean_state_locks_paths_and_no_execution(
     tmp_path: Path, monkeypatch
 ) -> None:  # type: ignore[no-untyped-def]

@@ -805,6 +805,7 @@ def install_lock_contract(repository_root: Path) -> dict[str, object]:
         "ml/requirements-dev.lock",
     )
     locks: list[dict[str, object]] = []
+    pinned_versions: dict[str, str] = {}
     for relative_path in relative_paths:
         path = repository_root / relative_path
         lines = [
@@ -814,6 +815,10 @@ def install_lock_contract(repository_root: Path) -> dict[str, object]:
         ]
         if not lines or any(not (line.startswith("-r ") or "==" in line) for line in lines):
             raise ColabFoundationError(f"{relative_path} contains an unpinned requirement")
+        for line in lines:
+            if "==" in line:
+                package, version = line.split("==", maxsplit=1)
+                pinned_versions[package.casefold()] = version
         locks.append(
             {
                 "path": relative_path,
@@ -821,6 +826,13 @@ def install_lock_contract(repository_root: Path) -> dict[str, object]:
                 "requirement_count": len(lines),
             }
         )
+    if "paddleocr" in pinned_versions:
+        try:
+            numpy_version = tuple(int(part) for part in pinned_versions["numpy"].split(".")[:2])
+        except (KeyError, ValueError) as exc:
+            raise ColabFoundationError("PaddleOCR requires a numeric pinned numpy version") from exc
+        if not (numpy_version >= (1, 24) and numpy_version < (2, 4)):
+            raise ColabFoundationError("PaddleOCR requires numpy<2.4 and >=1.24")
     return {
         "schema_version": "colab-lock-contract-v1",
         "python": ">=3.12,<3.13",

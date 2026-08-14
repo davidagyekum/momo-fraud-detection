@@ -6,6 +6,15 @@
     "path": "ml/configs/ocr_benchmark_v1.json",
     "sha256": "ecd7d7845b130cf657c0bdca57b9bf0eae9b47da4afbc6086b5970d35e95e2c9"
   },
+  "dependency_repair": {
+    "benchmark_data_accessed_before_failure": false,
+    "failure_boundary": "pip_dependency_resolution",
+    "numpy_pin_after": "2.3.5",
+    "numpy_pin_before": "2.5.2",
+    "paddlex_constraint": ">=1.24,<2.4",
+    "root_cause": "runtime_numpy_pin_incompatible_with_paddlex_3_7_0",
+    "wheel_availability_checked": true
+  },
   "data_boundary": {
     "controlled_real_test_record_count": 5,
     "development_manifest_sha256": "1ba8c58e1c29b77a46ba3cc54da7843dd84f090fdb2e731704091162d556d644",
@@ -51,7 +60,7 @@
   },
   "package_locks": {
     "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",
-    "runtime_sha256": "669492c17b7263a010240edcb94f1b04b00804cb8f6285c9fdfba367cbfae6b3"
+    "runtime_sha256": "074ab7b414333046081b5892cffafec0fa79a0953472ca219473e82727bdc0dc"
   },
   "schema_version": "pr17-ocr-benchmark-preparation-evidence-v1",
   "selection_bundle_created": false,

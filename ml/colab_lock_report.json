@@ -9,7 +9,7 @@
     {
       "path": "ml/requirements-runtime.lock",
       "requirement_count": 14,
-      "sha256": "669492c17b7263a010240edcb94f1b04b00804cb8f6285c9fdfba367cbfae6b3"
+      "sha256": "074ab7b414333046081b5892cffafec0fa79a0953472ca219473e82727bdc0dc"
     },
     {
       "path": "ml/requirements-ocr.lock",

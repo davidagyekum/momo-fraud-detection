@@ -9,7 +9,7 @@ description = "Governed dataset and reproducibility tooling for MoMo-FDVS"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "joblib==1.5.3",
-  "numpy==2.5.2",
+  "numpy==2.3.5",
   "opencv-python-headless==4.14.0.94",
   "pandas==3.0.3",
   "Pillow==12.3.0",
