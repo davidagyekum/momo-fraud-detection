@@ -35,7 +35,7 @@ from momo_fdvs_ml.ocr_parser import (
 OCR_ADAPTER_SCHEMA_VERSION: Final = "ocr-adapter-result-v1"
 OCR_DEVELOPMENT_BUNDLE_VERSION: Final = "ghana-ocr-development-bundle-v1"
 OCR_BENCHMARK_REPORT_VERSION: Final = "ghana-ocr-benchmark-report-v2"
-OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v1"
+OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v2"
 OCR_SELECTED_BUNDLE_VERSION: Final = "ghana-ocr-selected-bundle-v2"
 OCR_BENCHMARK_VERSION: Final = "ghana-ocr-benchmark-v1"
 OCR_BENCHMARK_CONFIG_VERSION: Final = "ocr-benchmark-config-v2"
@@ -61,6 +61,7 @@ RELEASE_GATES: Final = {
     "recipient": 0.90,
     "required_field_parse_success": 0.90,
 }
+_PARSER_WARNING_CODE: Final = re.compile(r"[A-Z][A-Z0-9_]{2,63}")
 
 
 class OCRBenchmarkError(RuntimeError):
@@ -914,6 +915,10 @@ def run_ocr_parser_ceiling_diagnostic(
     if not records:
         raise OCRBenchmarkError("OCR parser ceiling has no validation records")
     matches_by_field: dict[str, list[bool]] = {field: [] for field in FIELD_WEIGHTS}
+    outcomes_by_field: dict[str, dict[str, int]] = {
+        field: {"exact": 0, "mismatch": 0, "unavailable": 0} for field in FIELD_WEIGHTS
+    }
+    parser_warning_counts: dict[str, int] = {}
     required_matches: list[bool] = []
     inconclusive: list[bool] = []
     for record in records:
@@ -932,6 +937,16 @@ def run_ocr_parser_ceiling_diagnostic(
         for field, matched in field_matches.items():
             if matched is not None:
                 matches_by_field[field].append(matched)
+                if matched:
+                    outcomes_by_field[field]["exact"] += 1
+                elif not parser.fields[field].available or parser.fields[field].normalized is None:
+                    outcomes_by_field[field]["unavailable"] += 1
+                else:
+                    outcomes_by_field[field]["mismatch"] += 1
+            for warning in parser.fields[field].warnings:
+                if _PARSER_WARNING_CODE.fullmatch(warning) is None:
+                    raise OCRBenchmarkError("OCR parser warning code is invalid")
+                parser_warning_counts[warning] = parser_warning_counts.get(warning, 0) + 1
         if all(value is not None for value in field_matches.values()):
             required_matches.append(all(value is True for value in field_matches.values()))
         inconclusive.append(parser.inconclusive)
@@ -949,6 +964,8 @@ def run_ocr_parser_ceiling_diagnostic(
             field: statistics.fmean(values) if values else None
             for field, values in matches_by_field.items()
         },
+        "field_outcome_counts": outcomes_by_field,
+        "parser_warning_counts": dict(sorted(parser_warning_counts.items())),
         "required_field_scored_record_count": len(required_matches),
         "required_field_parse_success": (
             statistics.fmean(required_matches) if required_matches else None

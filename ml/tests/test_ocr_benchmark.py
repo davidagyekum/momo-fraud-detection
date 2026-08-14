@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import zipfile
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -620,7 +621,7 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
 
     report = json.loads(output.read_text(encoding="utf-8"))
     serialized = json.dumps(report)
-    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v1"
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v2"
     assert report["partition"] == "validation"
     assert report["record_count"] == 1
     assert report["field_scored_record_count"] == {
@@ -646,6 +647,85 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
     assert "ABC12345" not in serialized
     assert VALIDATION_ID not in serialized
     assert report["report_sha256"] == _canonical(report, "report_sha256")
+
+
+def test_parser_ceiling_diagnostic_separates_outcomes_and_counts_stable_warnings(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = (
+        "MTN MobileMoney Amount GHS 10.00 sent to Demo Person. Reference ZXCVB123"
+    )
+    truth["fields"] = [
+        {"name": "amount", "normalized": "10.00"},
+        {"name": "reference", "normalized": "ABCDE123"},
+        {"name": "recipient_name", "normalized": "DEMO PERSON"},
+        {"name": "timestamp", "normalized": "2026-08-14T10:30:00Z"},
+    ]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    serialized = json.dumps(report)
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v2"
+    assert report["field_outcome_counts"] == {
+        "amount": {"exact": 1, "mismatch": 0, "unavailable": 0},
+        "reference": {"exact": 0, "mismatch": 1, "unavailable": 0},
+        "timestamp": {"exact": 0, "mismatch": 0, "unavailable": 1},
+        "recipient": {"exact": 1, "mismatch": 0, "unavailable": 0},
+    }
+    assert report["parser_warning_counts"] == {"TIMESTAMP_NOT_FOUND": 1}
+    assert "Demo Person" not in serialized
+    assert "ZXCVB123" not in serialized
+    assert "ABCDE123" not in serialized
+    assert VALIDATION_ID not in serialized
+
+
+def test_parser_ceiling_diagnostic_rejects_noncanonical_warning_codes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+    real_parse = ocr_benchmark.parse_momo_text
+
+    def parse_with_sensitive_warning(text: str, **kwargs: object) -> object:
+        result = real_parse(text, **kwargs)
+        fields = dict(result.fields)
+        fields["amount"] = replace(fields["amount"], warnings=("AMOUNT_NOT_FOUND: +233555123456",))
+        return replace(result, fields=fields)
+
+    monkeypatch.setattr(ocr_benchmark, "parse_momo_text", parse_with_sensitive_warning)
+    with pytest.raises(OCRBenchmarkError, match="warning code is invalid"):
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+    assert not output.exists()
 
 
 def test_parser_ceiling_diagnostic_reports_sparse_truth_without_inventing_denominators(
