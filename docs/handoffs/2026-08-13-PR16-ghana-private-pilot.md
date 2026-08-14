@@ -1,5 +1,7 @@
 # Codex Session Handoff
 
+> Superseded for owner-message/OCR corpus counts and review state by `2026-08-14-PR16-text-review-synthetic-pilot.md`; the earlier 230-row/167-group privacy conclusion did not survive full manual review.
+
 ## Session identity
 
 - Date/time: 2026-08-13, Africa/Lagos

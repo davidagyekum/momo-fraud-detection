@@ -29,35 +29,71 @@
   "network_acquisition_executed": false,
   "owner_message_text_corpus": {
     "deduplicated_category_counts": {
-      "official_service_message": 90,
-      "transaction_confirmation": 140
+      "official_service_message": 64,
+      "transaction_confirmation": 52
     },
-    "deduplicated_csv_sha256": "3c6e2d0ceaf76e23df139e7eb8877c8c51854b2e9db44390a80fd930867b1a21",
-    "deduplicated_record_count": 230,
-    "exact_duplicate_occurrence_count": 2424,
-    "message_index_sha256": "427ecc2122be0758166ea6b5e04a8c91214b6381905a3eb55502664374d38643",
-    "message_report_sha256": "eb6fb153c0915d38628c9264fa1e38751d353740a57dca1c2aa161ff04a38d17",
-    "pending_second_review_count": 230,
+    "deduplicated_csv_sha256": "4a93e9cbd7e72f5e5d8c40e66577f65cb644e020a9493acc6eb82cefb6dca684",
+    "deduplicated_record_count": 116,
+    "exact_duplicate_occurrence_count": 2512,
+    "message_index_sha256": "848abc389cb1c4663cd79ffc7ddb1575aba0a69557286153ecaa940de7fe3c22",
+    "message_report_sha256": "2300fadd73bef7f349c3c92e2b071cabcbb93d05c431d95e183102443a5c5f1e",
+    "pending_second_review_count": 0,
     "raw_category_counts": {
-      "official_service_message": 204,
+      "official_service_message": 178,
       "transaction_confirmation": 2450
     },
-    "raw_csv_sha256": "b85048ecccf233202bbdd124845464a4cd26344f29745bdf0cdd435f32cb0e00",
-    "raw_record_count": 2654,
+    "raw_csv_sha256": "5d4a7499b99e3072744082816404442d325b3a0d95db9b759a8e20e0bce49b76",
+    "raw_record_count": 2628,
     "residual_direct_identifier_pattern_hits": 0,
+    "second_review_approved_count": 116,
+    "secret_bearing_message_excluded_count": 26,
     "source_group_policy": "template_family_plus_owner_train_only_pending_review",
-    "template_group_count": 167,
+    "template_group_count": 90,
     "training_eligible_count": 0
   },
   "ocr_text_corpus": {
-    "deidentified_csv_sha256": "bd2e357118f94ecf8495839b9ca9ab315bbdc5ed18cc9d82f045da7747b377f8",
+    "deidentified_csv_sha256": "1a2c272b109138fabef7404ff1d116d5e80c694575a044bb61ce2990169f7a5a",
     "deidentified_row_count": 13,
     "image_derivatives_excluded_from_training": true,
-    "pending_second_review_count": 13,
-    "raw_csv_sha256": "0388e83b2f8b2adcd35c6cef6bf0784066f2121506725326d7eee5e082252734",
+    "malformed_placeholder_count": 0,
+    "pending_second_review_count": 0,
+    "raw_csv_sha256": "7f9650121d034444e1e6444f7102242b2c77da2e3c22763ea890638507d3878e",
     "raw_row_count": 13,
+    "second_review_approved_count": 13,
     "sensitive_exact_value_leak_count": 0,
     "text_substitution_policy": "exact_sensitive_values_to_typed_placeholders",
+    "training_eligible_count": 0
+  },
+  "reviewed_text_corpus": {
+    "approved_label_counts": {
+      "FRAUDULENT": 10,
+      "GENUINE": 118,
+      "SUSPICIOUS": 1
+    },
+    "approved_record_count": 129,
+    "approved_source_counts": {
+      "owner_messages": 116,
+      "screenshot_ocr": 13
+    },
+    "excluded_record_count": 0,
+    "manifest_sha256": "54797f4a096150f6192419824aaf36aa14ae28bd663746e4d6ab8cf796ccd075",
+    "reviewed_csv_sha256": "2ea57d65423411a2fe9a69c68d19d7837d5a6091b97c10ecbd19695975de9dfa",
+    "splits_frozen": false,
+    "training_eligible_count": 0
+  },
+  "synthetic_clean_text_pilot": {
+    "corpus_sha256": "2ea79890f414bde8556b87222bc7b0214b0ee781c897b1a221efae0ff8c3d24f",
+    "fictitious_values_only": true,
+    "label_counts": {
+      "FRAUDULENT": 30,
+      "GENUINE": 30,
+      "SUSPICIOUS": 30
+    },
+    "manifest_sha256": "40599eab39251c4809dfadf13741d64ff614750807b1aa3bf61ccf019c268bd0",
+    "pending_second_review_count": 90,
+    "record_count": 90,
+    "source_group_count": 30,
+    "splits_frozen": false,
     "training_eligible_count": 0
   },
   "online_candidate_pilot": {
@@ -86,7 +122,7 @@
     },
     "perceptual_duplicate_count": 0,
     "primary_ghana_momo_fraud_count": 3,
-    "private_index_sha256": "d6e3ff47b34e512ad024b8cb41a7f5ab9a8e97b87f29e9dbdd4c122456604a8c",
+    "private_index_sha256": "75992b37a44c01be1063aab1f32e5ec05fa5a93ff006b764e3a7c72a35443dfa",
     "safe_report_sha256": "22580b1b2b2fb48363eda88e417376dc093cdee8f2839bbf1ce168c8971d6fc0",
     "second_review_excluded_count": 1,
     "second_review_label_approved_count": 5,
@@ -97,7 +133,7 @@
   },
   "permission_evidence": "project_owner_attestation_of_friend_permission",
   "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
-  "private_index_sha256": "f16df0829e8363accbc5877fccf4bd5173f0927e5308a8bf416787efaf9eac64",
+  "private_index_sha256": "8086578821d93618141ff9c79c46459dbdb9efc6e42a945a2f934a3e8bca8641",
   "private_request_sha256": "1ef52b6ef65966b72d5b284e44bf65e354c970ac404c26220578c5e4f502687f",
   "provisional_label_counts": {
     "ambiguous": 1,
@@ -108,7 +144,9 @@
   "raw_images_copied": false,
   "record_count": 10,
   "remaining_training_gates": [
-    "minimum_group_count_and_class_balance",
+    "controlled_real_minimum_group_count_and_class_balance",
+    "synthetic_clean_second_review",
+    "explicit_training_eligibility_decision",
     "group_safe_split_freeze"
   ],
   "safe_report_sha256": "632587ee9b104d6a89087277612c0bb0d621c584130fa4063e3e0bc45658e039",

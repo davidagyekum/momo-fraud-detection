@@ -23,6 +23,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     export_private_imazing_genuine_corpus,
     export_private_ocr_text_corpus,
     freeze_group_splits,
+    generate_private_synthetic_clean_text_corpus,
     index_imazing_messages,
     ingest_private_screenshots,
     initialize_owner_consent,
@@ -33,6 +34,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     record_provisional_annotation,
     record_second_review,
     review_online_candidate,
+    review_private_text_corpora,
     revise_private_redaction,
     safe_intake_summary,
 )
@@ -419,6 +421,14 @@ def test_owner_message_corpus_deidentifies_deduplicates_and_groups_templates(
             "sender_identifier": "MobileMoney",
             "service": "SMS",
             "direction": "incoming",
+            "sent_at_utc": "2026-01-04T00:00:00+00:00",
+            "message_body": "Your OTP is 123456. Do not share it.",
+            "source_provenance": "owner_iphone_local_backup",
+        },
+        {
+            "sender_identifier": "MobileMoney",
+            "service": "SMS",
+            "direction": "incoming",
             "sent_at_utc": "2026-01-02T00:00:00+00:00",
             "message_body": (
                 "Payment made for GHS 30.00 to PRIVATE PERSON. "
@@ -479,9 +489,14 @@ def test_owner_message_corpus_deidentifies_deduplicates_and_groups_templates(
     assert report["raw_record_count"] == 3
     assert report["deduplicated_record_count"] == 2
     assert report["template_group_count"] == 2
+    assert report["secret_bearing_message_excluded_count"] == 1
     assert report["splits_frozen"] is False
     index = json.loads(index_path.read_text(encoding="utf-8"))
-    assert all(record["workflow_state"] == "needs_second_annotation" for record in index["records"])
+    assert (
+        sum(record["workflow_state"] == "needs_second_annotation" for record in index["records"])
+        == 3
+    )
+    assert sum(record["workflow_state"] == "quarantined" for record in index["records"]) == 1
     assert all(record["training_eligible"] is False for record in index["records"])
 
 
@@ -515,6 +530,75 @@ def test_owner_message_corpus_rejects_changed_source_and_authenticity(tmp_path: 
             repository_root=tmp_path / "repository",
             reviewer_id="REVIEWER_STEWARD_003",
         )
+
+
+def test_owner_message_corpus_masks_unusual_owner_names_and_excludes_login_codes(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "owner-messages.csv"
+    headers = [
+        "sender_identifier",
+        "service",
+        "direction",
+        "sent_at_utc",
+        "message_body",
+        "source_provenance",
+    ]
+    messages = [
+        "Y'ello PRIVATE OWNER NAME, Welcome to the service.",
+        "Hello, PRIVATE OWNER NAME, you have been registered.",
+        "Payment complete. Reference: PRIVATE OWNER NAME,0244000000,1. "
+        "Financial Transaction Id: ABC 1234567.",
+        "<#> Please enter the following code:5501 to complete your login.",
+    ]
+    with source.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=headers)
+        writer.writeheader()
+        for position, message in enumerate(messages):
+            writer.writerow(
+                {
+                    "sender_identifier": "MobileMoney",
+                    "service": "SMS",
+                    "direction": "incoming",
+                    "sent_at_utc": f"2026-01-0{position + 1}T00:00:00+00:00",
+                    "message_body": message,
+                    "source_provenance": "owner_iphone_local_backup",
+                }
+            )
+    index_path = tmp_path / "message-index.json"
+    report_path = tmp_path / "message-report.json"
+    index_imazing_messages(
+        source_csv=source,
+        index_path=index_path,
+        report_path=report_path,
+        participant_id_hash=_hash("owner"),
+        permission_reference="PERMISSION_OWNER_001",
+        repository_root=tmp_path / "repository",
+        text_column="message_body",
+        sender_column="sender_identifier",
+    )
+    outputs = export_private_imazing_genuine_corpus(
+        source_csv=source,
+        index_path=index_path,
+        report_path=report_path,
+        output_root=tmp_path / "private-corpus",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_STEWARD_003",
+    )
+
+    with outputs.sanitized_csv_path.open(encoding="utf-8", newline="") as stream:
+        sanitized_rows = list(csv.DictReader(stream))
+    sanitized = "\n".join(row["sanitized_text"] for row in sanitized_rows)
+    assert "PRIVATE OWNER NAME" not in sanitized
+    assert "0244000000" not in sanitized
+    assert "1234567" not in sanitized
+    assert "5501" not in sanitized
+    assert sanitized.count("[ENTITY_001]") >= 2
+    assert "[REFERENCE_TEXT_001]" in sanitized
+    assert "[REFERENCE_001]" in sanitized
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["raw_record_count"] == 3
+    assert report["secret_bearing_message_excluded_count"] == 1
 
 
 @pytest.mark.parametrize(
@@ -1325,7 +1409,7 @@ def test_private_ocr_truth_exports_raw_and_deidentified_text_without_image_deriv
         report_path=outputs.report_path,
         record_id="GHIMG_OWNER_0037",
         truth_root=tmp_path / "private-truth",
-        transcript="Available Balance GHS 50.00 Transaction ID ABC12345",
+        transcript="Available Balance GHS 50.00 Transaction ID ABC12345 Reference 1",
         fields=[
             {
                 "name": "balance",
@@ -1348,13 +1432,20 @@ def test_private_ocr_truth_exports_raw_and_deidentified_text_without_image_deriv
                 "bbox": [40, 30, 40, 10],
                 "sensitive": True,
             },
+            {
+                "name": "reference",
+                "raw": "1",
+                "normalized": "1",
+                "bbox": [80, 30, 10, 10],
+                "sensitive": True,
+            },
         ],
         reviewer_id="REVIEWER_STEWARD_003",
         repository_root=tmp_path / "repository",
     )
     truth = json.loads(result.truth_path.read_text(encoding="utf-8"))
     indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
-    assert truth["full_transcript"].endswith("ABC12345")
+    assert truth["full_transcript"].endswith("Reference 1")
     assert indexed["ocr_ground_truth"]["contains_private_values"] is True
     assert "full_transcript" not in indexed["ocr_ground_truth"]
     assert indexed["annotation_state"] == "ocr_truth_pending_second_review"
@@ -1380,12 +1471,14 @@ def test_private_ocr_truth_exports_raw_and_deidentified_text_without_image_deriv
         raw_row = next(csv.DictReader(stream))
     with exported.sanitized_csv_path.open(encoding="utf-8", newline="") as stream:
         sanitized_row = next(csv.DictReader(stream))
-    assert raw_row["raw_ocr_text"].endswith("ABC12345")
+    assert raw_row["raw_ocr_text"].endswith("Reference 1")
     assert "GHS 50.00" not in sanitized_row["sanitized_text"]
     assert "ABC12345" not in sanitized_row["sanitized_text"]
     assert "Available Balance" in sanitized_row["sanitized_text"]
     assert "[BALANCE_001]" in sanitized_row["sanitized_text"]
     assert "[REFERENCE_001]" in sanitized_row["sanitized_text"]
+    assert "[REFERENCE_002]" in sanitized_row["sanitized_text"]
+    assert "[REFERENCE_00[" not in sanitized_row["sanitized_text"]
     assert sanitized_row["training_eligible"] == "false"
     indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
     assert indexed["annotation_state"] == "ocr_text_pending_second_review"
@@ -1426,6 +1519,146 @@ def test_private_ocr_text_export_requires_private_roots_and_an_index(tmp_path: P
             output_root=tmp_path / "output",
             reviewer_id="REVIEWER_STEWARD_003",
             repository_root=repository_root,
+        )
+
+
+def test_private_text_second_review_is_complete_independent_and_non_training(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "deidentified.csv"
+    fieldnames = [
+        "record_id",
+        "source_group_id",
+        "label",
+        "sender_kind",
+        "message_category",
+        "sanitized_text",
+        "duplicate_occurrences",
+        "training_eligible",
+    ]
+    with source.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(
+            [
+                {
+                    "record_id": "GHMSG_REVIEW_0001",
+                    "source_group_id": "GHMSG_GROUP_0001",
+                    "label": "GENUINE",
+                    "sender_kind": "alphanumeric_label",
+                    "message_category": "transaction_confirmation",
+                    "sanitized_text": "Payment received for [AMOUNT_001].",
+                    "duplicate_occurrences": "2",
+                    "training_eligible": "false",
+                },
+                {
+                    "record_id": "GHMSG_REVIEW_0002",
+                    "source_group_id": "GHMSG_GROUP_0002",
+                    "label": "GENUINE",
+                    "sender_kind": "alphanumeric_label",
+                    "message_category": "official_service_message",
+                    "sanitized_text": "Account information message.",
+                    "duplicate_occurrences": "1",
+                    "training_eligible": "false",
+                },
+            ]
+        )
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    outputs = review_private_text_corpora(
+        corpora=[("owner_messages", source, source_hash)],
+        approved_record_ids=frozenset({"GHMSG_REVIEW_0001"}),
+        excluded_record_ids=frozenset({"GHMSG_REVIEW_0002"}),
+        output_root=tmp_path / "reviewed",
+        first_reviewer_id="REVIEWER_STEWARD_003",
+        second_reviewer_id="REVIEWER_STEWARD_004",
+        repository_root=tmp_path / "repository",
+    )
+
+    with outputs.reviewed_csv_path.open(encoding="utf-8", newline="") as stream:
+        reviewed = list(csv.DictReader(stream))
+    manifest = json.loads(outputs.manifest_path.read_text(encoding="utf-8"))
+    assert outputs.approved_record_count == 1
+    assert outputs.excluded_record_count == 1
+    assert {row["review_decision"] for row in reviewed} == {"approve", "exclude"}
+    assert all(row["training_eligible"] == "false" for row in reviewed)
+    assert manifest["approved_label_counts"] == {"GENUINE": 1}
+    assert manifest["contains_raw_values"] is False
+    assert manifest["splits_frozen"] is False
+
+
+@pytest.mark.parametrize("case", ["same_reviewer", "incomplete", "unsafe", "changed"])
+def test_private_text_second_review_rejects_unsafe_state(tmp_path: Path, case: str) -> None:
+    source = tmp_path / "deidentified.csv"
+    text = "Payment received for [AMOUNT_001]."
+    if case == "unsafe":
+        text = "Call 0244000000 for help."
+    source.write_text(
+        "record_id,source_group_id,label,sender_kind,sanitized_text,training_eligible\n"
+        f"GHMSG_REVIEW_0001,GHMSG_GROUP_0001,GENUINE,alphanumeric_label,{text},false\n",
+        encoding="utf-8",
+    )
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    if case == "changed":
+        source_hash = _hash("different")
+    approved = frozenset() if case == "incomplete" else frozenset({"GHMSG_REVIEW_0001"})
+    second_reviewer = "REVIEWER_STEWARD_003" if case == "same_reviewer" else "REVIEWER_STEWARD_004"
+    with pytest.raises(GhanaPrivateError):
+        review_private_text_corpora(
+            corpora=[("owner_messages", source, source_hash)],
+            approved_record_ids=approved,
+            excluded_record_ids=frozenset(),
+            output_root=tmp_path / "reviewed",
+            first_reviewer_id="REVIEWER_STEWARD_003",
+            second_reviewer_id=second_reviewer,
+            repository_root=tmp_path / "repository",
+        )
+
+
+def test_synthetic_clean_text_pilot_is_balanced_deterministic_and_non_training(
+    tmp_path: Path,
+) -> None:
+    first = generate_private_synthetic_clean_text_corpus(
+        output_root=tmp_path / "synthetic-first",
+        repository_root=tmp_path / "repository",
+    )
+    second = generate_private_synthetic_clean_text_corpus(
+        output_root=tmp_path / "synthetic-second",
+        repository_root=tmp_path / "repository",
+    )
+
+    with first.corpus_path.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
+    assert first.record_count == 90
+    assert first.source_group_count == 30
+    assert first.corpus_sha256 == second.corpus_sha256
+    assert manifest["label_counts"] == {
+        "FRAUDULENT": 30,
+        "GENUINE": 30,
+        "SUSPICIOUS": 30,
+    }
+    assert len({row["source_group_id"] for row in rows}) == 30
+    assert all(row["fictitious_values_only"] == "true" for row in rows)
+    assert all(row["training_eligible"] == "false" for row in rows)
+    assert manifest["second_review_required"] is True
+    assert manifest["splits_frozen"] is False
+
+
+def test_synthetic_clean_text_pilot_enforces_private_root_and_group_minimum(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    with pytest.raises(GhanaPrivateError, match="outside"):
+        generate_private_synthetic_clean_text_corpus(
+            output_root=repository / "synthetic",
+            repository_root=repository,
+        )
+    with pytest.raises(GhanaPrivateError, match="safe range"):
+        generate_private_synthetic_clean_text_corpus(
+            output_root=tmp_path / "synthetic",
+            repository_root=repository,
+            source_group_count=19,
         )
 
 

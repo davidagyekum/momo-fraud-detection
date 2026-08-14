@@ -29,6 +29,8 @@ ONLINE_CANDIDATE_INDEX_VERSION: Final = "ghana-online-candidate-index-v1"
 OCR_GROUND_TRUTH_VERSION: Final = "ghana-private-ocr-ground-truth-v1"
 OCR_TEXT_CORPUS_VERSION: Final = "ghana-private-ocr-text-corpus-v1"
 MESSAGE_TEXT_CORPUS_VERSION: Final = "ghana-private-message-text-corpus-v1"
+REVIEWED_TEXT_CORPUS_VERSION: Final = "ghana-private-reviewed-text-corpus-v1"
+SYNTHETIC_CLEAN_TEXT_VERSION: Final = "ghana-synthetic-clean-text-corpus-v1"
 PROVISIONAL_LABELS: Final = frozenset(
     {
         "fraud_candidate",
@@ -233,6 +235,28 @@ class PrivateMessageCorpusOutputs:
     sanitized_csv_sha256: str
     raw_record_count: int
     deduplicated_record_count: int
+
+
+@dataclass(frozen=True)
+class ReviewedTextCorpusOutputs:
+    """Private second-reviewed de-identified text corpus locations."""
+
+    reviewed_csv_path: Path
+    reviewed_csv_sha256: str
+    manifest_path: Path
+    approved_record_count: int
+    excluded_record_count: int
+
+
+@dataclass(frozen=True)
+class SyntheticCleanTextOutputs:
+    """Private deterministic synthetic-clean text pilot locations."""
+
+    corpus_path: Path
+    corpus_sha256: str
+    manifest_path: Path
+    record_count: int
+    source_group_count: int
 
 
 @dataclass(frozen=True)
@@ -744,6 +768,29 @@ _MESSAGE_ENTITY = re.compile(
     r"available\s+balance|balance|transaction\s+id|fee\s+charged|token\b|"
     r"thank\s+you\b|on\s+(?:mtn|mobilemoney)\b))"
 )
+_MESSAGE_REFERENCE_TEXT = re.compile(
+    r"(?is)(\brefer\w*\s*:\s*)(.+?)(?=\.\s*(?:financial\s+)?transaction\s+id\b|"
+    r"\.\s*download\s+the\s+momo\s+app\b)"
+)
+_MESSAGE_TRANSACTION_REFERENCE = re.compile(
+    r"(?is)(\b(?:financial\s+|external\s+)?transaction\s+id\s*:\s*)(.+?)"
+    r"(?=\.\s*(?:external\s+transaction\s+id|transaction\s+fee|download\s+the\s+momo\s+app|"
+    r"cash-out\s+fee|fee\s+charged|tax\s+charged)|$)"
+)
+_MESSAGE_HAS_SENT_ENTITY = re.compile(r"(?i)\b([A-Z][A-Z' .-]{2,}?)(\s+has sent\b)")
+_MESSAGE_NAME_BEFORE_PHONE = re.compile(
+    r"\b([A-Z][A-Za-z']+(?:\s+(?:TO\s+)?[A-Z][A-Za-z']+){1,5})[\s,]+"
+    r"(?=(?:\+?233[\s-]?|0)(?:2|5)\d)"
+)
+_MESSAGE_SALUTATION_NAME = re.compile(r"^([A-Z][A-Za-z'-]{2,})(,\s+)")
+_MESSAGE_GREETING_NAME = re.compile(
+    r"^((?i:Y'?ello|Hello)[,!]?\s+)([A-Z][A-Z'-]+(?:\s+[A-Z][A-Z'-]+){1,5})(,\s+)"
+)
+_MESSAGE_POST_GREETING_NAME = re.compile(
+    r"^((?i:Hello),\s+)([A-Z][A-Z'-]+(?:\s+[A-Z][A-Z'-]+){1,5})(,\s+)"
+)
+_IPV4 = re.compile(r"(?<!\d)(?:\d{1,3}\.){3}\d{1,3}(?!\d)")
+_MONEY_SUFFIX = re.compile(r"(?i)\b\d[\d,]*(?:\.\d{1,2})?\s*(?:GHS|GH\u20B5|GH\u00A2)\b")
 _MESSAGE_TRANSACTION_CUES: Final = (
     "payment made",
     "payment received",
@@ -756,6 +803,12 @@ _MESSAGE_TRANSACTION_CUES: Final = (
     "transaction id",
     "fee charged",
     "reversal",
+)
+_MESSAGE_SECRET = re.compile(
+    r"(?is)(?:\b(?:otp|one[ -]?time password|verification code|security code|pin is|code is|"
+    r"following code)\b"
+    r".{0,300}?\b\d{4,8}\b|\b\d{4,8}\b.{0,100}?\b(?:otp|one[ -]?time password|"
+    r"verification code|security code)\b)"
 )
 
 
@@ -777,19 +830,48 @@ def _deidentify_owner_message(value: str) -> tuple[str, list[dict[str, str]]]:
         raw = match.group(2).strip()
         return match.group(1) + placeholder("ENTITY", raw)
 
+    def replace_reference_text(match: re.Match[str]) -> str:
+        return match.group(1) + placeholder("REFERENCE_TEXT", match.group(2).strip())
+
+    def replace_transaction_reference(match: re.Match[str]) -> str:
+        return match.group(1) + placeholder("REFERENCE", match.group(2).strip())
+
+    def replace_has_sent_entity(match: re.Match[str]) -> str:
+        return placeholder("ENTITY", match.group(1).strip()) + match.group(2)
+
+    def replace_name_before_phone(match: re.Match[str]) -> str:
+        return placeholder("ENTITY", match.group(1).strip()) + " "
+
+    def replace_salutation_name(match: re.Match[str]) -> str:
+        if match.group(1).casefold() in {"hello", "yello", "y'ello", "congratulations"}:
+            return match.group(0)
+        return placeholder("ENTITY", match.group(1)) + match.group(2)
+
+    def replace_greeting_name(match: re.Match[str]) -> str:
+        return match.group(1) + placeholder("ENTITY", match.group(2)) + match.group(3)
+
     def replacement(kind: str) -> Callable[[re.Match[str]], str]:
         def replace(match: re.Match[str]) -> str:
             return placeholder(kind, match.group(0))
 
         return replace
 
+    text = _MESSAGE_REFERENCE_TEXT.sub(replace_reference_text, text)
+    text = _MESSAGE_TRANSACTION_REFERENCE.sub(replace_transaction_reference, text)
+    text = _MESSAGE_GREETING_NAME.sub(replace_greeting_name, text)
+    text = _MESSAGE_POST_GREETING_NAME.sub(replace_greeting_name, text)
+    text = _MESSAGE_SALUTATION_NAME.sub(replace_salutation_name, text)
+    text = _MESSAGE_NAME_BEFORE_PHONE.sub(replace_name_before_phone, text)
+    text = _MESSAGE_HAS_SENT_ENTITY.sub(replace_has_sent_entity, text)
     text = _MESSAGE_ENTITY.sub(replace_entity, text)
     for kind, pattern in (
         ("URL", _URL),
         ("EMAIL", _EMAIL),
         ("PHONE", _PHONE),
         ("AMOUNT", _MONEY),
+        ("AMOUNT", _MONEY_SUFFIX),
         ("REFERENCE", _LONG_REFERENCE),
+        ("REFERENCE", _IPV4),
     ):
         text = pattern.sub(replacement(kind), text)
     for field in sorted(fields, key=lambda item: len(item["raw"]), reverse=True):
@@ -803,7 +885,9 @@ def _deidentify_owner_message(value: str) -> tuple[str, list[dict[str, str]]]:
 
 def _message_template_group(sanitized_text: str) -> str:
     template = re.sub(
-        r"\[(?:ENTITY|URL|EMAIL|PHONE|AMOUNT|REFERENCE)_\d{3}\]", "[VALUE]", sanitized_text
+        r"\[(?:ENTITY|URL|EMAIL|PHONE|AMOUNT|REFERENCE|REFERENCE_TEXT)_\d{3}\]",
+        "[VALUE]",
+        sanitized_text,
     )
     template = re.sub(r"\b\d+\b", "[NUMBER]", template.casefold())
     template = " ".join(template.split())
@@ -847,6 +931,7 @@ def export_private_imazing_genuine_corpus(
     sanitized_by_hash: dict[str, dict[str, object]] = {}
     category_counts: Counter[str] = Counter()
     group_counts: Counter[str] = Counter()
+    excluded_secret_count = 0
     try:
         stream = source_csv.open("r", encoding="utf-8-sig", newline="")
     except OSError as exc:
@@ -879,6 +964,13 @@ def export_private_imazing_genuine_corpus(
                 or row.get("source_provenance") != "owner_iphone_local_backup"
             ):
                 raise GhanaPrivateError("private message authenticity boundary changed")
+            if _MESSAGE_SECRET.search(raw_text):
+                indexed["workflow_state"] = "quarantined"
+                indexed["quarantine_reason"] = "secret_bearing_message_excluded"
+                indexed["training_eligible"] = False
+                excluded_secret_count += 1
+                continue
+            indexed.pop("quarantine_reason", None)
             sanitized, fields = _deidentify_owner_message(raw_text)
             category = (
                 "transaction_confirmation"
@@ -923,7 +1015,7 @@ def export_private_imazing_genuine_corpus(
             else:
                 existing["duplicate_occurrences"] = cast(int, existing["duplicate_occurrences"]) + 1
 
-    if len(raw_rows) != len(records):
+    if len(raw_rows) + excluded_secret_count != len(records):
         raise GhanaPrivateError("private message source/index row counts differ")
     sanitized_rows = sorted(sanitized_by_hash.values(), key=lambda row: cast(str, row["record_id"]))
     raw_rows.sort(key=lambda row: cast(int, row["source_row_number"]))
@@ -959,6 +1051,8 @@ def export_private_imazing_genuine_corpus(
     sanitized_hash = _sha256_file(sanitized_path)
     for record_object in records:
         record = cast(dict[str, object], record_object)
+        if record.get("quarantine_reason") == "secret_bearing_message_excluded":
+            continue
         record["workflow_state"] = "needs_second_annotation"
         record["training_eligible"] = False
         record["text_corpus"] = {
@@ -977,6 +1071,7 @@ def export_private_imazing_genuine_corpus(
             "raw_record_count": len(raw_rows),
             "deduplicated_record_count": len(sanitized_rows),
             "exact_duplicate_occurrence_count": len(raw_rows) - len(sanitized_rows),
+            "secret_bearing_message_excluded_count": excluded_secret_count,
             "template_group_count": len(group_counts),
             "message_category_counts": dict(sorted(category_counts.items())),
             "raw_csv_sha256": raw_hash,
@@ -1832,7 +1927,7 @@ _OCR_PLACEHOLDER_KINDS: Final = {
 def _deidentify_ocr_text(
     transcript: str, fields: Sequence[Mapping[str, object]]
 ) -> tuple[str, int]:
-    sensitive: dict[str, str] = {}
+    sensitive: dict[str, tuple[str, str]] = {}
     for field in fields:
         if field.get("sensitive") is not True:
             continue
@@ -1840,20 +1935,34 @@ def _deidentify_ocr_text(
         raw = field.get("raw")
         if name not in _OCR_PLACEHOLDER_KINDS or not isinstance(raw, str) or not raw.strip():
             raise GhanaPrivateError("private OCR sensitive field cannot be de-identified")
-        sensitive.setdefault(raw, _OCR_PLACEHOLDER_KINDS[cast(str, name)])
+        normalized_raw = raw.strip()
+        sensitive.setdefault(
+            normalized_raw.casefold(),
+            (normalized_raw, _OCR_PLACEHOLDER_KINDS[cast(str, name)]),
+        )
     if not sensitive:
         raise GhanaPrivateError("private OCR transcript has no de-identification fields")
 
     counters: Counter[str] = Counter()
-    sanitized = transcript
-    replacement_count = 0
-    for raw, kind in sorted(sensitive.items(), key=lambda item: len(item[0]), reverse=True):
+    placeholders: dict[str, str] = {}
+    ordered = sorted(sensitive.items(), key=lambda item: len(item[1][0]), reverse=True)
+    for key, (_, kind) in ordered:
         counters[kind] += 1
-        placeholder = f"[{kind}_{counters[kind]:03d}]"
-        sanitized, count = re.subn(re.escape(raw), placeholder, sanitized, flags=re.IGNORECASE)
-        if count == 0:
+        placeholders[key] = f"[{kind}_{counters[kind]:03d}]"
+    pattern = re.compile("|".join(re.escape(raw) for _, (raw, _) in ordered), re.IGNORECASE)
+    matched: Counter[str] = Counter()
+
+    def replace_sensitive(match: re.Match[str]) -> str:
+        key = match.group(0).casefold()
+        matched[key] += 1
+        return placeholders[key]
+
+    sanitized, replacement_count = pattern.subn(replace_sensitive, transcript)
+    for key, (raw, _) in sensitive.items():
+        if matched[key] == 0:
             raise GhanaPrivateError("private OCR sensitive value is absent from its transcript")
-        replacement_count += count
+        if len(raw) >= 3 and raw.casefold() in sanitized.casefold():
+            raise GhanaPrivateError("private OCR de-identification left an exact sensitive value")
     return sanitized, replacement_count
 
 
@@ -2004,6 +2113,292 @@ def export_private_ocr_text_corpus(
         sanitized_path,
         sanitized_hash,
         len(raw_rows),
+    )
+
+
+def review_private_text_corpora(
+    *,
+    corpora: Sequence[tuple[str, Path, str]],
+    approved_record_ids: frozenset[str],
+    excluded_record_ids: frozenset[str],
+    output_root: Path,
+    first_reviewer_id: str,
+    second_reviewer_id: str,
+    repository_root: Path,
+) -> ReviewedTextCorpusOutputs:
+    """Second-review de-identified text while retaining a non-training gate."""
+
+    first_reviewer = _expect_opaque_id(first_reviewer_id, "first_reviewer_id")
+    second_reviewer = _expect_opaque_id(second_reviewer_id, "second_reviewer_id")
+    if first_reviewer == second_reviewer:
+        raise GhanaPrivateError("private text review requires an independent reviewer")
+    _require_outside_repository(output_root, repository_root, "private reviewed text corpus")
+    if not corpora:
+        raise GhanaPrivateError("private text review requires at least one corpus")
+    if approved_record_ids & excluded_record_ids:
+        raise GhanaPrivateError("private text review decisions overlap")
+
+    rows: list[dict[str, object]] = []
+    seen: set[str] = set()
+    source_hashes: dict[str, str] = {}
+    label_counts: Counter[str] = Counter()
+    source_counts: Counter[str] = Counter()
+    malformed_placeholder = re.compile(r"\[[A-Z_]+_\d*\[")
+    for source_name, source_path, expected_hash_value in corpora:
+        if re.fullmatch(r"[a-z][a-z0-9_]{2,39}", source_name) is None:
+            raise GhanaPrivateError("private text corpus source name is invalid")
+        expected_hash = _expect_sha256(expected_hash_value, "expected corpus SHA-256")
+        if _sha256_file(source_path) != expected_hash:
+            raise GhanaPrivateError("private text corpus identity changed")
+        source_hashes[source_name] = expected_hash
+        try:
+            stream = source_path.open("r", encoding="utf-8-sig", newline="")
+        except OSError as exc:
+            raise GhanaPrivateError("private text corpus could not be opened") from exc
+        with stream:
+            for source_row in csv.DictReader(stream):
+                record_id = _expect_opaque_id(source_row.get("record_id"), "record_id")
+                if record_id in seen:
+                    raise GhanaPrivateError("private text record identifier is duplicated")
+                seen.add(record_id)
+                source_group_id = _expect_opaque_id(
+                    source_row.get("source_group_id"), "source_group_id"
+                )
+                label = source_row.get("label")
+                text = source_row.get("sanitized_text")
+                if label not in set(FINAL_LABELS.values()):
+                    raise GhanaPrivateError("private text label is invalid")
+                if not isinstance(text, str) or not text.strip():
+                    raise GhanaPrivateError("private text review found an empty transcript")
+                if source_row.get("training_eligible") != "false":
+                    raise GhanaPrivateError("private text review source bypassed its training gate")
+                if (
+                    _EMAIL.search(text)
+                    or _PHONE.search(text)
+                    or _IPV4.search(text)
+                    or _MESSAGE_SECRET.search(text)
+                    or malformed_placeholder.search(text)
+                ):
+                    raise GhanaPrivateError("private text review found a residual sensitive value")
+                decision = (
+                    "approve"
+                    if record_id in approved_record_ids
+                    else "exclude"
+                    if record_id in excluded_record_ids
+                    else None
+                )
+                if decision is None:
+                    raise GhanaPrivateError("private text review decisions are incomplete")
+                label_counts[cast(str, label)] += decision == "approve"
+                source_counts[source_name] += decision == "approve"
+                rows.append(
+                    {
+                        "record_id": record_id,
+                        "source_group_id": source_group_id,
+                        "source_corpus": source_name,
+                        "source_kind": source_row.get("source_kind") or "owner_sms",
+                        "label": label,
+                        "sender_kind": source_row.get("sender_kind") or "unknown",
+                        "message_category": source_row.get("message_category") or "",
+                        "indicators": source_row.get("indicators") or "",
+                        "duplicate_occurrences": source_row.get("duplicate_occurrences") or "1",
+                        "sanitized_text": text.strip(),
+                        "review_decision": decision,
+                        "review_reason": (
+                            "SECOND_TEXT_REVIEW_APPROVED_001"
+                            if decision == "approve"
+                            else "SECOND_TEXT_REVIEW_EXCLUDED_001"
+                        ),
+                        "reviewer_id": second_reviewer,
+                        "training_eligible": "false",
+                        "review_state": (
+                            "text_approved_pending_dataset_minimum"
+                            if decision == "approve"
+                            else "text_excluded"
+                        ),
+                    }
+                )
+    decided = approved_record_ids | excluded_record_ids
+    if seen != decided:
+        raise GhanaPrivateError("private text review decisions include unknown records")
+
+    rows.sort(key=lambda row: cast(str, row["record_id"]))
+    reviewed_path = output_root.resolve() / "reviewed_records.csv"
+    _atomic_csv(
+        reviewed_path,
+        [
+            "record_id",
+            "source_group_id",
+            "source_corpus",
+            "source_kind",
+            "label",
+            "sender_kind",
+            "message_category",
+            "indicators",
+            "duplicate_occurrences",
+            "sanitized_text",
+            "review_decision",
+            "review_reason",
+            "reviewer_id",
+            "training_eligible",
+            "review_state",
+        ],
+        rows,
+    )
+    reviewed_hash = _sha256_file(reviewed_path)
+    manifest_path = output_root.resolve() / "review-manifest.json"
+    _atomic_json(
+        manifest_path,
+        {
+            "schema_version": REVIEWED_TEXT_CORPUS_VERSION,
+            "pipeline_version": GHANA_PIPELINE_VERSION,
+            "source_corpus_sha256": dict(sorted(source_hashes.items())),
+            "reviewed_csv_sha256": reviewed_hash,
+            "record_count": len(rows),
+            "approved_record_count": len(approved_record_ids),
+            "excluded_record_count": len(excluded_record_ids),
+            "approved_label_counts": dict(sorted(label_counts.items())),
+            "approved_source_counts": dict(sorted(source_counts.items())),
+            "first_reviewer_id": first_reviewer,
+            "second_reviewer_id": second_reviewer,
+            "contains_raw_values": False,
+            "splits_frozen": False,
+            "training_eligible": False,
+            "training_executed": False,
+        },
+    )
+    return ReviewedTextCorpusOutputs(
+        reviewed_path,
+        reviewed_hash,
+        manifest_path,
+        len(approved_record_ids),
+        len(excluded_record_ids),
+    )
+
+
+def generate_private_synthetic_clean_text_corpus(
+    *,
+    output_root: Path,
+    repository_root: Path,
+    source_group_count: int = 30,
+    seed: int = 20260814,
+) -> SyntheticCleanTextOutputs:
+    """Generate a balanced, fictitious, deterministic text pilot without enabling training."""
+
+    _require_outside_repository(output_root, repository_root, "private synthetic-clean corpus")
+    if source_group_count < 20 or source_group_count > 500:
+        raise GhanaPrivateError("synthetic-clean source group count is outside the safe range")
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise GhanaPrivateError("synthetic-clean seed is invalid")
+
+    actions = ("Payment received", "Cash In received", "Payment made", "Transfer received")
+    official_endings = (
+        "Thank you for using MobileMoney.",
+        "Fee charged: [AMOUNT_003].",
+        "Do not pay an agent a deposit fee.",
+    )
+    fraud_phrases = (
+        ("recieved", "been blocked"),
+        ("received", "being blocked"),
+        ("recieved", "been suspended"),
+        ("credited", "been lock"),
+        ("received", "been blocked"),
+    )
+    urgent_actions = (
+        "Call [PHONE_002] now for reversal.",
+        "Do not try your PIN; contact [PHONE_002].",
+        "Confirm immediately at [URL_001].",
+    )
+    suspicious_actions = (
+        "Confirm this alert using [URL_001].",
+        "Reply urgently if this was not you.",
+        "Contact [PHONE_002] to keep the transfer active.",
+    )
+    rows: list[dict[str, object]] = []
+    for position in range(source_group_count):
+        number = position + 1
+        group_id = f"GHSYN_GROUP_{number:04d}"
+        action = actions[(position + seed) % len(actions)]
+        ending = official_endings[(position + seed // 3) % len(official_endings)]
+        receipt_word, blocked_phrase = fraud_phrases[(position + seed // 5) % len(fraud_phrases)]
+        urgent = urgent_actions[(position + seed // 7) % len(urgent_actions)]
+        suspicious = suspicious_actions[(position + seed // 11) % len(suspicious_actions)]
+        examples = (
+            (
+                "GENUINE",
+                "alphanumeric_label",
+                f"{action} for [AMOUNT_001] from [ENTITY_001]. Current Balance "
+                f"[BALANCE_001]. Transaction ID: [REFERENCE_001]. {ending}",
+            ),
+            (
+                "FRAUDULENT",
+                "phone_number",
+                f"[PHONE_001] Cash In {receipt_word} for [AMOUNT_001] from [ENTITY_001]. "
+                f"Avialable balance [BALANCE_001]. Your account has {blocked_phrase}. {urgent}",
+            ),
+            (
+                "SUSPICIOUS",
+                "phone_number",
+                f"[PHONE_001] {action} for [AMOUNT_001]. Reference [REFERENCE_001]. {suspicious}",
+            ),
+        )
+        for label, sender_kind, text in examples:
+            rows.append(
+                {
+                    "record_id": f"GHSYN_{number:04d}_{label}",
+                    "source_group_id": group_id,
+                    "provenance": "synthetic_clean",
+                    "label": label,
+                    "sender_kind": sender_kind,
+                    "sanitized_text": text,
+                    "fictitious_values_only": "true",
+                    "review_state": "synthetic_clean_pending_second_review",
+                    "training_eligible": "false",
+                }
+            )
+    rows.sort(key=lambda row: cast(str, row["record_id"]))
+    corpus_path = output_root.resolve() / "synthetic_clean_records.csv"
+    _atomic_csv(
+        corpus_path,
+        [
+            "record_id",
+            "source_group_id",
+            "provenance",
+            "label",
+            "sender_kind",
+            "sanitized_text",
+            "fictitious_values_only",
+            "review_state",
+            "training_eligible",
+        ],
+        rows,
+    )
+    corpus_hash = _sha256_file(corpus_path)
+    label_counts = Counter(cast(str, row["label"]) for row in rows)
+    manifest_path = output_root.resolve() / "synthetic-clean-manifest.json"
+    _atomic_json(
+        manifest_path,
+        {
+            "schema_version": SYNTHETIC_CLEAN_TEXT_VERSION,
+            "pipeline_version": GHANA_PIPELINE_VERSION,
+            "seed": seed,
+            "corpus_sha256": corpus_hash,
+            "record_count": len(rows),
+            "source_group_count": source_group_count,
+            "label_counts": dict(sorted(label_counts.items())),
+            "fictitious_values_only": True,
+            "second_review_required": True,
+            "splits_frozen": False,
+            "training_eligible": False,
+            "training_executed": False,
+        },
+    )
+    return SyntheticCleanTextOutputs(
+        corpus_path,
+        corpus_hash,
+        manifest_path,
+        len(rows),
+        source_group_count,
     )
 
 
