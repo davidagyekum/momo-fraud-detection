@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-14`
-- CI status: `Logical PR17 validation/diagnostic ML gate passes locally with 617 tests at 90.01% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 551 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
+- CI status: `Logical PR17 validation/diagnostic ML gate passes locally with 617 tests at 90.08% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 551 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR17 OCR benchmark/parser — clean validation complete; aggregate parser-ceiling diagnosis pending`
-- Next exact task: `Open ml/notebooks/colab/06_benchmark_ocr.ipynb at immutable diagnostic commit 9ef9ec603ee1d7b5b4929f7eab02a6cb89eb5312 and run through the new parser-ceiling cell. Return its aggregate-only JSON, then stop before engine initialisation; the completed 928f0cda validation does not need to be repeated. The five locked-test records must remain absent and recognizer training must remain false.`
+- Current phase: `Logical PR17 OCR benchmark/parser — parser ceiling measured; redacted failure taxonomy required before parser repair`
+- Next exact task: `Extend the aggregate-only parser-ceiling report with per-field exact/unavailable/mismatch counts and stable parser-warning counts, without persisting transcripts, values or record identifiers. Use those categories to identify the concrete parser format gaps before changing parser behavior. The completed engine benchmark must not be repeated, the five locked-test records must remain absent and recognizer training must remain false.`
 
 ## PR10-PR13 reconciliation status
 
@@ -99,7 +99,8 @@
 - Validation repair: PaddleOCR's 33/33 failure was reproduced with a generated non-private image and traced to its default CPU MKLDNN/oneDNN PIR path; the same PP-OCRv6 probe passed with MKLDNN disabled. Config/report/selected-bundle schemas are v2, partial candidates cannot compete, Tesseract major 5 is enforced and Jammy bootstraps exact official Tesseract 5.5.3 commit `db0ec62f…`. The verified private development-bundle v1 contract and archive bytes remain unchanged.
 - Completed repaired validation: the owner-operated run at immutable commit `928f0cda…` measured all 33 validation records for one 100%-coverage finalist from each required engine with no adapter failure. PaddleOCR `original_rgb` ranked first with CER `0.284632`, WER `0.410592` and weighted score `0.159254`; EasyOCR scored `0.154594` and Tesseract 5.5.3 scored `0.098769`. This is a valid clean-validation comparison, but not a production winner: every exact-field release gate failed, required-field parse success was `0.0`, the selected bundle remains `experimental`/non-promotable and the locked test stayed sealed.
 - Parser/OCR attribution boundary: report `55dc15e6…` proves the engines and selection contract now execute correctly, but aggregate OCR-output scoring alone cannot distinguish transcript-format parser gaps from recognition loss. Commit `9ef9ec60…` adds a validation-only parser-ceiling diagnostic that parses the verified human transcript and writes only aggregate field scores/counts. It persists no raw transcript, field value or record identifier and does not initialize an OCR engine, train, or access the locked test.
-- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 617 tests at 90.01% branch-aware coverage, governance, lock, notebook and controlled-data checks. The final secret/prohibited-artifact scan passes 551 candidate files. The earlier repository wrapper remains non-zero solely because the shared host doctor sees Node 22/npm 10.9.8 instead of the pinned frontend runtime and no local Tesseract; the repaired Colab notebook bootstraps pinned Tesseract 5 independently.
+- Parser-ceiling result: the owner-operated diagnostic processed all 33 validation transcripts and wrote report `a7cb9a30…`. Even without OCR recognition loss, exact extraction is amount `0.1875` over 32 scored records, recipient `0.03125` over 32, reference `0.05` over 20 and timestamp `0.0` over one; the parser is inconclusive on all 33 and the only record with all four truth fields fails. Parser/template-format coverage is therefore the dominant measured bottleneck. Timestamp and all-required support of one record are too sparse for a deployability claim, so release gates remain failed and parser changes require a further redacted failure-category breakdown rather than inspection-driven guessing.
+- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 617 tests at 90.08% branch-aware coverage, governance, lock, notebook and controlled-data checks. The final secret/prohibited-artifact scan passes 551 candidate files. The earlier repository wrapper remains non-zero solely because the shared host doctor sees Node 22/npm 10.9.8 instead of the pinned frontend runtime and no local Tesseract; the repaired Colab notebook bootstraps pinned Tesseract 5 independently.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -191,16 +192,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-14-PR17-colab-dependency-repair.md`
-- Summary: `Diagnosed the first Colab failure as a NumPy/PaddleX resolver conflict, pinned NumPy 2.3.5, added an executable compatibility regression gate and preserved the failure as pre-data/pre-benchmark evidence.`
+- Handoff file: `docs/handoffs/2026-08-14-PR17-parser-ceiling-diagnostic.md`
+- Summary: `Recorded the completed three-engine clean-validation comparison, added and executed a privacy-safe human-transcript parser ceiling, and established parser/template coverage as the dominant measured bottleneck without opening the locked test or training.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read the PR17 section of `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-035 and `docs/evidence/PR17_OCR_BENCHMARK_PREPARATION.json` before running the benchmark.
-4. Confirm the pushed PR17 head and clean worktree, then pin `ml/notebooks/colab/06_benchmark_ocr.ipynb` to that immutable commit.
+3. Read the PR17 section of `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-035/ADR-036 and `docs/evidence/PR17_OCR_BENCHMARK_PREPARATION.json` before changing the parser or diagnostics.
+4. Confirm the pushed PR17 head and clean worktree. Preserve the completed engine report `55dc15e6…`, bundle `ca38ece8…` and parser-ceiling report `a7cb9a30…`; do not repeat the engine benchmark.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve the three exact PR14 Drive bundles and the completed PaySim/MoMTSim v1 PR15 bundles. Keep all locked-test partitions sealed and unavailable for decisions before PR20; keep the v2 run explicitly incomplete.
-8. Upload only the exact private `pr17-ocr-development.zip` archive (SHA-256 `3370f7d38f6e56e995ba48e9808db669bbfe5a646923215a9c4834e7fab5afb2`) to the restricted Drive governance path. Run the clean train/validation benchmark only; keep all five controlled-real test records inaccessible, preserve raw values outside Git and retain experimental status while the tampered derivative slice is unavailable.
+8. Extend the validation-only parser-ceiling diagnostic with aggregate exact/unavailable/mismatch and stable warning counts, without persisting transcripts, values or record identifiers. Use those categories to identify proven parser gaps before changing behavior; keep all five controlled-real test records inaccessible and recognizer training false.

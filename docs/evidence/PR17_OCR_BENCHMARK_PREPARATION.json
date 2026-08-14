@@ -217,13 +217,30 @@
   },
   "parser_ceiling_diagnostic": {
     "code_commit": "9ef9ec603ee1d7b5b4929f7eab02a6cb89eb5312",
-    "execution_pending": true,
+    "execution_pending": false,
+    "field_exact": {
+      "amount": 0.1875,
+      "recipient": 0.03125,
+      "reference": 0.05,
+      "timestamp": 0.0
+    },
+    "field_scored_record_count": {
+      "amount": 32,
+      "recipient": 32,
+      "reference": 20,
+      "timestamp": 1
+    },
     "field_values_persisted": false,
     "locked_test_accessed": false,
+    "parser_inconclusive_rate": 1.0,
     "purpose": "separate parser-format errors from OCR-recognition errors using aggregate-only validation metrics",
     "raw_text_persisted": false,
+    "record_count": 33,
     "record_identifiers_persisted": false,
+    "report_sha256": "a7cb9a30225406d9677973d8da934d07b7b8be33de51d739a3225df21bc38967",
     "report_schema_version": "ghana-ocr-parser-ceiling-report-v1",
+    "required_field_parse_success": 0.0,
+    "required_field_scored_record_count": 1,
     "training_executed": false
   },
   "schema_version": "pr17-ocr-benchmark-evidence-v3",
