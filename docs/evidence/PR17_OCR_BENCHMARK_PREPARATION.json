@@ -192,7 +192,7 @@
   "notebook": {
     "outputs_stripped": true,
     "path": "ml/notebooks/colab/06_benchmark_ocr.ipynb",
-    "sha256": "b41ec38a9ba22fc0d1b24f3fa2048ef89b1a4ca7118e22752b35e2f350fa3a45"
+    "sha256": "ef1339e70d3acb94eec188798c31496c968f27c17641c741513dc5637a6a7ef0"
   },
   "package_locks": {
     "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",
@@ -307,7 +307,88 @@
     "training_executed": false,
     "warning_text_persisted": false
   },
-  "schema_version": "pr17-ocr-benchmark-evidence-v3",
+  "parser_measurement_contract_diagnostic": {
+    "benchmark_version": "ghana-ocr-benchmark-v1",
+    "code_commit": "a4dc60d0d4ada44c7c5bad4fe3103f0964ead4eb",
+    "execution_pending": false,
+    "field_exact": {
+      "amount": 0.1875,
+      "recipient": 0.03125,
+      "reference": 0.05,
+      "timestamp": 0.0
+    },
+    "field_outcome_counts": {
+      "amount": {
+        "exact": 6,
+        "mismatch": 23,
+        "unavailable": 3
+      },
+      "recipient": {
+        "exact": 1,
+        "mismatch": 23,
+        "unavailable": 8
+      },
+      "reference": {
+        "exact": 1,
+        "mismatch": 13,
+        "unavailable": 6
+      },
+      "timestamp": {
+        "exact": 0,
+        "mismatch": 0,
+        "unavailable": 1
+      }
+    },
+    "field_schema_version": "ghana-momo-ocr-fields-v1",
+    "field_scored_record_count": {
+      "amount": 32,
+      "recipient": 32,
+      "reference": 20,
+      "timestamp": 1
+    },
+    "field_values_persisted": false,
+    "locked_test_accessed": false,
+    "parser_inconclusive_rate": 1.0,
+    "parser_version": "ghana-momo-parser-v1",
+    "parser_warning_counts": {
+      "AMOUNT_AMBIGUOUS": 1,
+      "AMOUNT_NOT_FOUND": 3,
+      "RECIPIENT_NOT_FOUND": 9,
+      "REFERENCE_NOT_FOUND": 19,
+      "TIMESTAMP_NOT_FOUND": 33
+    },
+    "parser_warning_counts_by_observed_field": {
+      "amount": {
+        "AMOUNT_AMBIGUOUS": 1,
+        "AMOUNT_NOT_FOUND": 2
+      },
+      "recipient": {
+        "RECIPIENT_NOT_FOUND": 8
+      },
+      "reference": {
+        "REFERENCE_NOT_FOUND": 6
+      },
+      "timestamp": {
+        "TIMESTAMP_NOT_FOUND": 1
+      }
+    },
+    "partition": "validation",
+    "raw_text_persisted": false,
+    "recipient_secondary_truth_present_count": 11,
+    "recipient_truth_subtype_counts": {
+      "recipient_name_truth": 32,
+      "recipient_wallet_truth": 0
+    },
+    "record_count": 33,
+    "record_identifiers_persisted": false,
+    "report_schema_version": "ghana-ocr-parser-ceiling-report-v3",
+    "report_sha256": "194dead268dc3c07060e911ff0bb380d630db7e7d3b0fe74383d64b11167d02a",
+    "required_field_parse_success": 0.0,
+    "required_field_scored_record_count": 1,
+    "self_hash_verified": true,
+    "training_executed": false
+  },
+  "schema_version": "pr17-ocr-benchmark-evidence-v4",
   "selection_bundle_created": true,
   "selection_bundle_currently_valid": true,
   "tampered_derivative_slice_available": false,
