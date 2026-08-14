@@ -1,5 +1,7 @@
 # Codex Session Handoff
 
+> Superseded by `2026-08-14-PR16-mapped-friend-split-freeze.md` after 21 newly permission-mapped source groups passed readiness and produced the authoritative frozen text split.
+
 ## Session identity
 
 - Date: 2026-08-14, Africa/Lagos

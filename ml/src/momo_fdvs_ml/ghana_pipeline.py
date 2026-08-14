@@ -31,6 +31,7 @@ OCR_GROUND_TRUTH_VERSION: Final = "ghana-private-ocr-ground-truth-v1"
 OCR_TEXT_CORPUS_VERSION: Final = "ghana-private-ocr-text-corpus-v1"
 MESSAGE_TEXT_CORPUS_VERSION: Final = "ghana-private-message-text-corpus-v1"
 REVIEWED_TEXT_CORPUS_VERSION: Final = "ghana-private-reviewed-text-corpus-v1"
+TEXT_FROZEN_SPLIT_VERSION: Final = "ghana-private-text-frozen-split-v1"
 SYNTHETIC_CLEAN_TEXT_VERSION: Final = "ghana-synthetic-clean-text-corpus-v1"
 ANDROID_SMS_NORMALIZATION_VERSION: Final = "ghana-android-sms-normalization-v1"
 PROVISIONAL_LABELS: Final = frozenset(
@@ -2761,6 +2762,344 @@ def assess_private_text_split_readiness(
         len(groups["controlled_real"]),
         len(groups["synthetic_clean"]),
     )
+
+
+def _text_group_assignments(
+    *,
+    groups: Mapping[str, Sequence[Mapping[str, str]]],
+    seed: int,
+    ratios: Sequence[float],
+    bucket: str,
+) -> dict[str, str]:
+    """Assign label-stratified groups deterministically without splitting a source group."""
+
+    strata: dict[tuple[str, ...], list[str]] = {}
+    for group_id, records in groups.items():
+        labels = tuple(sorted({record["label"] for record in records}))
+        strata.setdefault(labels, []).append(group_id)
+    assignments: dict[str, str] = {}
+    for labels, group_ids in sorted(strata.items()):
+        ordered = sorted(
+            group_ids,
+            key=lambda group_id: hashlib.sha256(
+                f"{seed}:{bucket}:{'|'.join(labels)}:{group_id}".encode()
+            ).hexdigest(),
+        )
+        train_count, validation_count, _ = _quota(len(ordered), ratios)
+        for position, group_id in enumerate(ordered):
+            assignments[group_id] = (
+                "train"
+                if position < train_count
+                else "validation"
+                if position < train_count + validation_count
+                else "test"
+            )
+    return assignments
+
+
+def _ensure_controlled_label_coverage(
+    *,
+    groups: Mapping[str, Sequence[Mapping[str, str]]],
+    assignments: dict[str, str],
+    seed: int,
+) -> None:
+    """Cover each split when a label has at least three independent controlled groups."""
+
+    splits = ("test", "validation", "train")
+    label_groups: dict[str, list[str]] = {
+        label: sorted(
+            (
+                group_id
+                for group_id, records in groups.items()
+                if label in {record["label"] for record in records}
+            ),
+            key=lambda group_id: hashlib.sha256(
+                f"{seed}:controlled-coverage:{label}:{group_id}".encode()
+            ).hexdigest(),
+        )
+        for label in FINAL_LABELS.values()
+    }
+    for label, group_ids in sorted(label_groups.items()):
+        if len(group_ids) < len(splits):
+            continue
+        for missing_split in splits:
+            if any(assignments[group_id] == missing_split for group_id in group_ids):
+                continue
+            donor_counts = Counter(assignments[group_id] for group_id in group_ids)
+            candidates = [
+                group_id for group_id in group_ids if donor_counts[assignments[group_id]] > 1
+            ]
+            if not candidates:
+                raise GhanaPrivateError("controlled-real label coverage cannot be frozen safely")
+            candidates.sort(
+                key=lambda group_id: (
+                    len({record["label"] for record in groups[group_id]}),
+                    len(groups[group_id]),
+                    hashlib.sha256(
+                        f"{seed}:controlled-move:{label}:{missing_split}:{group_id}".encode()
+                    ).hexdigest(),
+                )
+            )
+            assignments[candidates[0]] = missing_split
+
+
+def freeze_private_text_group_splits(
+    *,
+    reviewed_csv_path: Path,
+    review_manifest_path: Path,
+    readiness_report_path: Path,
+    manifest_path: Path,
+    report_path: Path,
+    repository_root: Path,
+    seed: int = 20260814,
+) -> SplitOutputs:
+    """Freeze reviewed private text by source group and keep the controlled test locked."""
+
+    for path, path_label in (
+        (reviewed_csv_path, "private reviewed text corpus"),
+        (review_manifest_path, "private text review manifest"),
+        (readiness_report_path, "private text readiness report"),
+        (manifest_path, "private text split manifest"),
+        (report_path, "private text split report"),
+    ):
+        _require_outside_repository(path, repository_root, path_label)
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise GhanaPrivateError("private text split seed is invalid")
+
+    review_manifest = _load_object(review_manifest_path)
+    if review_manifest.get("schema_version") != REVIEWED_TEXT_CORPUS_VERSION:
+        raise GhanaPrivateError("private text review manifest is unsupported")
+    reviewed_hash = _expect_sha256(
+        review_manifest.get("reviewed_csv_sha256"), "reviewed_csv_sha256"
+    )
+    if _sha256_file(reviewed_csv_path) != reviewed_hash:
+        raise GhanaPrivateError("private reviewed text corpus identity changed")
+    if (
+        review_manifest.get("training_eligible") is not False
+        or review_manifest.get("splits_frozen") is not False
+    ):
+        raise GhanaPrivateError("private reviewed text corpus bypassed its split gate")
+
+    readiness = _load_object(readiness_report_path)
+    if readiness.get("schema_version") != "ghana-private-text-split-readiness-v1":
+        raise GhanaPrivateError("private text readiness report is unsupported")
+    if (
+        readiness.get("reviewed_csv_sha256") != reviewed_hash
+        or readiness.get("ready_to_freeze") is not True
+        or readiness.get("blockers") != []
+        or readiness.get("splits_frozen") is not False
+        or readiness.get("training_eligible") is not False
+        or readiness.get("training_executed") is not False
+    ):
+        raise GhanaPrivateError("private text corpus is not ready to freeze")
+    controlled_minimum = readiness.get("minimum_controlled_real_groups")
+    synthetic_minimum = readiness.get("minimum_synthetic_clean_groups")
+    if (
+        isinstance(controlled_minimum, bool)
+        or not isinstance(controlled_minimum, int)
+        or controlled_minimum < 30
+        or isinstance(synthetic_minimum, bool)
+        or not isinstance(synthetic_minimum, int)
+        or synthetic_minimum < 20
+    ):
+        raise GhanaPrivateError("private text readiness minimums were weakened")
+
+    source_buckets = {
+        "screenshot_ocr": "controlled_real",
+        "synthetic_clean": "synthetic_clean",
+        "owner_iphone_messages": "owner_train_only",
+        "owner_android_messages": "owner_train_only",
+    }
+    rows: list[dict[str, str]] = []
+    groups: dict[str, dict[str, list[dict[str, str]]]] = {
+        bucket: {} for bucket in set(source_buckets.values())
+    }
+    group_buckets: dict[str, str] = {}
+    seen_ids: set[str] = set()
+    try:
+        stream = reviewed_csv_path.open("r", encoding="utf-8-sig", newline="")
+    except OSError as exc:
+        raise GhanaPrivateError("private reviewed text corpus could not be opened") from exc
+    with stream:
+        for source_row in csv.DictReader(stream):
+            record_id = _expect_opaque_id(source_row.get("record_id"), "record_id")
+            if record_id in seen_ids:
+                raise GhanaPrivateError("private text split record is duplicated")
+            seen_ids.add(record_id)
+            group_id = _expect_opaque_id(source_row.get("source_group_id"), "source_group_id")
+            source = source_row.get("source_corpus")
+            bucket = source_buckets.get(cast(str, source))
+            label = source_row.get("label")
+            if (
+                bucket is None
+                or label not in set(FINAL_LABELS.values())
+                or source_row.get("review_decision") != "approve"
+                or source_row.get("training_eligible") != "false"
+            ):
+                raise GhanaPrivateError("private reviewed text row is not split eligible")
+            prior_bucket = group_buckets.setdefault(group_id, bucket)
+            if prior_bucket != bucket:
+                raise GhanaPrivateError("private text group crosses split buckets")
+            row = {
+                "record_id": record_id,
+                "source_group_id": group_id,
+                "source_corpus": cast(str, source),
+                "source_bucket": bucket,
+                "label": label,
+            }
+            rows.append(row)
+            groups[bucket].setdefault(group_id, []).append(row)
+    if len(rows) != review_manifest.get("approved_record_count"):
+        raise GhanaPrivateError("private text split count does not match its review manifest")
+    if len(groups["controlled_real"]) < controlled_minimum:
+        raise GhanaPrivateError("controlled-real text group count is below the frozen minimum")
+    if len(groups["synthetic_clean"]) < synthetic_minimum:
+        raise GhanaPrivateError("synthetic-clean text group count is below the frozen minimum")
+    if {
+        record["label"]
+        for group_records in groups["controlled_real"].values()
+        for record in group_records
+    } != set(FINAL_LABELS.values()):
+        raise GhanaPrivateError("controlled-real text class coverage is incomplete")
+
+    controlled_assignments = _text_group_assignments(
+        groups=groups["controlled_real"],
+        seed=seed,
+        ratios=(0.70, 0.15, 0.15),
+        bucket="controlled_real",
+    )
+    _ensure_controlled_label_coverage(
+        groups=groups["controlled_real"], assignments=controlled_assignments, seed=seed
+    )
+    assignments = {
+        **controlled_assignments,
+        **_text_group_assignments(
+            groups=groups["synthetic_clean"],
+            seed=seed,
+            ratios=(0.80, 0.20, 0.0),
+            bucket="synthetic_clean",
+        ),
+        **{group_id: "train" for group_id in groups["owner_train_only"]},
+    }
+    manifest_records = [
+        {
+            **row,
+            "split": assignments[row["source_group_id"]],
+            "development_eligible": assignments[row["source_group_id"]] in {"train", "validation"},
+            "locked_test": assignments[row["source_group_id"]] == "test",
+        }
+        for row in rows
+    ]
+    manifest = {
+        "schema_version": TEXT_FROZEN_SPLIT_VERSION,
+        "pipeline_version": GHANA_PIPELINE_VERSION,
+        "seed": seed,
+        "reviewed_csv_sha256": reviewed_hash,
+        "review_manifest_sha256": _sha256_file(review_manifest_path),
+        "readiness_report_sha256": _sha256_file(readiness_report_path),
+        "assignment_policy": "label_stratified_source_group_hash_v2",
+        "controlled_real_ratios": {"train": 0.70, "validation": 0.15, "test": 0.15},
+        "synthetic_clean_ratios": {"train": 0.80, "validation": 0.20, "test": 0.0},
+        "owner_records_train_only": True,
+        "locked_test": True,
+        "training_executed": False,
+        "records": sorted(manifest_records, key=lambda record: cast(str, record["record_id"])),
+    }
+    canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+    manifest_hash = _sha256_bytes(canonical)
+    manifest["manifest_sha256"] = manifest_hash
+    _atomic_json(manifest_path, manifest)
+
+    record_counts = Counter(record["split"] for record in manifest_records)
+    group_counts: dict[str, dict[str, int]] = {}
+    for bucket, bucket_groups in groups.items():
+        group_counts[bucket] = dict(
+            sorted(Counter(assignments[group_id] for group_id in bucket_groups).items())
+        )
+    label_counts: dict[str, dict[str, int]] = {}
+    for split in ("train", "validation", "test"):
+        label_counts[split] = dict(
+            sorted(
+                Counter(
+                    cast(str, record["label"])
+                    for record in manifest_records
+                    if record["split"] == split
+                ).items()
+            )
+        )
+    controlled_group_label_counts = {
+        label: sum(
+            label in {record["label"] for record in group_records}
+            for group_records in groups["controlled_real"].values()
+        )
+        for label in sorted(FINAL_LABELS.values())
+    }
+    controlled_split_class_coverage = {
+        split: sorted(
+            {
+                cast(str, record["label"])
+                for record in manifest_records
+                if record["split"] == split and record["source_bucket"] == "controlled_real"
+            }
+        )
+        for split in ("train", "validation", "test")
+    }
+    report = {
+        "schema_version": "ghana-private-text-split-report-v1",
+        "pipeline_version": GHANA_PIPELINE_VERSION,
+        "manifest_sha256": manifest_hash,
+        "reviewed_csv_sha256": reviewed_hash,
+        "record_count": len(manifest_records),
+        "record_counts": dict(sorted(record_counts.items())),
+        "group_counts": group_counts,
+        "label_counts": label_counts,
+        "controlled_group_label_counts": controlled_group_label_counts,
+        "controlled_split_class_coverage": controlled_split_class_coverage,
+        "controlled_class_coverage_limitations": sorted(
+            label for label, count in controlled_group_label_counts.items() if count < 3
+        ),
+        "group_intersections": {"train_validation": [], "train_test": [], "validation_test": []},
+        "controlled_test_only": all(
+            record["source_bucket"] == "controlled_real"
+            for record in manifest_records
+            if record["split"] == "test"
+        ),
+        "locked_test": True,
+        "training_executed": False,
+    }
+    _atomic_json(report_path, report)
+    return SplitOutputs(manifest_path, report_path, manifest_hash)
+
+
+def load_private_text_development_records(
+    manifest_path: Path,
+) -> tuple[dict[str, object], ...]:
+    """Load private text train/validation assignments without exposing the locked test."""
+
+    manifest = _load_object(manifest_path)
+    manifest_hash = _expect_sha256(manifest.get("manifest_sha256"), "manifest_sha256")
+    canonical = dict(manifest)
+    canonical.pop("manifest_sha256", None)
+    if (
+        _sha256_bytes(json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode())
+        != manifest_hash
+    ):
+        raise GhanaPrivateError("private text split manifest identity changed")
+    if (
+        manifest.get("schema_version") != TEXT_FROZEN_SPLIT_VERSION
+        or manifest.get("locked_test") is not True
+        or manifest.get("training_executed") is not False
+    ):
+        raise GhanaPrivateError("private text split manifest is not locked")
+    records = manifest.get("records")
+    if not isinstance(records, list) or not all(isinstance(record, dict) for record in records):
+        raise GhanaPrivateError("private text split records are invalid")
+    development = tuple(
+        record for record in records if record.get("split") in {"train", "validation"}
+    )
+    if any(record.get("locked_test") is True for record in development):
+        raise GhanaPrivateError("private text development loader exposed a locked test record")
+    return development
 
 
 def generate_private_synthetic_clean_text_corpus(

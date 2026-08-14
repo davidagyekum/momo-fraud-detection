@@ -24,11 +24,13 @@ from momo_fdvs_ml.ghana_pipeline import (
     export_private_imazing_genuine_corpus,
     export_private_ocr_text_corpus,
     freeze_group_splits,
+    freeze_private_text_group_splits,
     generate_private_synthetic_clean_text_corpus,
     index_imazing_messages,
     ingest_private_screenshots,
     initialize_owner_consent,
     load_development_records,
+    load_private_text_development_records,
     normalize_android_sms_backups,
     prepare_consented_screenshot_text_only_review,
     prepare_online_candidate_text_only_review,
@@ -2271,6 +2273,275 @@ def test_private_text_split_readiness_rejects_malformed_rows_and_reports_blocker
     else:
         with pytest.raises(GhanaPrivateError):
             assess_private_text_split_readiness(**arguments)
+
+
+def test_private_text_split_freeze_is_deterministic_group_safe_and_test_locked(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private = tmp_path / "private"
+    private.mkdir()
+    reviewed = private / "reviewed.csv"
+    fields = [
+        "record_id",
+        "source_group_id",
+        "source_corpus",
+        "label",
+        "review_decision",
+        "training_eligible",
+    ]
+    labels = ("FRAUDULENT", "GENUINE", "SUSPICIOUS")
+    rows: list[dict[str, str]] = []
+    for number in range(30):
+        controlled_label = "FRAUDULENT" if number < 27 else "GENUINE"
+        rows.append(
+            {
+                "record_id": f"GHCONTROLLED_{number:04d}",
+                "source_group_id": f"GHGROUP_CONTROLLED_{number:04d}",
+                "source_corpus": "screenshot_ocr",
+                "label": controlled_label,
+                "review_decision": "approve",
+                "training_eligible": "false",
+            }
+        )
+    for number in range(9):
+        rows.append(
+            {
+                "record_id": f"GHCONTROLLED_LARGE_{number:04d}",
+                "source_group_id": "GHGROUP_CONTROLLED_0027",
+                "source_corpus": "screenshot_ocr",
+                "label": "GENUINE",
+                "review_decision": "approve",
+                "training_eligible": "false",
+            }
+        )
+    rows.append(
+        {
+            "record_id": "GHCONTROLLED_SUSPICIOUS_0001",
+            "source_group_id": "GHGROUP_CONTROLLED_0029",
+            "source_corpus": "screenshot_ocr",
+            "label": "SUSPICIOUS",
+            "review_decision": "approve",
+            "training_eligible": "false",
+        }
+    )
+    for number in range(20):
+        rows.append(
+            {
+                "record_id": f"GHSYNTHETIC_{number:04d}",
+                "source_group_id": f"GHGROUP_SYNTHETIC_{number:04d}",
+                "source_corpus": "synthetic_clean",
+                "label": labels[number % len(labels)],
+                "review_decision": "approve",
+                "training_eligible": "false",
+            }
+        )
+    rows.extend(
+        [
+            {
+                "record_id": "GHOWNER_IPHONE_0001",
+                "source_group_id": "GHGROUP_OWNER_IPHONE_0001",
+                "source_corpus": "owner_iphone_messages",
+                "label": "GENUINE",
+                "review_decision": "approve",
+                "training_eligible": "false",
+            },
+            {
+                "record_id": "GHOWNER_ANDROID_0001",
+                "source_group_id": "GHGROUP_OWNER_ANDROID_0001",
+                "source_corpus": "owner_android_messages",
+                "label": "GENUINE",
+                "review_decision": "approve",
+                "training_eligible": "false",
+            },
+        ]
+    )
+    with reviewed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    reviewed_hash = hashlib.sha256(reviewed.read_bytes()).hexdigest()
+    review_manifest = _write_json(
+        private / "review-manifest.json",
+        {
+            "schema_version": "ghana-private-reviewed-text-corpus-v1",
+            "reviewed_csv_sha256": reviewed_hash,
+            "approved_record_count": len(rows),
+            "training_eligible": False,
+            "splits_frozen": False,
+        },
+    )
+    readiness = _write_json(
+        private / "readiness.json",
+        {
+            "schema_version": "ghana-private-text-split-readiness-v1",
+            "reviewed_csv_sha256": reviewed_hash,
+            "ready_to_freeze": True,
+            "blockers": [],
+            "minimum_controlled_real_groups": 30,
+            "minimum_synthetic_clean_groups": 20,
+            "splits_frozen": False,
+            "training_eligible": False,
+            "training_executed": False,
+        },
+    )
+
+    first = freeze_private_text_group_splits(
+        reviewed_csv_path=reviewed,
+        review_manifest_path=review_manifest,
+        readiness_report_path=readiness,
+        manifest_path=private / "split-a.json",
+        report_path=private / "split-a-report.json",
+        repository_root=repository,
+    )
+    second = freeze_private_text_group_splits(
+        reviewed_csv_path=reviewed,
+        review_manifest_path=review_manifest,
+        readiness_report_path=readiness,
+        manifest_path=private / "split-b.json",
+        report_path=private / "split-b-report.json",
+        repository_root=repository,
+    )
+    assert first.manifest_sha256 == second.manifest_sha256
+    manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
+    report = json.loads(first.report_path.read_text(encoding="utf-8"))
+    records = manifest["records"]
+    assignments: dict[str, set[str]] = {}
+    for record in records:
+        assignments.setdefault(record["source_group_id"], set()).add(record["split"])
+    assert all(len(splits) == 1 for splits in assignments.values())
+    assert all(
+        record["split"] == "train"
+        for record in records
+        if record["source_bucket"] == "owner_train_only"
+    )
+    assert all(
+        record["split"] != "test"
+        for record in records
+        if record["source_bucket"] == "synthetic_clean"
+    )
+    locked = [record for record in records if record["split"] == "test"]
+    assert locked
+    assert all(record["source_bucket"] == "controlled_real" for record in locked)
+    assert all(record["locked_test"] is True for record in locked)
+    assert report["controlled_test_only"] is True
+    assert report["controlled_split_class_coverage"] == {
+        "test": ["FRAUDULENT", "GENUINE"],
+        "train": ["FRAUDULENT", "GENUINE", "SUSPICIOUS"],
+        "validation": ["FRAUDULENT", "GENUINE"],
+    }
+    assert report["controlled_class_coverage_limitations"] == ["SUSPICIOUS"]
+    assert report["label_counts"]["test"]["GENUINE"] == 1
+    assert report["group_intersections"] == {
+        "train_validation": [],
+        "train_test": [],
+        "validation_test": [],
+    }
+    development = load_private_text_development_records(first.manifest_path)
+    assert len(development) == len(records) - len(locked)
+    assert all(record["split"] in {"train", "validation"} for record in development)
+
+    manifest["records"][0]["split"] = "test"
+    first.manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(GhanaPrivateError, match="identity changed"):
+        load_private_text_development_records(first.manifest_path)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "blocked",
+        "weakened",
+        "source_gate",
+        "inside_repository",
+        "seed",
+        "review_schema",
+        "hash",
+        "readiness_schema",
+        "duplicate",
+        "source",
+        "cross_bucket",
+        "count",
+    ],
+)
+def test_private_text_split_freeze_fails_closed(tmp_path: Path, case: str) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private = tmp_path / "private"
+    private.mkdir()
+    reviewed = private / "reviewed.csv"
+    fields = [
+        "record_id",
+        "source_group_id",
+        "source_corpus",
+        "label",
+        "review_decision",
+        "training_eligible",
+    ]
+    rows = [
+        {
+            "record_id": "GHCONTROLLED_0001",
+            "source_group_id": "GHGROUP_CONTROLLED_0001",
+            "source_corpus": "unsupported" if case == "source" else "screenshot_ocr",
+            "label": "FRAUDULENT",
+            "review_decision": "approve",
+            "training_eligible": "false",
+        }
+    ]
+    if case == "duplicate":
+        rows.append(dict(rows[0]))
+    elif case == "cross_bucket":
+        rows.append(
+            {
+                **rows[0],
+                "record_id": "GHSYNTHETIC_0001",
+                "source_corpus": "synthetic_clean",
+            }
+        )
+    with reviewed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    reviewed_hash = hashlib.sha256(reviewed.read_bytes()).hexdigest()
+    review_manifest = _write_json(
+        private / "manifest.json",
+        {
+            "schema_version": (
+                "unknown" if case == "review_schema" else "ghana-private-reviewed-text-corpus-v1"
+            ),
+            "reviewed_csv_sha256": _hash("changed") if case == "hash" else reviewed_hash,
+            "approved_record_count": len(rows) + (1 if case == "count" else 0),
+            "training_eligible": case == "source_gate",
+            "splits_frozen": False,
+        },
+    )
+    readiness = _write_json(
+        private / "readiness.json",
+        {
+            "schema_version": (
+                "unknown" if case == "readiness_schema" else "ghana-private-text-split-readiness-v1"
+            ),
+            "reviewed_csv_sha256": reviewed_hash,
+            "ready_to_freeze": case != "blocked",
+            "blockers": ["controlled_real_group_minimum"] if case == "blocked" else [],
+            "minimum_controlled_real_groups": 1 if case == "weakened" else 30,
+            "minimum_synthetic_clean_groups": 20,
+            "splits_frozen": False,
+            "training_eligible": False,
+            "training_executed": False,
+        },
+    )
+    with pytest.raises(GhanaPrivateError):
+        freeze_private_text_group_splits(
+            reviewed_csv_path=reviewed,
+            review_manifest_path=review_manifest,
+            readiness_report_path=readiness,
+            manifest_path=(repository if case == "inside_repository" else private) / "split.json",
+            report_path=private / "split-report.json",
+            repository_root=repository,
+            seed=-1 if case == "seed" else 20260814,
+        )
 
 
 def test_synthetic_clean_text_pilot_enforces_private_root_and_group_minimum(

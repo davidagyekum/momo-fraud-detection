@@ -7,11 +7,11 @@
   "excluded_from_training_count": 6,
   "exact_duplicate_count": 1,
   "final_label_counts": {
-    "FRAUDULENT": 17,
+    "FRAUDULENT": 38,
     "GENUINE": 24,
     "SUSPICIOUS": 1
   },
-  "second_review_label_approved_count": 42,
+  "second_review_label_approved_count": 63,
   "private_qa": {
     "deidentified_transcription_count": 13,
     "field_annotation_count": 13,
@@ -96,36 +96,36 @@
     "unapproved_conversation_content_written": false
   },
   "ocr_text_corpus": {
-    "deidentified_csv_sha256": "a9298e91c92baf081503eaadf48dcdd55e5b946930f1b75260971dcc4aa67b19",
-    "deidentified_row_count": 42,
+    "deidentified_csv_sha256": "1a9901631eafba5b7cc4bfaffe9b6c77082ce77c94713317d8c9c12fbaaa4b1d",
+    "deidentified_row_count": 63,
     "image_derivatives_excluded_from_training": true,
-    "coarse_full_image_localization_count": 22,
+    "coarse_full_image_localization_count": 43,
     "malformed_placeholder_count": 0,
     "pending_second_review_count": 0,
-    "raw_csv_sha256": "4b734eb1a7064ec7d94acb70ab0e8e230b282a2ad316b83d16828e3d74b3cca4",
-    "raw_row_count": 42,
-    "second_review_approved_count": 42,
+    "raw_csv_sha256": "5ebeb1d677ff6dba912745ab6ab5d7c64c1498c752e45dc15319975bf60e83d1",
+    "raw_row_count": 63,
+    "second_review_approved_count": 63,
     "sensitive_exact_value_leak_count": 0,
     "text_substitution_policy": "exact_sensitive_values_to_typed_placeholders",
     "training_eligible_count": 0
   },
   "reviewed_text_corpus": {
     "approved_label_counts": {
-      "FRAUDULENT": 47,
+      "FRAUDULENT": 68,
       "GENUINE": 319,
       "SUSPICIOUS": 31
     },
-    "approved_record_count": 397,
+    "approved_record_count": 418,
     "approved_source_counts": {
       "owner_android_messages": 159,
       "owner_iphone_messages": 106,
-      "screenshot_ocr": 42,
+      "screenshot_ocr": 63,
       "synthetic_clean": 90
     },
     "excluded_record_count": 0,
-    "manifest_sha256": "c56ede1e27878e765c23830b677e564d60bd98aa5a8109165fe7c6b1efc8ded2",
-    "reviewed_csv_sha256": "e8a3a2472543447d402109ccd5973582dfbc45321babc8f5d039ce9faf2c9eb5",
-    "splits_frozen": false,
+    "manifest_sha256": "d5c446294d70c76017d135577ebacf466983527f2a2ba9fc9f27ad3a6ed8bb44",
+    "reviewed_csv_sha256": "d7581471f55a475793976fed66a9f89c7b8107bfa744f6c92e700a3907f8fd0a",
+    "splits_frozen": true,
     "training_eligible_count": 0
   },
   "synthetic_clean_text_pilot": {
@@ -224,18 +224,70 @@
     "splits_frozen": false,
     "training_eligible_count": 0
   },
+  "latest_mapped_friend_batch": {
+    "consented_friend_count": 21,
+    "submitted_file_count": 21,
+    "participant_to_file_mapping_available": true,
+    "partitionable_source_group_count": 21,
+    "exact_duplicate_count": 0,
+    "cross_batch_near_duplicate_image_count": 1,
+    "cross_batch_near_duplicate_policy": "image_use_excluded_text_retained_after_distinct_content_review",
+    "label_approved_fraudulent_count": 21,
+    "ocr_text_approved_count": 21,
+    "ocr_localization_quality": "coarse_full_image_not_field_localization_ground_truth",
+    "private_request_sha256": "ffe53019b70210d69fed0e2f0206d3e96d664f0de66d91b22f9998a9e6c83b87",
+    "private_attestation_sha256": "5fb14101e885eea6b44547ab3dc528edf5a9f5318903fa9158862c4f211ed739",
+    "private_index_sha256": "a8fc08f1b462353b93f50ab4c8640eecd8fc297ecc2508bcc91a0f84832271b2",
+    "safe_report_sha256": "864ae4220bdc5443fbf49f3e554b088ef2e5c35df56341138d76e0bf658e7f65",
+    "image_training_eligible_count": 0,
+    "text_split_group_count": 21,
+    "training_executed": false
+  },
   "text_split_readiness": {
-    "blockers": [
-      "controlled_real_group_minimum"
-    ],
-    "controlled_real_group_count": 13,
+    "blockers": [],
+    "controlled_real_group_count": 34,
     "minimum_controlled_real_group_count": 30,
     "minimum_synthetic_clean_group_count": 20,
     "owner_participant_lineage_count": 1,
-    "ready_to_freeze": false,
-    "report_sha256": "38c268d7ba4dbb5430823857e2a3edfad2da630699b6dfa7682826832fd2d62d",
+    "ready_to_freeze": true,
+    "report_sha256": "046c715fc5d851f145f11cb6c39aa7a66c616b0109ebeab3f4238011255a831e",
     "synthetic_clean_group_count": 30,
     "training_eligible_count": 0
+  },
+  "frozen_text_split": {
+    "schema_version": "ghana-private-text-frozen-split-v1",
+    "assignment_policy": "label_stratified_source_group_hash_v2",
+    "seed": 20260814,
+    "authoritative_private_version": 3,
+    "manifest_sha256": "3c2bd2e3727b62f0a61f01a7eebcbe49da7ed0ac124a8f765d471533d867d941",
+    "manifest_file_sha256": "d16b0f7e3568597a613eb8202ab1287e5aa24bbeb03636f38aaf34d418ebd5f6",
+    "report_sha256": "b0aae3b9191f9d136bbe23c256fd8a3857797b165641b1f031bea2b503720727",
+    "record_counts": {
+      "train": 362,
+      "validation": 51,
+      "test": 5
+    },
+    "controlled_real_group_counts": {
+      "train": 23,
+      "validation": 6,
+      "test": 5
+    },
+    "synthetic_clean_group_counts": {
+      "train": 24,
+      "validation": 6,
+      "test": 0
+    },
+    "owner_train_only_template_group_count": 222,
+    "controlled_test_only": true,
+    "locked_test": true,
+    "controlled_split_class_coverage": {
+      "train": ["FRAUDULENT", "GENUINE", "SUSPICIOUS"],
+      "validation": ["FRAUDULENT", "GENUINE"],
+      "test": ["FRAUDULENT", "GENUINE"]
+    },
+    "controlled_class_coverage_limitations": ["SUSPICIOUS"],
+    "development_assignment_count": 413,
+    "training_executed": false
   },
   "permission_evidence": "project_owner_attestation_of_friend_permission",
   "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
@@ -250,14 +302,14 @@
   "raw_images_copied": false,
   "record_count": 10,
   "remaining_training_gates": [
-    "controlled_real_minimum_group_count_and_class_balance",
-    "explicit_training_eligibility_decision",
-    "group_safe_split_freeze"
+    "owner_confirmation_before_colab",
+    "pr17_training_validation_only_loader_binding",
+    "controlled_real_suspicious_validation_and_test_coverage_shortfall"
   ],
   "safe_report_sha256": "632587ee9b104d6a89087277612c0bb0d621c584130fa4063e3e0bc45658e039",
   "schema_version": "pr16-ghana-private-pilot-evidence-v1",
   "source_group_count": 8,
-  "splits_frozen": false,
+  "splits_frozen": true,
   "training_eligible_count": 0,
   "training_executed": false,
   "working_copy_count": 9,
