@@ -25,8 +25,8 @@
 - Last updated: `2026-08-14`
 - CI status: `Logical PR17 validation/diagnostic ML gate passes locally with 619 tests at 90.10% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 552 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR17 OCR benchmark/parser — v2 failure taxonomy measured; aggregate mismatch attribution required before parser repair`
-- Next exact task: `Add a validation-only, aggregate-redacted mismatch-attribution diagnostic. For amount mismatches, count whether the truth occurs among normalized currency candidates and bucket candidate counts; for recipient/reference mismatches, count truth presence or normalized containment without persisting values. Defer timestamp conclusions because its truth-scored support is one. Do not change parser behavior, rerun OCR engines, train, or access the five locked-test records.`
+- Current phase: `Logical PR17 OCR benchmark/parser — v2 failure taxonomy measured; external review brief prepared before aggregate mismatch attribution`
+- Next exact task: `Review the response to docs/handoffs/PR17_OCR_PARSER_MISMATCH_EXTERNAL_REVIEW.md. Confirm or reject the suspected recipient name/wallet measurement-contract defect, finalize a mutually exclusive aggregate attribution schema, then implement it test-first without changing parser behavior. Do not rerun OCR engines, train, or access the five locked-test records.`
 
 ## PR10-PR13 reconciliation status
 
@@ -194,7 +194,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 ## Last completed session
 
 - Handoff file: `docs/handoffs/2026-08-14-PR17-parser-failure-taxonomy.md`
-- Summary: `Executed parser-ceiling v2 on 33 private validation transcripts at immutable implementation commit 5576944c…, recorded privacy-safe exact/mismatch/unavailable and canonical warning aggregates, and established that mismatch attribution—not regex widening—is required before parser repair.`
+- Summary: `Prepared a self-contained privacy-safe external review request for the PR17 mismatch-dominant parser result, including the suspected recipient name/wallet measurement-contract defect, attribution design, architectural options and exact reviewer questions. No parser behavior changed.`
 
 ## Next session startup
 
@@ -205,4 +205,4 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve the three exact PR14 Drive bundles and the completed PaySim/MoMTSim v1 PR15 bundles. Keep all locked-test partitions sealed and unavailable for decisions before PR20; keep the v2 run explicitly incomplete.
-8. Implement the validation-only aggregate mismatch-attribution diagnostic described above, preserving the sealed five-record test, private-value redaction and `RUN_BENCHMARK=False`. Do not change parser behavior until those aggregate categories identify a proven repair target.
+8. Read `docs/handoffs/PR17_OCR_PARSER_MISMATCH_EXTERNAL_REVIEW.md` and the external response before implementation. Resolve the recipient measurement contract first, then implement only the reviewed aggregate diagnostic with the sealed five-record test, private-value redaction and `RUN_BENCHMARK=False` preserved.
