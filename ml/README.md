@@ -136,6 +136,13 @@ screen and integrity-checked selected-bundle replay. The private bundle builder
 accepts only explicit records returned by the PR16 train/validation loader; a
 test ID or unknown binding fails closed.
 
+The v2 benchmark contract requires zero failures and 100% record coverage for
+every competing configuration, plus one complete compatible finalist for each
+required engine. PaddleOCR PP-OCRv6 CPU inference disables MKLDNN to avoid the
+Paddle 3.3.1 oneDNN PIR incompatibility. The Colab bootstrap rejects Tesseract
+4 and builds exact official Tesseract 5.5.3 source when Jammy cannot supply
+major 5.
+
 The output-free `06_benchmark_ocr.ipynb` is owner-operated in Google Colab. It
 expects the content-hashed private development ZIP in
 `MyDrive/momo-fraud/private-governance/ghana-private/`, benchmarks three source
@@ -145,9 +152,12 @@ locked test is absent from the ZIP and unavailable through every PR17 loader.
 No approved tampered screenshot derivatives currently exist, so the required
 tampered slice remains an explicit blocker instead of a fabricated metric.
 
-The repository gate validates only code, fictitious fixtures, locks and the
-stripped notebook. Actual engine versions, latency and accuracy exist only
-after the owner completes the Colab run and returns its safe report hashes.
+The first completed Colab validation is retained only as failed evidence: its
+field-region finalists covered eight of 33 records, PaddleOCR failed 33/33 and
+Tesseract was unsupported 4.1.1. The resulting v1 experimental bundle is not a
+valid winner or accuracy claim. The repaired v2 notebook still requires an
+owner-operated clean-validation rerun; locked test and recognizer training
+remain prohibited.
 
 ## P12 pre-training commands
 

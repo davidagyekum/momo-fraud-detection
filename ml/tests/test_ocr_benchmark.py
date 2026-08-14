@@ -14,7 +14,6 @@ import momo_fdvs_ml.ocr_benchmark as ocr_benchmark
 from momo_fdvs_ml.ocr_benchmark import (
     OCR_ADAPTER_SCHEMA_VERSION,
     OCR_BENCHMARK_REPORT_VERSION,
-    OCR_BENCHMARK_VERSION,
     OCR_DEVELOPMENT_BUNDLE_VERSION,
     OCR_SELECTED_BUNDLE_VERSION,
     EasyOCRAdapter,
@@ -232,6 +231,33 @@ def test_easyocr_and_paddle_fail_closed_on_bad_runtime_results() -> None:
         ).extract(image, configuration="bad")
 
 
+def test_paddleocr_disables_mkldnn_for_ppocrv6_cpu_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class PaddleModule:
+        @staticmethod
+        def PaddleOCR(**options: object) -> _PaddlePipeline:
+            captured.update(options)
+            return _PaddlePipeline(
+                [{"rec_texts": ["Text"], "rec_scores": [0.8], "rec_boxes": [[0, 0, 20, 10]]}]
+            )
+
+    real_import = ocr_benchmark.importlib.import_module
+    monkeypatch.setattr(
+        ocr_benchmark.importlib,
+        "import_module",
+        lambda name: PaddleModule if name == "paddleocr" else real_import(name),
+    )
+
+    PaddleOCRAdapter(device="cpu")
+
+    assert captured["device"] == "cpu"
+    assert captured["ocr_version"] == "PP-OCRv6"
+    assert captured["enable_mkldnn"] is False
+
+
 def test_preprocessing_grid_is_deterministic_and_field_crop_is_bounded() -> None:
     import io
 
@@ -262,15 +288,27 @@ def test_committed_benchmark_config_matches_code_policy_and_rejects_drift(
     tmp_path: Path,
 ) -> None:
     repository_root = Path(__file__).resolve().parents[2]
-    config_path = repository_root / "ml/configs/ocr_benchmark_v1.json"
+    config_path = repository_root / "ml/configs/ocr_benchmark_v2.json"
     config = load_ocr_benchmark_config(config_path)
     assert config["data_policy"]["locked_test_access_allowed"] is False  # type: ignore[index]
+    assert config["selection_policy"] == {
+        "complete_record_coverage_required": True,
+        "required_engines_available": True,
+    }
     drifted = json.loads(config_path.read_text(encoding="utf-8"))
     drifted["release_gates"]["amount_exact"] = 0.5
     drifted_path = tmp_path / "drifted.json"
     _write_json(drifted_path, drifted)
     with pytest.raises(OCRBenchmarkError, match="drifted"):
         load_ocr_benchmark_config(drifted_path)
+
+    incompatible = json.loads(config_path.read_text(encoding="utf-8"))
+    paddle = next(engine for engine in incompatible["engines"] if engine["engine"] == "paddleocr")
+    paddle["options"]["enable_mkldnn"] = True
+    incompatible_path = tmp_path / "incompatible.json"
+    _write_json(incompatible_path, incompatible)
+    with pytest.raises(OCRBenchmarkError, match="drifted"):
+        load_ocr_benchmark_config(incompatible_path)
 
 
 def test_private_development_bundle_contains_only_train_and_validation(tmp_path: Path) -> None:
@@ -284,7 +322,7 @@ def test_private_development_bundle_contains_only_train_and_validation(tmp_path:
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["schema_version"] == OCR_DEVELOPMENT_BUNDLE_VERSION
-    assert manifest["benchmark_version"] == OCR_BENCHMARK_VERSION
+    assert manifest["benchmark_version"] == "ghana-ocr-benchmark-v1"
     assert manifest["record_count"] == 2
     assert manifest["locked_test_included"] is False
     assert {record["record_id"] for record in manifest["records"]} == {
@@ -681,7 +719,7 @@ def test_validation_benchmark_is_redacted_grouped_and_test_locked(tmp_path: Path
     assert report["report_sha256"] == _canonical(report, "report_sha256")
 
 
-def test_validation_benchmark_documents_engine_incompatibility_and_selects_experimental(
+def test_validation_benchmark_documents_engine_incompatibility_and_blocks_selection(
     tmp_path: Path,
 ) -> None:
     repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
@@ -709,28 +747,168 @@ def test_validation_benchmark_documents_engine_incompatibility_and_selects_exper
     assert report["engine_status"]["tesseract"]["measured"] is True
     assert report["engine_status"]["easyocr"]["incompatibility_documented"] is True
     assert report["engine_status"]["paddleocr"]["incompatibility_documented"] is True
+    assert report["selection_eligible"] is False
+    with pytest.raises(OCRBenchmarkError, match="boundary"):
+        select_ocr_configuration(
+            report_path=report_path,
+            output_path=private / "results" / "selected.json",
+            repository_root=repository,
+        )
+
+
+def test_screen_selection_excludes_high_scoring_partial_coverage_candidate(
+    tmp_path: Path,
+) -> None:
+    partial = OCRConfiguration("tesseract", "field_region", {"psm": 6})
+    complete = OCRConfiguration("tesseract", "original_rgb", {"psm": 6})
+    easy = OCRConfiguration("easyocr", "original_rgb", {"gpu": False})
+    paddle = OCRConfiguration("paddleocr", "original_rgb", {"device": "cpu"})
+
+    def candidate(
+        configuration: OCRConfiguration, *, score: float, coverage_complete: bool
+    ) -> dict[str, object]:
+        return {
+            "configuration_id": configuration.configuration_id,
+            "engine": configuration.engine,
+            "variant": configuration.variant,
+            "engine_options": dict(configuration.engine_options),
+            "engine_versions": ["5.5.3"] if configuration.engine == "tesseract" else ["test"],
+            "metrics": {
+                "all_release_gates_passed": score == 1.0,
+                "weighted_selection_score": score,
+            },
+            "successful_record_count": 1 if not coverage_complete else 2,
+            "failure_count": 1 if not coverage_complete else 0,
+            "record_coverage": 0.5 if not coverage_complete else 1.0,
+            "coverage_complete": coverage_complete,
+        }
+
+    report: dict[str, object] = {
+        "schema_version": OCR_BENCHMARK_REPORT_VERSION,
+        "stage": "screen",
+        "selection_eligible": False,
+        "locked_test_accessed": False,
+        "configurations": [
+            candidate(partial, score=1.0, coverage_complete=False),
+            candidate(complete, score=0.2, coverage_complete=True),
+            candidate(easy, score=0.2, coverage_complete=True),
+            candidate(paddle, score=0.2, coverage_complete=True),
+        ],
+    }
+    report["report_sha256"] = _canonical(report, "report_sha256")
+    report_path = tmp_path / "screen.json"
+    _write_json(report_path, report)
+
+    finalists = select_engine_finalists(report_path)
+
+    assert next(item for item in finalists if item.engine == "tesseract").variant == "original_rgb"
+
+
+def test_tesseract_four_is_recorded_as_unsupported_and_blocks_selection(tmp_path: Path) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    report_path = private / "results" / "benchmark.json"
+    run_ocr_validation_benchmark(
+        development_manifest_path=manifest_path,
+        configurations=_benchmark_configs(),
+        adapters={
+            "tesseract": TesseractAdapter(
+                runner=lambda *_: _full_tesseract_data(), version="4.1.1"
+            ),
+            "easyocr": EasyOCRAdapter(reader=_EasyReader()),
+            "paddleocr": PaddleOCRAdapter(
+                pipeline=_PaddlePipeline(
+                    [{"rec_texts": ["Text"], "rec_scores": [0.8], "rec_boxes": [[0, 0, 20, 10]]}]
+                )
+            ),
+        },
+        output_path=report_path,
+        repository_root=repository,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["engine_status"]["tesseract"]["required_version_satisfied"] is False
+    assert any(
+        failure["reason_code"] == "OCR_ENGINE_VERSION_UNSUPPORTED"
+        for failure in report["failures"]
+        if failure["engine"] == "tesseract"
+    )
+    assert report["selection_eligible"] is False
+
+
+def test_complete_full_report_creates_coverage_bound_experimental_bundle(tmp_path: Path) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    report_path = private / "results" / "benchmark.json"
+    run_ocr_validation_benchmark(
+        development_manifest_path=manifest_path,
+        configurations=_benchmark_configs(),
+        adapters={
+            "tesseract": TesseractAdapter(
+                runner=lambda *_: _full_tesseract_data(), version="5.5.3"
+            ),
+            "easyocr": EasyOCRAdapter(reader=_EasyReader()),
+            "paddleocr": PaddleOCRAdapter(
+                pipeline=_PaddlePipeline(
+                    [{"rec_texts": ["Text"], "rec_scores": [0.8], "rec_boxes": [[0, 0, 20, 10]]}]
+                )
+            ),
+        },
+        output_path=report_path,
+        repository_root=repository,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["selection_eligible"] is True
+    assert report["comparison_complete"] is True
+
     bundle_path = private / "results" / "selected.json"
     select_ocr_configuration(
-        report_path=report_path, output_path=bundle_path, repository_root=repository
+        report_path=report_path,
+        output_path=bundle_path,
+        repository_root=repository,
     )
     bundle = load_selected_ocr_bundle(bundle_path)
-    assert bundle["schema_version"] == OCR_SELECTED_BUNDLE_VERSION
-    assert bundle["engine"] == "tesseract"
+    assert bundle["source_report_schema_version"] == OCR_BENCHMARK_REPORT_VERSION
+    assert bundle["comparison_complete"] is True
+    assert bundle["coverage_complete"] is True
+    assert bundle["record_coverage"] == 1.0
+    assert bundle["validation_record_count"] == 1
     assert bundle["status"] == "experimental"
     assert bundle["promotable"] is False
-    assert bundle["locked_test_accessed"] is False
     replay = replay_parser_bundle(
         bundle_path,
         "MTN MobileMoney Amount GHS 10.00 Reference: ABC12345",
         engine_confidence=0.95,
         now=datetime(2026, 8, 14, tzinfo=UTC),
     )
-    direct = parse_momo_text(
-        "MTN MobileMoney Amount GHS 10.00 Reference: ABC12345",
-        engine_confidence=0.95,
-        now=datetime(2026, 8, 14, tzinfo=UTC),
+    assert (
+        replay.as_dict()
+        == parse_momo_text(
+            "MTN MobileMoney Amount GHS 10.00 Reference: ABC12345",
+            engine_confidence=0.95,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        ).as_dict()
     )
-    assert replay.as_dict() == direct.as_dict()
+
+    bundle["coverage_complete"] = False
+    bundle["bundle_sha256"] = _canonical(bundle, "bundle_sha256")
+    _write_json(bundle_path, bundle)
+    with pytest.raises(OCRBenchmarkError, match="compatibility"):
+        load_selected_ocr_bundle(bundle_path)
 
 
 def test_benchmark_rejects_partial_matrix_duplicates_naive_clock_and_no_validation(
@@ -841,7 +1019,13 @@ def test_two_stage_screen_selects_one_finalist_per_engine(tmp_path: Path) -> Non
         adapters={
             "tesseract": TesseractAdapter(
                 runner=lambda *_: _full_tesseract_data(), version="5.test"
-            )
+            ),
+            "easyocr": EasyOCRAdapter(reader=_EasyReader()),
+            "paddleocr": PaddleOCRAdapter(
+                pipeline=_PaddlePipeline(
+                    [{"rec_texts": ["Text"], "rec_scores": [0.8], "rec_boxes": [[0, 0, 20, 10]]}]
+                )
+            ),
         },
         output_path=screen_path,
         repository_root=repository,
@@ -851,6 +1035,7 @@ def test_two_stage_screen_selects_one_finalist_per_engine(tmp_path: Path) -> Non
     screen = json.loads(screen_path.read_text(encoding="utf-8"))
     assert screen["stage"] == "screen"
     assert screen["selection_eligible"] is False
+    assert screen["comparison_complete"] is True
     finalists = select_engine_finalists(screen_path)
     assert [config.engine for config in finalists] == [
         "tesseract",

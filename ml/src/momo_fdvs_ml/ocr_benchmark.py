@@ -7,6 +7,7 @@ import importlib
 import importlib.metadata
 import json
 import os
+import re
 import shutil
 import statistics
 import tempfile
@@ -33,11 +34,12 @@ from momo_fdvs_ml.ocr_parser import (
 
 OCR_ADAPTER_SCHEMA_VERSION: Final = "ocr-adapter-result-v1"
 OCR_DEVELOPMENT_BUNDLE_VERSION: Final = "ghana-ocr-development-bundle-v1"
-OCR_BENCHMARK_REPORT_VERSION: Final = "ghana-ocr-benchmark-report-v1"
-OCR_SELECTED_BUNDLE_VERSION: Final = "ghana-ocr-selected-bundle-v1"
+OCR_BENCHMARK_REPORT_VERSION: Final = "ghana-ocr-benchmark-report-v2"
+OCR_SELECTED_BUNDLE_VERSION: Final = "ghana-ocr-selected-bundle-v2"
 OCR_BENCHMARK_VERSION: Final = "ghana-ocr-benchmark-v1"
-OCR_BENCHMARK_CONFIG_VERSION: Final = "ocr-benchmark-config-v1"
+OCR_BENCHMARK_CONFIG_VERSION: Final = "ocr-benchmark-config-v2"
 REQUIRED_ENGINES: Final = ("tesseract", "easyocr", "paddleocr")
+REQUIRED_ENGINE_MAJOR_VERSIONS: Final = {"tesseract": 5}
 PREPROCESSING_VARIANTS: Final = (
     "original_rgb",
     "normalized_rgb",
@@ -62,6 +64,14 @@ RELEASE_GATES: Final = {
 
 class OCRBenchmarkError(RuntimeError):
     """Raised when OCR benchmarking would violate an integrity or split boundary."""
+
+
+class OCRAdapterError(OCRBenchmarkError):
+    """Raised with a stable, non-sensitive adapter failure category."""
+
+    def __init__(self, message: str, *, reason_code: str) -> None:
+        super().__init__(message)
+        self.reason_code = reason_code
 
 
 @dataclass(frozen=True)
@@ -215,6 +225,7 @@ def load_ocr_benchmark_config(path: Path) -> dict[str, object]:
     weights = config.get("selection_weights")
     gates = config.get("release_gates")
     policy = config.get("data_policy")
+    selection_policy = config.get("selection_policy")
     expected_weights = {
         "amount_exact": FIELD_WEIGHTS["amount"],
         "reference_exact": FIELD_WEIGHTS["reference"],
@@ -230,6 +241,13 @@ def load_ocr_benchmark_config(path: Path) -> dict[str, object]:
         "recipient_exact": RELEASE_GATES["recipient"],
         "required_field_parse_success": RELEASE_GATES["required_field_parse_success"],
     }
+    engine_contracts = (
+        {entry.get("engine"): entry for entry in engines if isinstance(entry, dict)}
+        if isinstance(engines, list)
+        else {}
+    )
+    tesseract_contract = engine_contracts.get("tesseract", {})
+    paddle_contract = engine_contracts.get("paddleocr", {})
     if (
         config.get("schema_version") != OCR_BENCHMARK_CONFIG_VERSION
         or config.get("benchmark_version") != OCR_BENCHMARK_VERSION
@@ -244,6 +262,19 @@ def load_ocr_benchmark_config(path: Path) -> dict[str, object]:
         or policy.get("locked_test_access_allowed") is not False
         or policy.get("primary_partition") != "controlled_real_validation"
         or policy.get("synthetic_results_supplementary_only") is not True
+        or selection_policy
+        != {
+            "complete_record_coverage_required": True,
+            "required_engines_available": True,
+        }
+        or tesseract_contract.get("required_major_version") != 5
+        or paddle_contract.get("options")
+        != {
+            "device": "cpu",
+            "enable_mkldnn": False,
+            "language": "en",
+            "ocr_version": "PP-OCRv6",
+        }
     ):
         raise OCRBenchmarkError("OCR benchmark configuration drifted from PR17 policy")
     return config
@@ -338,7 +369,9 @@ class TesseractAdapter:
                     output_type=pytesseract.Output.DICT,
                 )
             except (ImportError, OSError, RuntimeError) as exc:
-                raise OCRBenchmarkError("tesseract engine is unavailable") from exc
+                raise OCRAdapterError(
+                    "tesseract engine is unavailable", reason_code="OCR_ENGINE_UNAVAILABLE"
+                ) from exc
         else:
             data = self._runner(image, f"--psm {self.psm}")
         tokens: list[OCRToken] = []
@@ -359,7 +392,10 @@ class TesseractAdapter:
                     str(data[key][index]) for key in ("block_num", "par_num", "line_num")
                 )
             except (KeyError, IndexError, TypeError, ValueError) as exc:
-                raise OCRBenchmarkError("tesseract returned an invalid token schema") from exc
+                raise OCRAdapterError(
+                    "tesseract returned an invalid token schema",
+                    reason_code="OCR_ENGINE_RESULT_INVALID",
+                ) from exc
             tokens.append(OCRToken(text, round(confidence, 4), bbox, line_id))
         return _adapter_result(
             engine=self.engine,
@@ -389,7 +425,9 @@ class EasyOCRAdapter:
                     options["model_storage_directory"] = model_storage_directory
                 reader = easyocr.Reader(["en"], **options)
             except (ImportError, OSError, RuntimeError) as exc:
-                raise OCRBenchmarkError("easyocr engine is unavailable") from exc
+                raise OCRAdapterError(
+                    "easyocr engine is unavailable", reason_code="OCR_ENGINE_UNAVAILABLE"
+                ) from exc
         self.reader = cast(_EasyReader, reader)
         try:
             self.engine_version = importlib.metadata.version("easyocr")
@@ -402,11 +440,16 @@ class EasyOCRAdapter:
         try:
             rows = self.reader.readtext(np.asarray(image), detail=1, paragraph=False)
         except (AttributeError, RuntimeError, ValueError) as exc:
-            raise OCRBenchmarkError("easyocr inference failed") from exc
+            raise OCRAdapterError(
+                "easyocr inference failed", reason_code="OCR_ENGINE_INFERENCE_FAILED"
+            ) from exc
         tokens: list[OCRToken] = []
         for row in rows:
             if not isinstance(row, (list, tuple)) or len(row) != 3:
-                raise OCRBenchmarkError("easyocr returned an invalid token schema")
+                raise OCRAdapterError(
+                    "easyocr returned an invalid token schema",
+                    reason_code="OCR_ENGINE_RESULT_INVALID",
+                )
             polygon, text, confidence = row
             points = list(polygon)
             xs = [int(point[0]) for point in points]
@@ -426,19 +469,30 @@ class EasyOCRAdapter:
 class PaddleOCRAdapter:
     engine = "paddleocr"
 
-    def __init__(self, *, pipeline: object | None = None, device: str = "cpu") -> None:
+    def __init__(
+        self,
+        *,
+        pipeline: object | None = None,
+        device: str = "cpu",
+        ocr_version: str = "PP-OCRv6",
+        enable_mkldnn: bool = False,
+    ) -> None:
         if pipeline is None:
             try:
                 paddleocr = importlib.import_module("paddleocr")
                 pipeline = paddleocr.PaddleOCR(
                     lang="en",
                     device=device,
+                    ocr_version=ocr_version,
+                    enable_mkldnn=enable_mkldnn,
                     use_doc_orientation_classify=False,
                     use_doc_unwarping=False,
                     use_textline_orientation=False,
                 )
             except (ImportError, OSError, RuntimeError) as exc:
-                raise OCRBenchmarkError("paddleocr engine is unavailable") from exc
+                raise OCRAdapterError(
+                    "paddleocr engine is unavailable", reason_code="OCR_ENGINE_UNAVAILABLE"
+                ) from exc
         self.pipeline = cast(_PaddlePipeline, pipeline)
         try:
             self.engine_version = importlib.metadata.version("paddleocr")
@@ -451,22 +505,36 @@ class PaddleOCRAdapter:
         try:
             results = list(self.pipeline.predict(np.asarray(image)))
         except (AttributeError, RuntimeError, ValueError) as exc:
-            raise OCRBenchmarkError("paddleocr inference failed") from exc
+            raise OCRAdapterError(
+                "paddleocr inference failed", reason_code="OCR_ENGINE_INFERENCE_FAILED"
+            ) from exc
         if len(results) != 1:
-            raise OCRBenchmarkError("paddleocr returned an invalid result count")
+            raise OCRAdapterError(
+                "paddleocr returned an invalid result count",
+                reason_code="OCR_ENGINE_RESULT_INVALID",
+            )
         payload = results[0].json
         if callable(payload):
             payload = payload()
         if not isinstance(payload, dict):
-            raise OCRBenchmarkError("paddleocr returned an invalid result schema")
+            raise OCRAdapterError(
+                "paddleocr returned an invalid result schema",
+                reason_code="OCR_ENGINE_RESULT_INVALID",
+            )
         data = payload.get("res", payload)
         if not isinstance(data, dict):
-            raise OCRBenchmarkError("paddleocr returned an invalid result schema")
+            raise OCRAdapterError(
+                "paddleocr returned an invalid result schema",
+                reason_code="OCR_ENGINE_RESULT_INVALID",
+            )
         texts = data.get("rec_texts", [])
         scores = data.get("rec_scores", [])
         boxes = data.get("rec_boxes", [])
         if not (len(texts) == len(scores) == len(boxes)):
-            raise OCRBenchmarkError("paddleocr returned misaligned tokens")
+            raise OCRAdapterError(
+                "paddleocr returned misaligned tokens",
+                reason_code="OCR_ENGINE_RESULT_INVALID",
+            )
         tokens = [
             OCRToken(
                 str(text),
@@ -827,6 +895,14 @@ def _truth_boxes(truth: Mapping[str, object]) -> tuple[tuple[int, int, int, int]
     return tuple(boxes)
 
 
+def _engine_version_satisfies_policy(engine: str, version: str) -> bool:
+    required_major = REQUIRED_ENGINE_MAJOR_VERSIONS.get(engine)
+    if required_major is None:
+        return bool(version.strip())
+    match = re.match(r"\s*(\d+)", version)
+    return match is not None and int(match.group(1)) == required_major
+
+
 def run_ocr_validation_benchmark(
     *,
     development_manifest_path: Path,
@@ -912,6 +988,16 @@ def run_ocr_validation_benchmark(
                 continue
             try:
                 result = adapter.extract(image, configuration=config.configuration_id)
+            except OCRAdapterError as exc:
+                failures.append(
+                    {
+                        "record_id": record_id,
+                        "configuration_id": config.configuration_id,
+                        "engine": config.engine,
+                        "reason_code": exc.reason_code,
+                    }
+                )
+                continue
             except OCRBenchmarkError:
                 failures.append(
                     {
@@ -928,6 +1014,16 @@ def run_ocr_validation_benchmark(
             ):
                 raise OCRBenchmarkError("OCR adapter result contract drifted")
             engine_versions.setdefault(config.engine, set()).add(result.engine_version)
+            if not _engine_version_satisfies_policy(config.engine, result.engine_version):
+                failures.append(
+                    {
+                        "record_id": record_id,
+                        "configuration_id": config.configuration_id,
+                        "engine": config.engine,
+                        "reason_code": "OCR_ENGINE_VERSION_UNSUPPORTED",
+                    }
+                )
+                continue
             parser = parse_momo_text(
                 result.raw_text,
                 engine_confidence=result.text_confidence,
@@ -950,6 +1046,10 @@ def run_ocr_validation_benchmark(
     for config in configurations:
         config_rows = rows_by_configuration[config.configuration_id]
         metrics = aggregate_configuration_metrics(config_rows) if config_rows else None
+        failure_count = sum(
+            failure["configuration_id"] == config.configuration_id for failure in failures
+        )
+        record_coverage = len(config_rows) / len(records)
         configuration_reports.append(
             {
                 "configuration_id": config.configuration_id,
@@ -959,9 +1059,9 @@ def run_ocr_validation_benchmark(
                 "engine_versions": sorted(engine_versions.get(config.engine, set())),
                 "metrics": metrics,
                 "successful_record_count": len(config_rows),
-                "failure_count": sum(
-                    failure["configuration_id"] == config.configuration_id for failure in failures
-                ),
+                "failure_count": failure_count,
+                "record_coverage": round(record_coverage, 6),
+                "coverage_complete": len(config_rows) == len(records) and failure_count == 0,
             }
         )
     engine_status = {
@@ -971,10 +1071,24 @@ def run_ocr_validation_benchmark(
                 for report in configuration_reports
             ),
             "versions": sorted(engine_versions.get(engine, set())),
+            "required_major_version": REQUIRED_ENGINE_MAJOR_VERSIONS.get(engine),
+            "required_version_satisfied": bool(engine_versions.get(engine))
+            and all(
+                _engine_version_satisfies_policy(engine, version)
+                for version in engine_versions.get(engine, set())
+            ),
             "incompatibility_documented": any(failure["engine"] == engine for failure in failures),
         }
         for engine in REQUIRED_ENGINES
     }
+    comparison_complete = all(
+        engine_status[engine]["required_version_satisfied"] is True
+        and any(
+            report["engine"] == engine and report["coverage_complete"] is True
+            for report in configuration_reports
+        )
+        for engine in REQUIRED_ENGINES
+    )
     development_manifest = _load_object(development_manifest_path)
     report: dict[str, object] = {
         "schema_version": OCR_BENCHMARK_REPORT_VERSION,
@@ -982,7 +1096,9 @@ def run_ocr_validation_benchmark(
         "development_manifest_sha256": development_manifest.get("manifest_sha256"),
         "partition": "validation",
         "stage": "screen" if source_group_limit is not None else "full",
-        "selection_eligible": source_group_limit is None,
+        "selection_eligible": source_group_limit is None and comparison_complete,
+        "comparison_complete": comparison_complete,
+        "complete_record_coverage_required": True,
         "controlled_real_primary": True,
         "record_count": len(records),
         "source_group_count": len(group_ids),
@@ -1024,10 +1140,15 @@ def select_engine_finalists(report_path: Path) -> tuple[OCRConfiguration, ...]:
         candidates = [
             config
             for config in configurations
-            if isinstance(config, dict) and config.get("engine") == engine
+            if isinstance(config, dict)
+            and config.get("engine") == engine
+            and config.get("coverage_complete") is True
+            and isinstance(config.get("metrics"), dict)
         ]
         if not candidates:
-            raise OCRBenchmarkError("OCR screen omitted a required engine")
+            raise OCRBenchmarkError(
+                "OCR screen has no complete-coverage candidate for a required engine"
+            )
 
         def rank(config: dict[str, object]) -> tuple[float, float, str]:
             metrics = config.get("metrics")
@@ -1077,7 +1198,9 @@ def select_ocr_configuration(
     eligible = [
         config
         for config in configurations
-        if isinstance(config, dict) and isinstance(config.get("metrics"), dict)
+        if isinstance(config, dict)
+        and config.get("coverage_complete") is True
+        and isinstance(config.get("metrics"), dict)
     ]
     if not eligible:
         raise OCRBenchmarkError("OCR benchmark produced no selectable configuration")
@@ -1100,7 +1223,12 @@ def select_ocr_configuration(
     bundle: dict[str, object] = {
         "schema_version": OCR_SELECTED_BUNDLE_VERSION,
         "benchmark_version": OCR_BENCHMARK_VERSION,
+        "source_report_schema_version": report["schema_version"],
         "source_report_sha256": report["report_sha256"],
+        "comparison_complete": report["comparison_complete"],
+        "coverage_complete": selected["coverage_complete"],
+        "record_coverage": selected["record_coverage"],
+        "validation_record_count": report["record_count"],
         "status": "validated" if metrics["all_release_gates_passed"] is True else "experimental",
         "configuration_id": selected["configuration_id"],
         "engine": selected["engine"],
@@ -1124,10 +1252,18 @@ def load_selected_ocr_bundle(path: Path) -> dict[str, object]:
     """Verify selected bundle integrity and parser compatibility for replay."""
 
     bundle = _load_object(path)
+    validation_record_count = bundle.get("validation_record_count")
     if (
         bundle.get("schema_version") != OCR_SELECTED_BUNDLE_VERSION
+        or bundle.get("source_report_schema_version") != OCR_BENCHMARK_REPORT_VERSION
         or bundle.get("parser_version") != OCR_PARSER_VERSION
         or bundle.get("field_schema_version") != OCR_FIELD_SCHEMA_VERSION
+        or bundle.get("comparison_complete") is not True
+        or bundle.get("coverage_complete") is not True
+        or bundle.get("record_coverage") != 1.0
+        or isinstance(validation_record_count, bool)
+        or not isinstance(validation_record_count, int)
+        or validation_record_count <= 0
         or bundle.get("locked_test_accessed") is not False
         or bundle.get("training_executed") is not False
         or bundle.get("bundle_sha256") != _canonical_hash(bundle, "bundle_sha256")

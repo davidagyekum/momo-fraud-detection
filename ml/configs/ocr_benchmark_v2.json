@@ -39,6 +39,7 @@
       "license": "Apache-2.0",
       "options": {
         "device": "cpu",
+        "enable_mkldnn": false,
         "language": "en",
         "ocr_version": "PP-OCRv6"
       },
@@ -60,7 +61,11 @@
     "required_field_parse_success": 0.9,
     "timestamp_exact": 0.9
   },
-  "schema_version": "ocr-benchmark-config-v1",
+  "schema_version": "ocr-benchmark-config-v2",
+  "selection_policy": {
+    "complete_record_coverage_required": true,
+    "required_engines_available": true
+  },
   "selection_weights": {
     "amount_exact": 0.3,
     "cer_wer_composite": 0.1,

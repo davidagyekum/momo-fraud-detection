@@ -1,40 +1,10 @@
 {
-  "benchmark_executed": false,
+  "benchmark_executed": true,
   "branch": "codex/p17-ocr-benchmark",
   "code_base_sha": "b1284e37f8b4e6a38587fee68a44ed8a74203323",
-  "development_archive_repair": {
-    "adapter_failures": {},
-    "archive_member_count": 117,
-    "benchmark_row_completed_before_failure": false,
-    "configuration_count": 15,
-    "drive_malformed_archive_file_id": "1lgc1SSC9i5SIz196JXmYWuoi_JiQhy34",
-    "drive_portable_archive_file_id": "12FNEJXaZDh8jIecWmVbWmGBwi-VFFgbf",
-    "drive_replacement_pending_explicit_authorization": false,
-    "engine_initialization_completed": true,
-    "failure_boundary": "development_bundle_file_resolution_before_first_image",
-    "hash_mismatch_count_after_repair": 0,
-    "missing_member_count_after_repair": 0,
-    "original_archive_sha256": "3370f7d38f6e56e995ba48e9808db669bbfe5a646923215a9c4834e7fab5afb2",
-    "original_archive_size_bytes": 3106402,
-    "portable_archive_sha256": "8a7f4b58e20569775dc237e5e4fefba78e2bc5aa8c40d5ee41dd893d495ea9b9",
-    "portable_archive_size_bytes": 3105575,
-    "private_image_bytes_accessed_before_failure": false,
-    "private_manifest_accessed_before_failure": true,
-    "root_cause": "zip_members_used_windows_backslash_separators",
-    "training_executed": false
-  },
   "configuration": {
-    "path": "ml/configs/ocr_benchmark_v1.json",
-    "sha256": "ecd7d7845b130cf657c0bdca57b9bf0eae9b47da4afbc6086b5970d35e95e2c9"
-  },
-  "dependency_repair": {
-    "benchmark_data_accessed_before_failure": false,
-    "failure_boundary": "pip_dependency_resolution",
-    "numpy_pin_after": "2.3.5",
-    "numpy_pin_before": "2.5.2",
-    "paddlex_constraint": ">=1.24,<2.4",
-    "root_cause": "runtime_numpy_pin_incompatible_with_paddlex_3_7_0",
-    "wheel_availability_checked": true
+    "path": "ml/configs/ocr_benchmark_v2.json",
+    "sha256": "b8c667508e262e45754f22096797f5e66b71cc90638502c68f99d2fba55f5447"
   },
   "data_boundary": {
     "controlled_real_test_record_count": 5,
@@ -51,50 +21,123 @@
     "private_bytes_committed": false,
     "source_split_manifest_sha256": "3c2bd2e3727b62f0a61f01a7eebcbe49da7ed0ac124a8f765d471533d867d941"
   },
-  "engines": [
-    {
-      "engine": "tesseract",
-      "license": "Apache-2.0",
-      "required_major_version": 5,
-      "version_measured": false
+  "failed_attempts_before_validation": {
+    "dependency_resolution": {
+      "benchmark_data_accessed": false,
+      "failure_boundary": "pip_dependency_resolution",
+      "numpy_pin_after": "2.3.5",
+      "numpy_pin_before": "2.5.2",
+      "root_cause": "runtime_numpy_pin_incompatible_with_paddlex_3_7_0"
     },
-    {
-      "engine": "easyocr",
-      "license": "Apache-2.0",
-      "package_pin": "1.7.2",
-      "version_measured": false
+    "portable_archive": {
+      "archive_member_count": 117,
+      "benchmark_row_completed": false,
+      "failure_boundary": "development_bundle_file_resolution_before_first_image",
+      "portable_archive_sha256": "8a7f4b58e20569775dc237e5e4fefba78e2bc5aa8c40d5ee41dd893d495ea9b9",
+      "private_image_bytes_accessed": false,
+      "root_cause": "zip_members_used_windows_backslash_separators"
     },
-    {
-      "engine": "paddleocr",
-      "license": "Apache-2.0",
-      "package_pin": "3.7.0",
-      "runtime_pin": "paddlepaddle==3.3.1",
-      "version_measured": false
+    "runtime_restart": {
+      "benchmark_data_accessed": false,
+      "failure_boundary": "post_install_preflight_import",
+      "root_cause": "pillow_files_and_modules_mixed_after_in_process_upgrade"
     }
-  ],
+  },
+  "failed_validation_run": {
+    "code_commit": "f3b76f4c4e474c0f677d025db8dde365a3414847",
+    "comparison_complete": false,
+    "engine_results": {
+      "easyocr": {
+        "cer": 0.407628,
+        "failed_records": 25,
+        "field_exact": {
+          "amount": 0.285714,
+          "recipient": 0.0,
+          "reference": 0.0,
+          "timestamp": null
+        },
+        "median_latency_ms": 1348.4418,
+        "required_field_parse_success": null,
+        "successful_records": 8,
+        "variant": "field_region",
+        "version": "1.7.2",
+        "weighted_selection_score": 0.154401,
+        "wer": 0.644454
+      },
+      "paddleocr": {
+        "failed_records": 33,
+        "metrics": null,
+        "successful_records": 0,
+        "version": "3.7.0"
+      },
+      "tesseract": {
+        "cer": 0.504117,
+        "failed_records": 25,
+        "field_exact": {
+          "amount": 0.285714,
+          "recipient": 0.0,
+          "reference": 0.0,
+          "timestamp": null
+        },
+        "median_latency_ms": 739.0391,
+        "required_field_parse_success": null,
+        "required_major_version": 5,
+        "required_version_satisfied": false,
+        "successful_records": 8,
+        "variant": "field_region",
+        "version": "4.1.1",
+        "weighted_selection_score": 0.153837,
+        "wer": 0.70846
+      }
+    },
+    "failure_summary": {
+      "easyocr:OCR_PREPROCESSING_VARIANT_UNAVAILABLE": 25,
+      "paddleocr:OCR_ENGINE_FAILED": 33,
+      "tesseract:OCR_PREPROCESSING_VARIANT_UNAVAILABLE": 25
+    },
+    "locked_test_accessed": false,
+    "metrics_are_release_evidence": false,
+    "promotable": false,
+    "report_sha256": "1682dae402e5021d32c9f09314abe0ac6e42361a8a347de68abf88430eab329a",
+    "selected_bundle_sha256": "019e8e91d59b8f07302934e7fd61c671da8de06a9c00488e21ff83dd68cff162",
+    "selected_bundle_status": "historical_invalid_experimental",
+    "selected_engine": "easyocr",
+    "selected_variant": "field_region",
+    "source_group_count": 6,
+    "status": "failed_incomplete_validation",
+    "training_executed": false,
+    "validation_record_count": 33
+  },
   "locked_test_accessed": false,
-  "metrics": null,
   "notebook": {
     "outputs_stripped": true,
     "path": "ml/notebooks/colab/06_benchmark_ocr.ipynb",
-    "sha256": "14c0e435d79bca10ce1592bbeb94e417de061d064af8bfb713b206e6f774da3c"
+    "sha256": "6a6240c905654d617ffad8be4c52b24a292ff56b9be1047da95ef56ba9ff1f90"
   },
   "package_locks": {
     "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",
     "runtime_sha256": "074ab7b414333046081b5892cffafec0fa79a0953472ca219473e82727bdc0dc"
   },
-  "runtime_import_repair": {
-    "benchmark_data_accessed_before_failure": false,
-    "engine_initialization_completed_before_failure": false,
-    "failure_boundary": "post_install_preflight_import",
-    "locked_test_accessed": false,
-    "notebook_restart_gate_added": true,
-    "private_archive_accessed_before_failure": false,
-    "root_cause": "pillow_files_and_modules_mixed_after_in_process_upgrade",
-    "training_executed": false
+  "repair": {
+    "colab_rerun_executed": false,
+    "complete_record_coverage_required": true,
+    "configuration_schema_version": "ocr-benchmark-config-v2",
+    "development_bundle_version_preserved": "ghana-ocr-development-bundle-v1",
+    "paddle_diagnostic_probe": {
+      "fixed_probe_status": "passed",
+      "initial_failure_category": "PADDLE_ONEDNN_PIR_UNSUPPORTED",
+      "input": "generated_non_private_text_image",
+      "mkldnn_enabled_after": false,
+      "token_count_after": 1
+    },
+    "report_schema_version": "ghana-ocr-benchmark-report-v2",
+    "selected_bundle_schema_version": "ghana-ocr-selected-bundle-v2",
+    "tesseract_source_commit": "db0ec62f81b0737fbbe184d8fea40af5738f8eef",
+    "tesseract_source_version": "5.5.3"
   },
-  "schema_version": "pr17-ocr-benchmark-preparation-evidence-v1",
-  "selection_bundle_created": false,
+  "schema_version": "pr17-ocr-benchmark-evidence-v2",
+  "selection_bundle_created": true,
+  "selection_bundle_currently_valid": false,
   "tampered_derivative_slice_available": false,
   "training_executed": false
 }
