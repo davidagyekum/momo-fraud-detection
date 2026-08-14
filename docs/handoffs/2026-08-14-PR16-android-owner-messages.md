@@ -1,5 +1,7 @@
 # Codex Session Handoff
 
+> Superseded for current online-candidate counts by `2026-08-14-PR16-suspicious-online-batch.md`; retained as historical evidence of the Android-message intake.
+
 ## Session identity
 
 - Date: 2026-08-14, Africa/Lagos

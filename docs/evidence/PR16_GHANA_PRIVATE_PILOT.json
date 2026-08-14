@@ -176,6 +176,25 @@
     "unpermitted_count": 1,
     "working_copy_count": 7
   },
+  "latest_suspicious_candidate_batch": {
+    "batch_candidate_count": 11,
+    "combined_private_index_record_count": 22,
+    "combined_private_index_sha256": "13283824079b7b6c7065fc7f0930aa5278e7b7235eaaa1d167785902000479e9",
+    "combined_safe_report_sha256": "c212c05a55a4b6a0fde335327ada892c2a55da618399b1fcc1a18acc874eacbc",
+    "content_triage_counts": {
+      "adjacent_financial_phishing": 2,
+      "ambiguous_requires_adjudication": 2,
+      "primary_ghana_momo_fraud": 7
+    },
+    "controlled_source_group_count": 0,
+    "direct_identifier_present_count": 11,
+    "exact_duplicate_count": 0,
+    "perceptual_duplicate_count_at_distance_6": 0,
+    "rights_confirmed_count": 0,
+    "source_page_missing_count": 11,
+    "splits_frozen": false,
+    "training_eligible_count": 0
+  },
   "permission_evidence": "project_owner_attestation_of_friend_permission",
   "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
   "private_index_sha256": "8086578821d93618141ff9c79c46459dbdb9efc6e42a945a2f934a3e8bca8641",
