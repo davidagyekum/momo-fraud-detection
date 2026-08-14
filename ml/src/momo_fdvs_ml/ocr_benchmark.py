@@ -9,7 +9,9 @@ import json
 import os
 import shutil
 import statistics
+import tempfile
 import time
+import zipfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -753,6 +755,58 @@ def _resolve_bundle_file(root: Path, relative: object, expected_hash: object, la
     if _sha256_file(path) != expected_hash:
         raise OCRBenchmarkError(f"OCR bundle {label} hash changed")
     return path
+
+
+def package_ocr_development_bundle(
+    *, manifest_path: Path, output_path: Path, repository_root: Path
+) -> str:
+    """Write one deterministic, POSIX-member private ZIP and return its SHA-256."""
+
+    _require_private_path(manifest_path, repository_root, "OCR development manifest")
+    _require_private_path(output_path, repository_root, "OCR development archive")
+    if output_path.suffix.casefold() != ".zip":
+        raise OCRBenchmarkError("OCR development archive must use a .zip extension")
+    root = manifest_path.parent.resolve()
+    records = (
+        *load_ocr_development_bundle(manifest_path, partition="train"),
+        *load_ocr_development_bundle(manifest_path, partition="validation"),
+    )
+    members: dict[str, Path] = {"development-manifest.json": manifest_path.resolve()}
+    for record in records:
+        for field, hash_field, label in (
+            ("image_path", "image_sha256", "image"),
+            ("truth_path", "truth_sha256", "truth"),
+        ):
+            relative = record.get(field)
+            if not isinstance(relative, str) or "\\" in relative:
+                raise OCRBenchmarkError("OCR development archive member must use POSIX separators")
+            path = _resolve_bundle_file(root, relative, record.get(hash_field), label)
+            if relative in members:
+                raise OCRBenchmarkError("OCR development archive member is duplicated")
+            members[relative] = path
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f".{output_path.name}.", suffix=".tmp", dir=output_path.parent, delete=False
+        ) as handle:
+            temporary_path = Path(handle.name)
+        with zipfile.ZipFile(
+            temporary_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+        ) as archive:
+            for name, path in sorted(members.items()):
+                info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.external_attr = 0o600 << 16
+                archive.writestr(info, path.read_bytes(), compresslevel=9)
+        os.replace(temporary_path, output_path)
+        temporary_path = None
+    except (OSError, zipfile.BadZipFile, RuntimeError) as exc:
+        raise OCRBenchmarkError("unable to package OCR development archive") from exc
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+    return _sha256_file(output_path)
 
 
 def _truth_boxes(truth: Mapping[str, object]) -> tuple[tuple[int, int, int, int], ...]:

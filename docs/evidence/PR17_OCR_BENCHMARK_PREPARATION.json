@@ -2,6 +2,27 @@
   "benchmark_executed": false,
   "branch": "codex/p17-ocr-benchmark",
   "code_base_sha": "b1284e37f8b4e6a38587fee68a44ed8a74203323",
+  "development_archive_repair": {
+    "adapter_failures": {},
+    "archive_member_count": 117,
+    "benchmark_row_completed_before_failure": false,
+    "configuration_count": 15,
+    "drive_malformed_archive_file_id": "1lgc1SSC9i5SIz196JXmYWuoi_JiQhy34",
+    "drive_portable_archive_file_id": "12FNEJXaZDh8jIecWmVbWmGBwi-VFFgbf",
+    "drive_replacement_pending_explicit_authorization": false,
+    "engine_initialization_completed": true,
+    "failure_boundary": "development_bundle_file_resolution_before_first_image",
+    "hash_mismatch_count_after_repair": 0,
+    "missing_member_count_after_repair": 0,
+    "original_archive_sha256": "3370f7d38f6e56e995ba48e9808db669bbfe5a646923215a9c4834e7fab5afb2",
+    "original_archive_size_bytes": 3106402,
+    "portable_archive_sha256": "8a7f4b58e20569775dc237e5e4fefba78e2bc5aa8c40d5ee41dd893d495ea9b9",
+    "portable_archive_size_bytes": 3105575,
+    "private_image_bytes_accessed_before_failure": false,
+    "private_manifest_accessed_before_failure": true,
+    "root_cause": "zip_members_used_windows_backslash_separators",
+    "training_executed": false
+  },
   "configuration": {
     "path": "ml/configs/ocr_benchmark_v1.json",
     "sha256": "ecd7d7845b130cf657c0bdca57b9bf0eae9b47da4afbc6086b5970d35e95e2c9"
@@ -25,8 +46,8 @@
     },
     "governed_derivative_count": 2,
     "locked_test_included": false,
-    "private_archive_sha256": "3370f7d38f6e56e995ba48e9808db669bbfe5a646923215a9c4834e7fab5afb2",
-    "private_archive_size_bytes": 3106402,
+    "private_archive_sha256": "8a7f4b58e20569775dc237e5e4fefba78e2bc5aa8c40d5ee41dd893d495ea9b9",
+    "private_archive_size_bytes": 3105575,
     "private_bytes_committed": false,
     "source_split_manifest_sha256": "3c2bd2e3727b62f0a61f01a7eebcbe49da7ed0ac124a8f765d471533d867d941"
   },
@@ -56,7 +77,7 @@
   "notebook": {
     "outputs_stripped": true,
     "path": "ml/notebooks/colab/06_benchmark_ocr.ipynb",
-    "sha256": "427d482926142efe6f627df901c46dde8dd860b9ecd4dcd33c10c71a8c278141"
+    "sha256": "55cc14aa418eec52cbdbe97a4eda04c4423949766bdddcc5428a59f7f5b1c936"
   },
   "package_locks": {
     "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",

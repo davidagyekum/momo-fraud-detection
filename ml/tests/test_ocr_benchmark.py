@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ from typing import Any
 import pytest
 from PIL import Image
 
+import momo_fdvs_ml.ocr_benchmark as ocr_benchmark
 from momo_fdvs_ml.ocr_benchmark import (
     OCR_ADAPTER_SCHEMA_VERSION,
     OCR_BENCHMARK_REPORT_VERSION,
@@ -293,6 +295,150 @@ def test_private_development_bundle_contains_only_train_and_validation(tmp_path:
     assert len(load_ocr_development_bundle(manifest_path, partition="validation")) == 1
     with pytest.raises(OCRBenchmarkError, match="train or validation"):
         load_ocr_development_bundle(manifest_path, partition="test")
+
+
+def test_private_bundle_packager_writes_deterministic_posix_members(tmp_path: Path) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    packager = getattr(ocr_benchmark, "package_ocr_development_bundle", None)
+    assert packager is not None
+    first = private / "first.zip"
+    second = private / "second.zip"
+    first_hash = packager(
+        manifest_path=manifest_path,
+        output_path=first,
+        repository_root=repository,
+    )
+    second_hash = packager(
+        manifest_path=manifest_path,
+        output_path=second,
+        repository_root=repository,
+    )
+
+    assert first_hash == second_hash == hashlib.sha256(first.read_bytes()).hexdigest()
+    with zipfile.ZipFile(first) as archive:
+        members = archive.namelist()
+        assert members == sorted(members)
+        assert all("\\" not in member for member in members)
+        assert "development-manifest.json" in members
+        assert f"images/{TRAIN_ID}.png" in members
+        assert f"truth/{VALIDATION_ID}.json" in members
+        extracted = private / "extracted"
+        archive.extractall(extracted)
+    assert (
+        len(
+            load_ocr_development_bundle(
+                extracted / "development-manifest.json", partition="validation"
+            )
+        )
+        == 1
+    )
+    assert (extracted / f"images/{VALIDATION_ID}.png").is_file()
+
+
+def test_private_bundle_packager_rejects_unsafe_or_drifted_inputs(tmp_path: Path) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+
+    with pytest.raises(OCRBenchmarkError, match="outside the repository"):
+        ocr_benchmark.package_ocr_development_bundle(
+            manifest_path=manifest_path,
+            output_path=repository / "private-leak.zip",
+            repository_root=repository,
+        )
+    with pytest.raises(OCRBenchmarkError, match=r"\.zip extension"):
+        ocr_benchmark.package_ocr_development_bundle(
+            manifest_path=manifest_path,
+            output_path=private / "bundle.tar",
+            repository_root=repository,
+        )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["records"][0]["image_path"] = f"images\\{TRAIN_ID}.png"
+    manifest["manifest_sha256"] = ocr_benchmark._canonical_hash(manifest, "manifest_sha256")
+    _write_json(manifest_path, manifest)
+    with pytest.raises(OCRBenchmarkError, match="POSIX separators"):
+        ocr_benchmark.package_ocr_development_bundle(
+            manifest_path=manifest_path,
+            output_path=private / "bad-member.zip",
+            repository_root=repository,
+        )
+
+
+def test_private_bundle_packager_rejects_duplicate_and_hash_drift(tmp_path: Path) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    train = next(record for record in manifest["records"] if record["split"] == "train")
+    validation = next(record for record in manifest["records"] if record["split"] == "validation")
+    validation["image_path"] = train["image_path"]
+    validation["image_sha256"] = train["image_sha256"]
+    manifest["manifest_sha256"] = ocr_benchmark._canonical_hash(manifest, "manifest_sha256")
+    _write_json(manifest_path, manifest)
+    with pytest.raises(OCRBenchmarkError, match="duplicated"):
+        ocr_benchmark.package_ocr_development_bundle(
+            manifest_path=manifest_path,
+            output_path=private / "duplicate.zip",
+            repository_root=repository,
+        )
+
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "fresh-bundle",
+        repository_root=repository,
+    )
+    (manifest_path.parent / f"images/{TRAIN_ID}.png").write_bytes(b"changed")
+    with pytest.raises(OCRBenchmarkError, match="hash changed"):
+        ocr_benchmark.package_ocr_development_bundle(
+            manifest_path=manifest_path,
+            output_path=private / "drifted.zip",
+            repository_root=repository,
+        )
+
+
+def test_private_bundle_packager_cleans_temporary_file_on_publish_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+
+    def fail_replace(_source: Path, _destination: Path) -> None:
+        raise OSError("simulated publish failure")
+
+    monkeypatch.setattr(ocr_benchmark.os, "replace", fail_replace)
+    with pytest.raises(OCRBenchmarkError, match="unable to package"):
+        ocr_benchmark.package_ocr_development_bundle(
+            manifest_path=manifest_path,
+            output_path=private / "failed.zip",
+            repository_root=repository,
+        )
+    assert list(private.glob(".failed.zip.*.tmp")) == []
 
 
 def test_bundle_builder_rejects_locked_extra_missing_and_identity_drift(tmp_path: Path) -> None:
