@@ -8,10 +8,10 @@
 - Base branch: `main`
 - Base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
 - Work branch: `codex/p17-ocr-benchmark`
-- Final head SHA: pending
+- Final head SHA: reported in the final response because this handoff is part of the closure commit
 - Pull request: existing PR17 branch; no new pull request created
-- Push status: pending
-- Worktree status: clean at session start
+- Push status: implementation commit pushed; notebook/evidence closure push reported in the final response
+- Worktree status: clean at session start; expected clean after the closure commit
 
 ## Session plan (recorded before coding)
 
@@ -25,7 +25,7 @@
 - Requirement IDs: FR-OCR-001, FR-OCR-002, FR-OCR-003, NFR-ACC-001, NFR-AUD-001, NFR-DATA-001, NFR-PRIV-001
 - Backlog task IDs: logical PR17 parser/OCR attribution
 - Goal: expose aggregate parser failure categories without exposing private transcripts, normalized values or record identifiers.
-- Actual completed work: versioned the aggregate parser-ceiling report to v2; added mutually exclusive truth-scored field outcome counts; added canonical critical-field warning-code counts with fail-closed validation; preserved the private/validation-only execution boundary; and added RED→GREEN contract and leakage-boundary tests. The private v2 run remains pending the immutable Colab pin.
+- Actual completed work: versioned the aggregate parser-ceiling report to v2; added mutually exclusive truth-scored field outcome counts; added canonical critical-field warning-code counts with fail-closed validation; preserved the private/validation-only execution boundary; added RED→GREEN contract and leakage-boundary tests; pushed immutable implementation commit `5576944c…`; and pinned the output-free Colab notebook to it. The private v2 run remains pending.
 
 ## Changed files
 
@@ -35,6 +35,8 @@
 | `ml/tests/test_ocr_benchmark.py` | Added outcome taxonomy and malformed-warning leakage tests | Prove all categories and the new redaction boundary with RED→GREEN evidence |
 | `CHANGELOG.md`, `DECISION_LOG.md`, `IMPLEMENTATION_STATUS.md`, `requirements_traceability.csv` | Recorded the versioned diagnostic contract and pending private execution | Keep public status and requirements aligned |
 | `docs/handoffs/2026-08-14-PR17-parser-failure-taxonomy.md` | Recorded the pre-code plan and implementation evidence | Preserve an exact continuation point |
+| `ml/notebooks/colab/06_benchmark_ocr.ipynb`, `ml/notebooks/colab/notebook_report.json` | Pinned `TARGET_COMMIT` to `5576944c…` and refreshed the output-free notebook hash | Make the owner-operated v2 diagnostic immutable |
+| `docs/evidence/PR17_OCR_BENCHMARK_PREPARATION.json`, `docs/evidence/EVIDENCE_MANIFEST.csv` | Recorded the pending v2 execution contract, code/notebook identities and evidence hash | Preserve historical v1 metrics while distinguishing the new pending run |
 
 ## Database/migrations
 
@@ -84,8 +86,9 @@
 | Two new focused tests after implementation | PASS | 2 passed | 0.43 s |
 | `.venv\Scripts\python.exe -m pytest ml/tests/test_ocr_benchmark.py -q --no-cov` | PASS | 32 passed | 1.72 s |
 | Ruff format/check and strict mypy | PASS | no issues in 25 source files | 32.6 s |
-| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | 619 tests; 90.10% branch-aware coverage; all registered ML checks pass | 128.8 s |
-| `.venv\Scripts\python.exe scripts\check_secrets.py` | PASS | 552 candidate files | 3.3 s |
+| `.venv\Scripts\python.exe scripts\verify_ml.py` | PASS | 619 tests; 90.10% branch-aware coverage; all registered ML checks pass | 115.5 s |
+| `.venv\Scripts\python.exe scripts\check_secrets.py` | PASS | 552 candidate files | 2.8 s |
+| Notebook JSON/target/evidence-hash checks plus `test_notebooks.py` | PASS | 18 passed; target `5576944c…`; benchmark guard false | 3.3 s |
 
 Skipped/blocked checks and reason: the shared doctor retains the documented unrelated Node/npm mismatch and absent host Tesseract; the validation-only diagnostic uses no frontend tool or local OCR engine. Private v2 execution awaits the immutable Colab pin. Hosted GitHub jobs remain unavailable because of the documented Actions billing lock.
 
@@ -110,10 +113,11 @@ Skipped/blocked checks and reason: the shared doctor retains the documented unre
 ```text
 branch: codex/p17-ocr-benchmark
 session start: f588f0832eb4d8760f5ae224be3265c161c89ad4
+implementation: 5576944c096240c701002b672914f1ddfc9b6bc1
 full ML gate: PASS (619 tests, 90.10%)
-implementation/push: pending
+notebook/evidence closure: reported in the final response
 ```
 
 ## Next exact task
 
-Commit and push the verified implementation, pin the output-free Colab notebook to that immutable commit, then run only through the parser-ceiling v2 cell and return the aggregate JSON. Stop before OCR adapter initialization; do not change the parser, rerun the engine benchmark, train or open the locked test.
+Open the output-free Colab notebook at the final notebook-source commit, verify `TARGET_COMMIT=5576944c096240c701002b672914f1ddfc9b6bc1` and `RUN_BENCHMARK=False`, then run only through the parser-ceiling v2 cell and return the aggregate JSON. Stop before OCR adapter initialization; do not change the parser, rerun the engine benchmark, train or open the locked test.

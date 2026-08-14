@@ -192,7 +192,7 @@
   "notebook": {
     "outputs_stripped": true,
     "path": "ml/notebooks/colab/06_benchmark_ocr.ipynb",
-    "sha256": "16fcdfef49a184a606f6b67475d8fd4ce32a615f0d49fa82c2fe88c17d45b388"
+    "sha256": "b41ec38a9ba22fc0d1b24f3fa2048ef89b1a4ca7118e22752b35e2f350fa3a45"
   },
   "package_locks": {
     "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",
@@ -242,6 +242,24 @@
     "required_field_parse_success": 0.0,
     "required_field_scored_record_count": 1,
     "training_executed": false
+  },
+  "parser_failure_taxonomy_diagnostic": {
+    "code_commit": "5576944c096240c701002b672914f1ddfc9b6bc1",
+    "execution_pending": true,
+    "field_outcomes_persisted": [
+      "exact",
+      "mismatch",
+      "unavailable"
+    ],
+    "field_values_persisted": false,
+    "canonical_warning_codes_persisted": true,
+    "locked_test_accessed": false,
+    "purpose": "separate parser unavailability from wrong normalized values using aggregate-only validation counts",
+    "raw_text_persisted": false,
+    "record_identifiers_persisted": false,
+    "report_schema_version": "ghana-ocr-parser-ceiling-report-v2",
+    "training_executed": false,
+    "warning_text_persisted": false
   },
   "schema_version": "pr17-ocr-benchmark-evidence-v3",
   "selection_bundle_created": true,
