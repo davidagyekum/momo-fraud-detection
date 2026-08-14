@@ -665,6 +665,49 @@ def test_field_comparison_fails_closed_for_missing_observed_field() -> None:
         )
 
 
+def test_field_comparison_fails_closed_for_missing_unscored_parser_field() -> None:
+    parser = parse_momo_text("Amount GHS 10.00 Reference ABC12345")
+    fields = dict(parser.fields)
+    fields.pop("timestamp")
+
+    with pytest.raises(OCRBenchmarkError, match="missing required field timestamp"):
+        ocr_benchmark.compare_parser_result(
+            replace(parser, fields=fields),
+            {
+                "fields": [
+                    {"name": "amount", "normalized": "10.00"},
+                    {"name": "reference", "normalized": "ABC12345"},
+                ]
+            },
+        )
+
+
+def test_field_comparison_rejects_normalized_but_unavailable_parser_field() -> None:
+    parser = parse_momo_text("Reference ABC12345")
+    fields = dict(parser.fields)
+    fields["recipient_wallet"] = replace(
+        fields["recipient_wallet"],
+        raw="+233240000012",
+        normalized="+233240000012",
+        confidence=0.0,
+        available=False,
+        warnings=("WALLET_UNAVAILABLE",),
+    )
+
+    with pytest.raises(
+        OCRBenchmarkError,
+        match="availability state is invalid for recipient_wallet",
+    ):
+        ocr_benchmark.compare_parser_result(
+            replace(parser, fields=fields),
+            {
+                "fields": [
+                    {"name": "recipient_wallet", "normalized": "+233240000012"},
+                ]
+            },
+        )
+
+
 def test_field_scoring_rejects_conflicting_duplicate_truth_without_values() -> None:
     parser = parse_momo_text("Amount GHS 10.00")
     truth = {
@@ -857,7 +900,11 @@ def test_parser_ceiling_diagnostic_uses_wallet_field_for_outcome_and_warning_agg
         "recipient_wallet_truth": 1,
     }
     assert report["recipient_secondary_truth_present_count"] == 0
-    assert report["parser_warning_counts"] == {"WALLET_UNLABELLED": 1}
+    assert report["parser_warning_counts"] == {
+        "AMOUNT_NOT_FOUND": 1,
+        "RECIPIENT_NOT_FOUND": 1,
+        "TIMESTAMP_NOT_FOUND": 1,
+    }
     assert report["parser_warning_counts_by_observed_field"] == {
         "recipient_wallet": {"WALLET_UNLABELLED": 1}
     }
@@ -937,6 +984,10 @@ def test_parser_ceiling_diagnostic_reports_sparse_truth_without_inventing_denomi
     }
     assert report["required_field_scored_record_count"] == 0
     assert report["required_field_parse_success"] is None
+    assert report["parser_warning_counts"] == {
+        "RECIPIENT_NOT_FOUND": 1,
+        "TIMESTAMP_NOT_FOUND": 1,
+    }
 
 
 def test_parser_ceiling_diagnostic_rejects_invalid_execution_boundaries(

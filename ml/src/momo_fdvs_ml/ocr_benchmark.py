@@ -62,6 +62,13 @@ RELEASE_GATES: Final = {
     "required_field_parse_success": 0.90,
 }
 _PARSER_WARNING_CODE: Final = re.compile(r"[A-Z][A-Z0-9_]{2,63}")
+_PARSER_COMPARISON_FIELDS: Final = (
+    "amount",
+    "reference",
+    "timestamp",
+    "recipient",
+    "recipient_wallet",
+)
 
 
 class OCRBenchmarkError(RuntimeError):
@@ -794,6 +801,12 @@ def compare_parser_result(
 ) -> dict[str, FieldComparison | None]:
     """Compare normalized truth against the exact parser subfield used downstream."""
 
+    for field in _PARSER_COMPARISON_FIELDS:
+        observed = parser.fields.get(field)
+        if observed is None:
+            raise OCRBenchmarkError(f"parser is missing required field {field}")
+        if observed.available is not (observed.normalized is not None):
+            raise OCRBenchmarkError(f"parser field availability state is invalid for {field}")
     expected = _truth_fields(truth)
     comparisons: dict[str, FieldComparison | None] = {}
     for field in ("amount", "reference", "timestamp"):
@@ -1020,6 +1033,11 @@ def run_ocr_parser_ceiling_diagnostic(
             now=now or datetime.now(UTC),
         )
         comparisons = compare_parser_result(parser, truth)
+        for field in FIELD_WEIGHTS:
+            for warning in parser.fields[field].warnings:
+                if _PARSER_WARNING_CODE.fullmatch(warning) is None:
+                    raise OCRBenchmarkError("OCR parser warning code is invalid")
+                parser_warning_counts[warning] = parser_warning_counts.get(warning, 0) + 1
         field_matches = {
             field: None if comparison is None else comparison.matched
             for field, comparison in comparisons.items()
@@ -1037,7 +1055,6 @@ def run_ocr_parser_ceiling_diagnostic(
             for warning in comparison.warnings:
                 if _PARSER_WARNING_CODE.fullmatch(warning) is None:
                     raise OCRBenchmarkError("OCR parser warning code is invalid")
-                parser_warning_counts[warning] = parser_warning_counts.get(warning, 0) + 1
                 observed_counts = parser_warning_counts_by_observed_field.setdefault(
                     comparison.observed_field, {}
                 )
