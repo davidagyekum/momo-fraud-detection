@@ -35,6 +35,7 @@ from momo_fdvs_ml.ocr_parser import (
 OCR_ADAPTER_SCHEMA_VERSION: Final = "ocr-adapter-result-v1"
 OCR_DEVELOPMENT_BUNDLE_VERSION: Final = "ghana-ocr-development-bundle-v1"
 OCR_BENCHMARK_REPORT_VERSION: Final = "ghana-ocr-benchmark-report-v2"
+OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v1"
 OCR_SELECTED_BUNDLE_VERSION: Final = "ghana-ocr-selected-bundle-v2"
 OCR_BENCHMARK_VERSION: Final = "ghana-ocr-benchmark-v1"
 OCR_BENCHMARK_CONFIG_VERSION: Final = "ocr-benchmark-config-v2"
@@ -893,6 +894,75 @@ def _truth_boxes(truth: Mapping[str, object]) -> tuple[tuple[int, int, int, int]
         ):
             boxes.append(cast(tuple[int, int, int, int], tuple(bbox)))
     return tuple(boxes)
+
+
+def run_ocr_parser_ceiling_diagnostic(
+    *,
+    development_manifest_path: Path,
+    output_path: Path,
+    repository_root: Path,
+    now: datetime | None = None,
+) -> Path:
+    """Measure parser performance on verified transcripts without persisting private values."""
+
+    _require_private_path(development_manifest_path, repository_root, "development manifest")
+    _require_private_path(output_path, repository_root, "OCR parser ceiling report")
+    if now is not None and now.tzinfo is None:
+        raise OCRBenchmarkError("OCR parser ceiling clock must be timezone-aware")
+    root = development_manifest_path.parent.resolve()
+    records = load_ocr_development_bundle(development_manifest_path, partition="validation")
+    if not records:
+        raise OCRBenchmarkError("OCR parser ceiling has no validation records")
+    matches_by_field: dict[str, list[bool]] = {field: [] for field in FIELD_WEIGHTS}
+    required_matches: list[bool] = []
+    inconclusive: list[bool] = []
+    for record in records:
+        truth_path = _resolve_bundle_file(
+            root, record.get("truth_path"), record.get("truth_sha256"), "truth"
+        )
+        truth = _load_object(truth_path)
+        transcript = truth.get("full_transcript")
+        if truth.get("record_id") != record.get("record_id") or not isinstance(transcript, str):
+            raise OCRBenchmarkError("OCR validation truth record is invalid")
+        parser = parse_momo_text(
+            transcript,
+            now=now or datetime.now(UTC),
+        )
+        field_matches = score_parser_result(parser, truth)
+        for field, matched in field_matches.items():
+            if matched is not None:
+                matches_by_field[field].append(matched)
+        if all(value is not None for value in field_matches.values()):
+            required_matches.append(all(value is True for value in field_matches.values()))
+        inconclusive.append(parser.inconclusive)
+    report: dict[str, object] = {
+        "schema_version": OCR_PARSER_CEILING_REPORT_VERSION,
+        "benchmark_version": OCR_BENCHMARK_VERSION,
+        "parser_version": OCR_PARSER_VERSION,
+        "field_schema_version": OCR_FIELD_SCHEMA_VERSION,
+        "partition": "validation",
+        "record_count": len(records),
+        "field_scored_record_count": {
+            field: len(values) for field, values in matches_by_field.items()
+        },
+        "field_exact": {
+            field: statistics.fmean(values) if values else None
+            for field, values in matches_by_field.items()
+        },
+        "required_field_scored_record_count": len(required_matches),
+        "required_field_parse_success": (
+            statistics.fmean(required_matches) if required_matches else None
+        ),
+        "parser_inconclusive_rate": statistics.fmean(inconclusive),
+        "raw_text_persisted": False,
+        "field_values_persisted": False,
+        "record_identifiers_persisted": False,
+        "locked_test_accessed": False,
+        "training_executed": False,
+    }
+    report["report_sha256"] = _canonical_hash(report, "report_sha256")
+    _write_json(output_path, report)
+    return output_path
 
 
 def _engine_version_satisfies_policy(engine: str, version: str) -> bool:

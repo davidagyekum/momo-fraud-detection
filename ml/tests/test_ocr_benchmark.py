@@ -585,6 +585,69 @@ def test_field_scoring_uses_normalized_truth_and_excludes_unavailable_fields() -
         score_parser_result(parser, {"fields": "bad"})
 
 
+def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = (
+        "MTN MobileMoney Amount GHS 10.00 sent to Demo Person "
+        "on 14/08/2026 10:30. Reference ABC12345"
+    )
+    truth["fields"] = [
+        {"name": "amount", "normalized": "10.00"},
+        {"name": "reference", "normalized": "ABC12345"},
+        {"name": "recipient_name", "normalized": "DEMO PERSON"},
+        {"name": "timestamp", "normalized": "2026-08-14T10:30:00Z"},
+    ]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    serialized = json.dumps(report)
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v1"
+    assert report["partition"] == "validation"
+    assert report["record_count"] == 1
+    assert report["field_scored_record_count"] == {
+        "amount": 1,
+        "reference": 1,
+        "timestamp": 1,
+        "recipient": 1,
+    }
+    assert report["field_exact"] == {
+        "amount": 1.0,
+        "reference": 1.0,
+        "timestamp": 1.0,
+        "recipient": 1.0,
+    }
+    assert report["required_field_scored_record_count"] == 1
+    assert report["required_field_parse_success"] == 1.0
+    assert report["parser_inconclusive_rate"] == 0.0
+    assert report["raw_text_persisted"] is False
+    assert report["field_values_persisted"] is False
+    assert report["record_identifiers_persisted"] is False
+    assert report["locked_test_accessed"] is False
+    assert "Demo Person" not in serialized
+    assert "ABC12345" not in serialized
+    assert VALIDATION_ID not in serialized
+    assert report["report_sha256"] == _canonical(report, "report_sha256")
+
+
 def _metric_row(
     *,
     matches: dict[str, bool | None] | None = None,
