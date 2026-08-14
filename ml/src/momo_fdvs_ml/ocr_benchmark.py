@@ -35,7 +35,7 @@ from momo_fdvs_ml.ocr_parser import (
 OCR_ADAPTER_SCHEMA_VERSION: Final = "ocr-adapter-result-v1"
 OCR_DEVELOPMENT_BUNDLE_VERSION: Final = "ghana-ocr-development-bundle-v1"
 OCR_BENCHMARK_REPORT_VERSION: Final = "ghana-ocr-benchmark-report-v2"
-OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v2"
+OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v3"
 OCR_SELECTED_BUNDLE_VERSION: Final = "ghana-ocr-selected-bundle-v2"
 OCR_BENCHMARK_VERSION: Final = "ghana-ocr-benchmark-v1"
 OCR_BENCHMARK_CONFIG_VERSION: Final = "ocr-benchmark-config-v2"
@@ -738,8 +738,102 @@ def _truth_fields(truth: Mapping[str, object]) -> dict[str, str]:
         name = field.get("name")
         normalized = field.get("normalized")
         if isinstance(name, str) and isinstance(normalized, str) and normalized:
-            values.setdefault(name, normalized)
+            prior = values.get(name)
+            if prior is not None and prior != normalized:
+                raise OCRBenchmarkError(f"conflicting OCR truth for {name}")
+            values[name] = normalized
     return values
+
+
+@dataclass(frozen=True)
+class FieldComparison:
+    """One private in-memory field comparison with explicit field identity."""
+
+    aggregate_field: str
+    truth_field: str
+    observed_field: str
+    expected_normalized: str
+    observed_normalized: str | None
+    matched: bool
+    available: bool
+    warnings: tuple[str, ...]
+    truth_subtype: str | None = None
+    secondary_truth_present: bool = False
+
+
+def _make_field_comparison(
+    *,
+    aggregate_field: str,
+    truth_field: str,
+    observed_field: str,
+    expected_normalized: str,
+    parser: ParserResult,
+    truth_subtype: str | None = None,
+    secondary_truth_present: bool = False,
+) -> FieldComparison:
+    try:
+        observed = parser.fields[observed_field]
+    except KeyError as exc:
+        raise OCRBenchmarkError(f"parser is missing required field {observed_field}") from exc
+    return FieldComparison(
+        aggregate_field=aggregate_field,
+        truth_field=truth_field,
+        observed_field=observed_field,
+        expected_normalized=expected_normalized,
+        observed_normalized=observed.normalized,
+        matched=expected_normalized == observed.normalized,
+        available=bool(observed.available and observed.normalized is not None),
+        warnings=tuple(observed.warnings),
+        truth_subtype=truth_subtype,
+        secondary_truth_present=secondary_truth_present,
+    )
+
+
+def compare_parser_result(
+    parser: ParserResult, truth: Mapping[str, object]
+) -> dict[str, FieldComparison | None]:
+    """Compare normalized truth against the exact parser subfield used downstream."""
+
+    expected = _truth_fields(truth)
+    comparisons: dict[str, FieldComparison | None] = {}
+    for field in ("amount", "reference", "timestamp"):
+        expected_normalized = expected.get(field)
+        comparisons[field] = (
+            None
+            if expected_normalized is None
+            else _make_field_comparison(
+                aggregate_field=field,
+                truth_field=field,
+                observed_field=field,
+                expected_normalized=expected_normalized,
+                parser=parser,
+            )
+        )
+
+    recipient_name = expected.get("recipient_name")
+    recipient_wallet = expected.get("recipient_wallet")
+    if recipient_name is not None:
+        comparisons["recipient"] = _make_field_comparison(
+            aggregate_field="recipient",
+            truth_field="recipient_name",
+            observed_field="recipient",
+            expected_normalized=recipient_name,
+            parser=parser,
+            truth_subtype="recipient_name_truth",
+            secondary_truth_present=recipient_wallet is not None,
+        )
+    elif recipient_wallet is not None:
+        comparisons["recipient"] = _make_field_comparison(
+            aggregate_field="recipient",
+            truth_field="recipient_wallet",
+            observed_field="recipient_wallet",
+            expected_normalized=recipient_wallet,
+            parser=parser,
+            truth_subtype="recipient_wallet_truth",
+        )
+    else:
+        comparisons["recipient"] = None
+    return comparisons
 
 
 def score_parser_result(
@@ -747,23 +841,9 @@ def score_parser_result(
 ) -> dict[str, bool | None]:
     """Score exact normalized fields, leaving unavailable truth out of the denominator."""
 
-    expected = _truth_fields(truth)
-    observed = parser.fields
-    recipient_expected = expected.get("recipient_name") or expected.get("recipient_wallet")
-    recipient_observed = (
-        observed["recipient"].normalized
-        if expected.get("recipient_name")
-        else observed["recipient_wallet"].normalized
-    )
-    pairs = {
-        "amount": (expected.get("amount"), observed["amount"].normalized),
-        "reference": (expected.get("reference"), observed["reference"].normalized),
-        "timestamp": (expected.get("timestamp"), observed["timestamp"].normalized),
-        "recipient": (recipient_expected, recipient_observed),
-    }
     return {
-        name: None if truth_value is None else truth_value == observed_value
-        for name, (truth_value, observed_value) in pairs.items()
+        field: None if comparison is None else comparison.matched
+        for field, comparison in compare_parser_result(parser, truth).items()
     }
 
 
@@ -919,6 +999,12 @@ def run_ocr_parser_ceiling_diagnostic(
         field: {"exact": 0, "mismatch": 0, "unavailable": 0} for field in FIELD_WEIGHTS
     }
     parser_warning_counts: dict[str, int] = {}
+    parser_warning_counts_by_observed_field: dict[str, dict[str, int]] = {}
+    recipient_truth_subtype_counts = {
+        "recipient_name_truth": 0,
+        "recipient_wallet_truth": 0,
+    }
+    recipient_secondary_truth_present_count = 0
     required_matches: list[bool] = []
     inconclusive: list[bool] = []
     for record in records:
@@ -933,23 +1019,43 @@ def run_ocr_parser_ceiling_diagnostic(
             transcript,
             now=now or datetime.now(UTC),
         )
-        field_matches = score_parser_result(parser, truth)
-        for field, matched in field_matches.items():
-            if matched is not None:
-                matches_by_field[field].append(matched)
-                if matched:
-                    outcomes_by_field[field]["exact"] += 1
-                elif not parser.fields[field].available or parser.fields[field].normalized is None:
-                    outcomes_by_field[field]["unavailable"] += 1
-                else:
-                    outcomes_by_field[field]["mismatch"] += 1
-            for warning in parser.fields[field].warnings:
+        comparisons = compare_parser_result(parser, truth)
+        field_matches = {
+            field: None if comparison is None else comparison.matched
+            for field, comparison in comparisons.items()
+        }
+        for field, comparison in comparisons.items():
+            if comparison is None:
+                continue
+            matches_by_field[field].append(comparison.matched)
+            if comparison.matched:
+                outcomes_by_field[field]["exact"] += 1
+            elif not comparison.available:
+                outcomes_by_field[field]["unavailable"] += 1
+            else:
+                outcomes_by_field[field]["mismatch"] += 1
+            for warning in comparison.warnings:
                 if _PARSER_WARNING_CODE.fullmatch(warning) is None:
                     raise OCRBenchmarkError("OCR parser warning code is invalid")
                 parser_warning_counts[warning] = parser_warning_counts.get(warning, 0) + 1
+                observed_counts = parser_warning_counts_by_observed_field.setdefault(
+                    comparison.observed_field, {}
+                )
+                observed_counts[warning] = observed_counts.get(warning, 0) + 1
+            if comparison.truth_subtype is not None:
+                if comparison.truth_subtype not in recipient_truth_subtype_counts:
+                    raise OCRBenchmarkError("OCR recipient truth subtype is invalid")
+                recipient_truth_subtype_counts[comparison.truth_subtype] += 1
+            if comparison.secondary_truth_present:
+                recipient_secondary_truth_present_count += 1
         if all(value is not None for value in field_matches.values()):
             required_matches.append(all(value is True for value in field_matches.values()))
         inconclusive.append(parser.inconclusive)
+    for field, matches in matches_by_field.items():
+        if sum(outcomes_by_field[field].values()) != len(matches):
+            raise OCRBenchmarkError(f"OCR field outcome total is invalid for {field}")
+    if sum(recipient_truth_subtype_counts.values()) != len(matches_by_field["recipient"]):
+        raise OCRBenchmarkError("OCR recipient truth subtype total is invalid")
     report: dict[str, object] = {
         "schema_version": OCR_PARSER_CEILING_REPORT_VERSION,
         "benchmark_version": OCR_BENCHMARK_VERSION,
@@ -966,6 +1072,12 @@ def run_ocr_parser_ceiling_diagnostic(
         },
         "field_outcome_counts": outcomes_by_field,
         "parser_warning_counts": dict(sorted(parser_warning_counts.items())),
+        "parser_warning_counts_by_observed_field": {
+            field: dict(sorted(counts.items()))
+            for field, counts in sorted(parser_warning_counts_by_observed_field.items())
+        },
+        "recipient_truth_subtype_counts": recipient_truth_subtype_counts,
+        "recipient_secondary_truth_present_count": (recipient_secondary_truth_present_count),
         "required_field_scored_record_count": len(required_matches),
         "required_field_parse_success": (
             statistics.fmean(required_matches) if required_matches else None

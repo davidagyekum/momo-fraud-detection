@@ -586,6 +586,100 @@ def test_field_scoring_uses_normalized_truth_and_excludes_unavailable_fields() -
         score_parser_result(parser, {"fields": "bad"})
 
 
+def test_field_comparison_uses_wallet_identity_for_match_availability_and_warnings() -> None:
+    parser = parse_momo_text("Reference ABC12345")
+    fields = dict(parser.fields)
+    fields["recipient"] = replace(
+        fields["recipient"],
+        raw=None,
+        normalized=None,
+        confidence=0.0,
+        available=False,
+        warnings=("RECIPIENT_NOT_FOUND",),
+    )
+    fields["recipient_wallet"] = replace(
+        fields["recipient_wallet"],
+        raw="+233240000013",
+        normalized="+233240000013",
+        confidence=0.8,
+        available=True,
+        warnings=("WALLET_UNLABELLED",),
+    )
+
+    comparisons = ocr_benchmark.compare_parser_result(
+        replace(parser, fields=fields),
+        {
+            "fields": [
+                {"name": "recipient_wallet", "normalized": "+233240000012"},
+            ]
+        },
+    )
+
+    recipient = comparisons["recipient"]
+    assert recipient is not None
+    assert recipient.aggregate_field == "recipient"
+    assert recipient.truth_field == "recipient_wallet"
+    assert recipient.observed_field == "recipient_wallet"
+    assert recipient.expected_normalized == "+233240000012"
+    assert recipient.observed_normalized == "+233240000013"
+    assert recipient.matched is False
+    assert recipient.available is True
+    assert recipient.warnings == ("WALLET_UNLABELLED",)
+    assert recipient.truth_subtype == "recipient_wallet_truth"
+    assert recipient.secondary_truth_present is False
+
+
+def test_field_comparison_preserves_name_precedence_and_exposes_secondary_truth() -> None:
+    parser = parse_momo_text("Sent to Demo Person +233240000012")
+
+    comparison = ocr_benchmark.compare_parser_result(
+        parser,
+        {
+            "fields": [
+                {"name": "recipient_name", "normalized": "DEMO PERSON"},
+                {"name": "recipient_wallet", "normalized": "+233240000012"},
+            ]
+        },
+    )["recipient"]
+
+    assert comparison is not None
+    assert comparison.truth_field == "recipient_name"
+    assert comparison.observed_field == "recipient"
+    assert comparison.truth_subtype == "recipient_name_truth"
+    assert comparison.secondary_truth_present is True
+
+
+def test_field_comparison_fails_closed_for_missing_observed_field() -> None:
+    parser = parse_momo_text("Reference ABC12345")
+    fields = dict(parser.fields)
+    fields.pop("recipient_wallet")
+
+    with pytest.raises(OCRBenchmarkError, match="missing required field recipient_wallet"):
+        ocr_benchmark.compare_parser_result(
+            replace(parser, fields=fields),
+            {
+                "fields": [
+                    {"name": "recipient_wallet", "normalized": "+233240000012"},
+                ]
+            },
+        )
+
+
+def test_field_scoring_rejects_conflicting_duplicate_truth_without_values() -> None:
+    parser = parse_momo_text("Amount GHS 10.00")
+    truth = {
+        "fields": [
+            {"name": "amount", "normalized": "10.00"},
+            {"name": "amount", "normalized": "11.00"},
+        ]
+    }
+
+    with pytest.raises(OCRBenchmarkError, match=r"^conflicting OCR truth for amount$") as exc:
+        score_parser_result(parser, truth)
+    assert "10.00" not in str(exc.value)
+    assert "11.00" not in str(exc.value)
+
+
 def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
     tmp_path: Path,
 ) -> None:
@@ -621,7 +715,7 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
 
     report = json.loads(output.read_text(encoding="utf-8"))
     serialized = json.dumps(report)
-    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v2"
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v3"
     assert report["partition"] == "validation"
     assert report["record_count"] == 1
     assert report["field_scored_record_count"] == {
@@ -639,6 +733,11 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
     assert report["required_field_scored_record_count"] == 1
     assert report["required_field_parse_success"] == 1.0
     assert report["parser_inconclusive_rate"] == 0.0
+    assert report["recipient_truth_subtype_counts"] == {
+        "recipient_name_truth": 1,
+        "recipient_wallet_truth": 0,
+    }
+    assert report["recipient_secondary_truth_present_count"] == 0
     assert report["raw_text_persisted"] is False
     assert report["field_values_persisted"] is False
     assert report["record_identifiers_persisted"] is False
@@ -683,7 +782,7 @@ def test_parser_ceiling_diagnostic_separates_outcomes_and_counts_stable_warnings
 
     report = json.loads(output.read_text(encoding="utf-8"))
     serialized = json.dumps(report)
-    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v2"
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v3"
     assert report["field_outcome_counts"] == {
         "amount": {"exact": 1, "mismatch": 0, "unavailable": 0},
         "reference": {"exact": 0, "mismatch": 1, "unavailable": 0},
@@ -694,6 +793,81 @@ def test_parser_ceiling_diagnostic_separates_outcomes_and_counts_stable_warnings
     assert "Demo Person" not in serialized
     assert "ZXCVB123" not in serialized
     assert "ABCDE123" not in serialized
+    assert VALIDATION_ID not in serialized
+
+
+def test_parser_ceiling_diagnostic_uses_wallet_field_for_outcome_and_warning_aggregates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "Fictional wallet-only transaction"
+    truth["fields"] = [
+        {"name": "recipient_wallet", "normalized": "+233240000012"},
+    ]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+    parser = parse_momo_text("Reference ABC12345")
+    fields = dict(parser.fields)
+    fields["recipient"] = replace(
+        fields["recipient"],
+        raw=None,
+        normalized=None,
+        confidence=0.0,
+        available=False,
+        warnings=("RECIPIENT_NOT_FOUND",),
+    )
+    fields["recipient_wallet"] = replace(
+        fields["recipient_wallet"],
+        raw="+233240000013",
+        normalized="+233240000013",
+        confidence=0.8,
+        available=True,
+        warnings=("WALLET_UNLABELLED",),
+    )
+    parser = replace(parser, fields=fields)
+    monkeypatch.setattr(ocr_benchmark, "parse_momo_text", lambda *args, **kwargs: parser)
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    serialized = json.dumps(report)
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v3"
+    assert report["field_scored_record_count"]["recipient"] == 1
+    assert report["field_outcome_counts"]["recipient"] == {
+        "exact": 0,
+        "mismatch": 1,
+        "unavailable": 0,
+    }
+    assert report["recipient_truth_subtype_counts"] == {
+        "recipient_name_truth": 0,
+        "recipient_wallet_truth": 1,
+    }
+    assert report["recipient_secondary_truth_present_count"] == 0
+    assert report["parser_warning_counts"] == {"WALLET_UNLABELLED": 1}
+    assert report["parser_warning_counts_by_observed_field"] == {
+        "recipient_wallet": {"WALLET_UNLABELLED": 1}
+    }
+    assert report["raw_text_persisted"] is False
+    assert report["field_values_persisted"] is False
+    assert report["record_identifiers_persisted"] is False
+    assert report["locked_test_accessed"] is False
+    assert report["training_executed"] is False
+    assert "+233240000012" not in serialized
+    assert "+233240000013" not in serialized
     assert VALIDATION_ID not in serialized
 
 
