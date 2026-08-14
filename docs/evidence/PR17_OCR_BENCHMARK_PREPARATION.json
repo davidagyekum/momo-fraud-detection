@@ -77,11 +77,21 @@
   "notebook": {
     "outputs_stripped": true,
     "path": "ml/notebooks/colab/06_benchmark_ocr.ipynb",
-    "sha256": "55cc14aa418eec52cbdbe97a4eda04c4423949766bdddcc5428a59f7f5b1c936"
+    "sha256": "14c0e435d79bca10ce1592bbeb94e417de061d064af8bfb713b206e6f774da3c"
   },
   "package_locks": {
     "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",
     "runtime_sha256": "074ab7b414333046081b5892cffafec0fa79a0953472ca219473e82727bdc0dc"
+  },
+  "runtime_import_repair": {
+    "benchmark_data_accessed_before_failure": false,
+    "engine_initialization_completed_before_failure": false,
+    "failure_boundary": "post_install_preflight_import",
+    "locked_test_accessed": false,
+    "notebook_restart_gate_added": true,
+    "private_archive_accessed_before_failure": false,
+    "root_cause": "pillow_files_and_modules_mixed_after_in_process_upgrade",
+    "training_executed": false
   },
   "schema_version": "pr17-ocr-benchmark-preparation-evidence-v1",
   "selection_bundle_created": false,

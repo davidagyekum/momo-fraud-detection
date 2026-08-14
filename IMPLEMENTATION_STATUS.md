@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-14`
-- CI status: `Logical PR17 portable-archive-repair ML gate passes locally with 599 tests at 90.09% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 543 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
+- CI status: `Logical PR17 runtime-restart-repair ML gate passes locally with 602 tests at 90.02% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 546 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
 - Deployment status: `Not deployed`
 - Current phase: `Logical PR17 OCR benchmark/parser — Colab execution pending`
-- Next exact task: `Reopen ml/notebooks/colab/06_benchmark_ocr.ipynb at the new immutable commit and rerun from the first cell against the verified portable Drive archive SHA-256 8a7f4b58…. Cached EasyOCR/PaddleOCR weights may be reused. Use only 25 train and 33 validation screenshot records; the five controlled-real test records must remain absent and inaccessible.`
+- Next exact task: `Restart the current Colab session, reopen ml/notebooks/colab/06_benchmark_ocr.ipynb at the new immutable runtime-bootstrap commit and rerun from the first cell against portable archive SHA-256 8a7f4b58…. On a brand-new VM, the first install pass may intentionally stop with COLAB_RUNTIME_RESTART_REQUIRED; restart the session and run all cells a second time. Use only 25 train and 33 validation records; the five locked-test records must remain absent.`
 
 ## PR10-PR13 reconciliation status
 
@@ -94,7 +94,8 @@
 - First Colab attempt: pip resolution failed before engine initialisation or private archive extraction because NumPy 2.5.2 violated PaddleX 3.7.0's `>=1.24,<2.4` requirement. The repaired runtime pin is NumPy 2.3.5, and the executable lock contract now rejects recurrence. No data, benchmark or test record was accessed by the failed attempt.
 - Second Colab attempt: all 15 OCR configurations initialized with no adapter failure, but the screen pass failed before its first image because the ZIP used Windows backslashes while its manifest used POSIX paths. The deterministic packager now writes sorted POSIX members, and the notebook rejects non-portable archives before extraction. The failed pass accessed the development manifest but no private image bytes, completed no benchmark row, opened no locked test and produced no metric or selected bundle.
 - Drive repair: with explicit project-owner authorization, the portable 3,105,575-byte archive was uploaded to the existing restricted `ghana-private` folder as file `12FNEJXa…`. The malformed 3,106,402-byte copy remains under the explicit audit name `pr17-ocr-development.invalid-backslash.zip`; it is no longer the canonical notebook input.
-- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 599 tests at 90.09% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 543 candidate files.
+- Third Colab attempt: the preflight import failed before private archive access because the live process mixed Pillow 12.3.0 files with an older imported `PIL._typing`. The new standard-library-only bootstrap snapshots versions before pip, tests critical imports in the current and a clean child process, and requires a clean runtime pass whenever an already-loaded distribution changes or the parent process is inconsistent. No engine was initialized, no private data or locked test was accessed, and no benchmark row, metric, training or selection exists for this attempt.
+- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 602 tests at 90.02% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 546 candidate files.
 
 ## Logical PR10 evidence/execution foundation
 
