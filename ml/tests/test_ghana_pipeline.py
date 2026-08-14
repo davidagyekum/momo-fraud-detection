@@ -28,6 +28,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     ingest_private_screenshots,
     initialize_owner_consent,
     load_development_records,
+    normalize_android_sms_backups,
     quarantine_online_candidate,
     record_private_ocr_ground_truth,
     record_private_qa_annotation,
@@ -69,6 +70,22 @@ def _image(path: Path, *, phase: int = 0, metadata: str | None = None) -> Path:
         pnginfo = PngImagePlugin.PngInfo()
         pnginfo.add_text("private_note", metadata)
     image.save(path, pnginfo=pnginfo)
+    return path
+
+
+def _sms_xml(
+    path: Path, rows: list[tuple[str, str, str, str]], *, count: int | None = None
+) -> Path:
+    attributes = "\n".join(
+        f'  <sms address="{address}" date="{date}" type="{direction}" body="{body}" />'
+        for address, date, direction, body in rows
+    )
+    declared_count = count if count is not None else len(rows)
+    path.write_text(
+        f'<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<smses count="{declared_count}">\n{attributes}\n</smses>\n',
+        encoding="utf-8",
+    )
     return path
 
 
@@ -381,6 +398,207 @@ def test_message_deidentification_preserves_language_signals_and_indexes_sender_
     assert report["training_eligible"] is False
 
 
+def test_android_sms_normalization_filters_providers_deduplicates_and_exports(
+    tmp_path: Path,
+) -> None:
+    first = _sms_xml(
+        tmp_path / "all.xml",
+        [
+            ("MobileMoney", "1786384800000", "1", "Payment received GHS 10.00 Ref ABC12345"),
+            ("T-CASH", "1786384860000", "1", "Cash received GHS 20.00 Ref XYZ12345"),
+            ("Private Person", "1786384920000", "1", "Unrelated private conversation"),
+            ("T Cash", "1786384980000", "2", "Outgoing message"),
+        ],
+    )
+    second = _sms_xml(
+        tmp_path / "selected.xml",
+        [
+            ("MobileMoney", "1786384800000", "1", "Payment received GHS 10.00 Ref ABC12345"),
+            ("Telecel", "1786385040000", "1", "Account service information"),
+        ],
+    )
+    normalized_path = tmp_path / "private" / "android.csv"
+    report_path = tmp_path / "private" / "android-report.json"
+    outputs = normalize_android_sms_backups(
+        source_paths=[first, second],
+        normalized_csv_path=normalized_path,
+        report_path=report_path,
+        allowed_sender_providers={
+            "MobileMoney": "MTN_MOMO",
+            "T Cash": "TELECEL_CASH",
+            "T-CASH": "TELECEL_CASH",
+            "Telecel": "TELECEL_CASH",
+        },
+        repository_root=tmp_path / "repository",
+    )
+
+    with normalized_path.open(encoding="utf-8", newline="") as stream:
+        normalized = list(csv.DictReader(stream))
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert outputs.parsed_message_count == 6
+    assert outputs.selected_message_count == 3
+    assert outputs.exact_duplicate_count == 1
+    assert {row["sender_identifier"] for row in normalized} == {
+        "MobileMoney",
+        "T-CASH",
+        "Telecel",
+    }
+    assert {row["source_provenance"] for row in normalized} == {"owner_android_local_backup"}
+    assert all(row["direction"] == "incoming" for row in normalized)
+    assert report["ignored_sender_message_count"] == 1
+    assert report["ignored_direction_message_count"] == 1
+    assert report["provider_family_counts"] == {"MTN_MOMO": 1, "TELECEL_CASH": 2}
+    assert report["training_eligible"] is False
+
+    index_path = tmp_path / "private" / "index.json"
+    message_report_path = tmp_path / "private" / "message-report.json"
+    index_imazing_messages(
+        source_csv=normalized_path,
+        index_path=index_path,
+        report_path=message_report_path,
+        participant_id_hash=_hash("owner"),
+        permission_reference="PERMISSION_OWNER_001",
+        repository_root=tmp_path / "repository",
+        text_column="message_body",
+        sender_column="sender_identifier",
+    )
+    corpus = export_private_imazing_genuine_corpus(
+        source_csv=normalized_path,
+        index_path=index_path,
+        report_path=message_report_path,
+        output_root=tmp_path / "private" / "corpus",
+        repository_root=tmp_path / "repository",
+        reviewer_id="REVIEWER_STEWARD_003",
+        expected_sender_labels=frozenset({"MobileMoney", "T Cash", "T-CASH", "Telecel"}),
+        expected_source_provenance="owner_android_local_backup",
+    )
+    with corpus.sanitized_csv_path.open(encoding="utf-8", newline="") as stream:
+        sanitized = list(csv.DictReader(stream))
+    message_report = json.loads(message_report_path.read_text(encoding="utf-8"))
+    assert corpus.raw_record_count == 3
+    assert {row["provider_family"] for row in sanitized} == {
+        "MTN_MOMO",
+        "TELECEL_CASH",
+    }
+    assert message_report["provider_family_counts"] == {"MTN_MOMO": 1, "TELECEL_CASH": 2}
+    assert message_report["training_eligible"] is False
+
+
+@pytest.mark.parametrize("case", ["doctype", "count", "duplicate_document", "inside_repo"])
+def test_android_sms_normalization_rejects_unsafe_sources(tmp_path: Path, case: str) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    source = _sms_xml(
+        tmp_path / "source.xml",
+        [("MobileMoney", "1786384800000", "1", "Account information")],
+        count=2 if case == "count" else None,
+    )
+    sources = [source, source] if case == "duplicate_document" else [source]
+    if case == "doctype":
+        source.write_text(
+            '<!DOCTYPE smses [<!ENTITY x "unsafe">]><smses count="0"></smses>',
+            encoding="utf-8",
+        )
+    output = repository / "android.csv" if case == "inside_repo" else tmp_path / "android.csv"
+    with pytest.raises(GhanaPrivateError):
+        normalize_android_sms_backups(
+            source_paths=sources,
+            normalized_csv_path=output,
+            report_path=tmp_path / "report.json",
+            allowed_sender_providers={"MobileMoney": "MTN_MOMO"},
+            repository_root=repository,
+        )
+
+
+@pytest.mark.parametrize(
+    ("case", "expected"),
+    [
+        ("no_source", "at least one"),
+        ("bad_provenance", "provenance"),
+        ("empty_mapping", "approved sender"),
+        ("invalid_sender", "mapping"),
+        ("duplicate_sender", "duplicated"),
+        ("missing_source", "could not be opened"),
+        ("empty_source", "size"),
+        ("malformed", "malformed"),
+        ("wrong_root", "schema"),
+        ("wrong_child", "schema"),
+        ("missing_count", "declared count"),
+        ("incomplete_row", "incomplete"),
+        ("invalid_timestamp", "timestamp is invalid"),
+        ("unsafe_timestamp", "safe range"),
+        ("no_selected_rows", "selected no incoming"),
+    ],
+)
+def test_android_sms_normalization_fails_closed_for_invalid_contracts(
+    tmp_path: Path, case: str, expected: str
+) -> None:
+    source = tmp_path / "source.xml"
+    source.write_text(
+        '<smses count="1"><sms address="MobileMoney" date="1786384800000" '
+        'type="1" body="Account information" /></smses>',
+        encoding="utf-8",
+    )
+    sources = [source]
+    mappings = {"MobileMoney": "MTN_MOMO"}
+    provenance = "owner_android_local_backup"
+    if case == "no_source":
+        sources = []
+    elif case == "bad_provenance":
+        provenance = "downloaded_online"
+    elif case == "empty_mapping":
+        mappings = {}
+    elif case == "invalid_sender":
+        mappings = {"+233501234567": "MTN_MOMO"}
+    elif case == "duplicate_sender":
+        mappings = {"MobileMoney": "MTN_MOMO", "mobilemoney": "MTN_MOMO"}
+    elif case == "missing_source":
+        sources = [tmp_path / "missing.xml"]
+    elif case == "empty_source":
+        source.write_bytes(b"")
+    elif case == "malformed":
+        source.write_text("<smses>", encoding="utf-8")
+    elif case == "wrong_root":
+        source.write_text('<messages count="0" />', encoding="utf-8")
+    elif case == "wrong_child":
+        source.write_text('<smses count="1"><mms /></smses>', encoding="utf-8")
+    elif case == "missing_count":
+        source.write_text("<smses />", encoding="utf-8")
+    elif case == "incomplete_row":
+        source.write_text(
+            '<smses count="1"><sms address="MobileMoney" date="1786384800000" type="1" /></smses>',
+            encoding="utf-8",
+        )
+    elif case == "invalid_timestamp":
+        source.write_text(
+            '<smses count="1"><sms address="MobileMoney" date="invalid" '
+            'type="1" body="Account information" /></smses>',
+            encoding="utf-8",
+        )
+    elif case == "unsafe_timestamp":
+        source.write_text(
+            '<smses count="1"><sms address="MobileMoney" date="0" '
+            'type="1" body="Account information" /></smses>',
+            encoding="utf-8",
+        )
+    elif case == "no_selected_rows":
+        source.write_text(
+            '<smses count="1"><sms address="Other" date="1786384800000" '
+            'type="1" body="Private conversation" /></smses>',
+            encoding="utf-8",
+        )
+
+    with pytest.raises(GhanaPrivateError, match=expected):
+        normalize_android_sms_backups(
+            source_paths=sources,
+            normalized_csv_path=tmp_path / "android.csv",
+            report_path=tmp_path / "report.json",
+            allowed_sender_providers=mappings,
+            repository_root=tmp_path / "repository",
+            source_provenance=provenance,
+        )
+
+
 def test_message_index_rejects_missing_file_columns_and_bad_identity(tmp_path: Path) -> None:
     with pytest.raises(GhanaPrivateError, match="does not exist"):
         index_imazing_messages(
@@ -549,6 +767,7 @@ def test_owner_message_corpus_masks_unusual_owner_names_and_excludes_login_codes
         "Hello, PRIVATE OWNER NAME, you have been registered.",
         "Payment complete. Reference: PRIVATE OWNER NAME,0244000000,1. "
         "Financial Transaction Id: ABC 1234567.",
+        "Date: 2026/02/19 22:45:23. Current Balance GHC 17.0004.",
         "<#> Please enter the following code:5501 to complete your login.",
     ]
     with source.open("w", encoding="utf-8", newline="") as stream:
@@ -593,11 +812,14 @@ def test_owner_message_corpus_masks_unusual_owner_names_and_excludes_login_codes
     assert "0244000000" not in sanitized
     assert "1234567" not in sanitized
     assert "5501" not in sanitized
+    assert "2026/02/19" not in sanitized
+    assert "22:45:23" not in sanitized
+    assert "GHC 17.0004" not in sanitized
     assert sanitized.count("[ENTITY_001]") >= 2
     assert "[REFERENCE_TEXT_001]" in sanitized
     assert "[REFERENCE_001]" in sanitized
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["raw_record_count"] == 3
+    assert report["raw_record_count"] == 4
     assert report["secret_bearing_message_excluded_count"] == 1
 
 

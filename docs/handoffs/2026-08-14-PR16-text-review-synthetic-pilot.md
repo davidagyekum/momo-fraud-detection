@@ -1,5 +1,7 @@
 # Codex Session Handoff
 
+> Superseded for current corpus counts by `2026-08-14-PR16-android-owner-messages.md`; retained as historical evidence of the earlier review pass.
+
 ## Session identity
 
 - Date: 2026-08-14, Africa/Lagos

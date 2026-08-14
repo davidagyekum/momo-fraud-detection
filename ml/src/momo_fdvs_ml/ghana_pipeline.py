@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import uuid
+import xml.etree.ElementTree as ET
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ OCR_TEXT_CORPUS_VERSION: Final = "ghana-private-ocr-text-corpus-v1"
 MESSAGE_TEXT_CORPUS_VERSION: Final = "ghana-private-message-text-corpus-v1"
 REVIEWED_TEXT_CORPUS_VERSION: Final = "ghana-private-reviewed-text-corpus-v1"
 SYNTHETIC_CLEAN_TEXT_VERSION: Final = "ghana-synthetic-clean-text-corpus-v1"
+ANDROID_SMS_NORMALIZATION_VERSION: Final = "ghana-android-sms-normalization-v1"
 PROVISIONAL_LABELS: Final = frozenset(
     {
         "fraud_candidate",
@@ -95,6 +97,7 @@ ALLOWED_IMAGE_EXTENSIONS: Final = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 ALLOWED_IMAGE_FORMATS: Final = frozenset({"JPEG", "PNG", "WEBP"})
 MAX_IMAGE_BYTES: Final = 20 * 1024 * 1024
 MAX_IMAGE_PIXELS: Final = 40_000_000
+MAX_ANDROID_SMS_XML_BYTES: Final = 25 * 1024 * 1024
 NEAR_DUPLICATE_DISTANCE: Final = 6
 WORKFLOW_STATES: Final = (
     "ingested",
@@ -139,7 +142,7 @@ _PII_FILENAME = re.compile(
 _EMAIL = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 _URL = re.compile(r"\b(?:https?://|www\.)\S+", re.IGNORECASE)
 _PHONE = re.compile(r"(?<!\d)(?:\+?233[\s-]?|0)(?:2|5)\d(?:[\s-]?\d){7}(?!\d)")
-_MONEY = re.compile(r"(?i)(?:GH[₵¢S]|GHS)\s*\d[\d,]*(?:\.\d{1,2})?")
+_MONEY = re.compile(r"(?i)(?:GHS|GHC|GH[₵¢])\s*\d[\d,]*(?:\.\d{1,4})?")
 _LONG_REFERENCE = re.compile(
     r"(?<![A-Za-z0-9])(?=[A-Za-z0-9-]{8,}\b)(?=[A-Za-z0-9-]*\d)[A-Za-z0-9-]+"
 )
@@ -257,6 +260,18 @@ class SyntheticCleanTextOutputs:
     manifest_path: Path
     record_count: int
     source_group_count: int
+
+
+@dataclass(frozen=True)
+class AndroidSmsNormalizationOutputs:
+    """Private normalized Android SMS corpus and safe aggregate report locations."""
+
+    normalized_csv_path: Path
+    normalized_csv_sha256: str
+    report_path: Path
+    parsed_message_count: int
+    selected_message_count: int
+    exact_duplicate_count: int
 
 
 @dataclass(frozen=True)
@@ -641,6 +656,182 @@ def ingest_private_screenshots(
     )
 
 
+def normalize_android_sms_backups(
+    *,
+    source_paths: Sequence[Path],
+    normalized_csv_path: Path,
+    report_path: Path,
+    allowed_sender_providers: Mapping[str, str],
+    repository_root: Path,
+    source_provenance: str = "owner_android_local_backup",
+) -> AndroidSmsNormalizationOutputs:
+    """Normalize selected incoming SMS Backup & Restore XML rows and remove overlaps."""
+
+    _require_outside_repository(
+        normalized_csv_path, repository_root, "private Android normalized CSV"
+    )
+    _require_outside_repository(report_path, repository_root, "private Android safe report")
+    if not source_paths:
+        raise GhanaPrivateError("Android SMS normalization requires at least one XML source")
+    if source_provenance != "owner_android_local_backup":
+        raise GhanaPrivateError("Android SMS source provenance is invalid")
+    normalized_senders: dict[str, tuple[str, str]] = {}
+    for sender, provider in allowed_sender_providers.items():
+        clean_sender = sender.strip()
+        clean_provider = provider.strip()
+        if (
+            not clean_sender
+            or len(clean_sender) > 80
+            or _PHONE.search(clean_sender)
+            or re.fullmatch(r"[A-Z][A-Z0-9_]{2,39}", clean_provider) is None
+        ):
+            raise GhanaPrivateError("Android SMS sender/provider mapping is invalid")
+        key = clean_sender.casefold()
+        if key in normalized_senders:
+            raise GhanaPrivateError("Android SMS sender mapping is duplicated")
+        normalized_senders[key] = (clean_sender, clean_provider)
+    if not normalized_senders:
+        raise GhanaPrivateError("Android SMS normalization requires approved sender mappings")
+
+    rows_by_identity: dict[str, dict[str, object]] = {}
+    document_hashes: list[str] = []
+    document_message_counts: dict[str, int] = {}
+    parsed_message_count = 0
+    selected_occurrence_count = 0
+    ignored_sender_count = 0
+    ignored_direction_count = 0
+    duplicate_count = 0
+    provider_counts: Counter[str] = Counter()
+    sender_counts: Counter[str] = Counter()
+    seen_document_hashes: set[str] = set()
+    for source_path in source_paths:
+        try:
+            size = source_path.stat().st_size
+            payload = source_path.read_bytes()
+        except OSError as exc:
+            raise GhanaPrivateError("Android SMS XML source could not be opened") from exc
+        if size < 1 or size > MAX_ANDROID_SMS_XML_BYTES or len(payload) != size:
+            raise GhanaPrivateError("Android SMS XML source size is invalid")
+        lowered_prefix = payload[:4096].lower()
+        if b"<!doctype" in lowered_prefix or b"<!entity" in lowered_prefix:
+            raise GhanaPrivateError("Android SMS XML declarations are not allowed")
+        document_hash = _sha256_bytes(payload)
+        if document_hash in seen_document_hashes:
+            raise GhanaPrivateError("Android SMS XML document is duplicated")
+        seen_document_hashes.add(document_hash)
+        document_hashes.append(document_hash)
+        try:
+            root = ET.fromstring(payload)  # noqa: S314 - size cap and declarations rejected above
+        except ET.ParseError as exc:
+            raise GhanaPrivateError("Android SMS XML source is malformed") from exc
+        if root.tag != "smses" or set(child.tag for child in root) - {"sms"}:
+            raise GhanaPrivateError("Android SMS XML schema is unsupported")
+        messages = list(root)
+        try:
+            declared_count = int(root.attrib["count"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise GhanaPrivateError("Android SMS XML declared count is invalid") from exc
+        if declared_count != len(messages):
+            raise GhanaPrivateError("Android SMS XML declared count does not match its rows")
+        document_message_counts[document_hash] = len(messages)
+        parsed_message_count += len(messages)
+        for message in messages:
+            sender_value = message.attrib.get("address", "").strip()
+            body = message.attrib.get("body", "").replace("\x00", " ").strip()
+            direction = message.attrib.get("type")
+            date_value = message.attrib.get("date")
+            if not sender_value or not body or date_value is None:
+                raise GhanaPrivateError("Android SMS XML row is incomplete")
+            sender_mapping = normalized_senders.get(sender_value.casefold())
+            if sender_mapping is None:
+                ignored_sender_count += 1
+                continue
+            if direction != "1":
+                ignored_direction_count += 1
+                continue
+            try:
+                milliseconds = int(date_value)
+                sent_at = datetime.fromtimestamp(milliseconds / 1000, tz=UTC)
+            except (OverflowError, OSError, TypeError, ValueError) as exc:
+                raise GhanaPrivateError("Android SMS XML timestamp is invalid") from exc
+            if not 2000 <= sent_at.year <= 2100:
+                raise GhanaPrivateError("Android SMS XML timestamp is outside the safe range")
+            selected_occurrence_count += 1
+            approved_sender, provider_family = sender_mapping
+            identity = _sha256_bytes(
+                "\x1f".join(
+                    (approved_sender.casefold(), str(milliseconds), direction, body)
+                ).encode("utf-8")
+            )
+            if identity in rows_by_identity:
+                duplicate_count += 1
+                continue
+            rows_by_identity[identity] = {
+                "sender_identifier": approved_sender,
+                "provider_family": provider_family,
+                "service": "SMS",
+                "direction": "incoming",
+                "sent_at_utc": sent_at.isoformat().replace("+00:00", "Z"),
+                "message_body": body,
+                "source_provenance": source_provenance,
+                "source_message_sha256": identity,
+            }
+            provider_counts[provider_family] += 1
+            sender_counts[approved_sender] += 1
+
+    rows = sorted(
+        rows_by_identity.values(),
+        key=lambda row: (cast(str, row["sent_at_utc"]), cast(str, row["source_message_sha256"])),
+    )
+    if not rows:
+        raise GhanaPrivateError("Android SMS normalization selected no incoming messages")
+    _atomic_csv(
+        normalized_csv_path,
+        [
+            "sender_identifier",
+            "provider_family",
+            "service",
+            "direction",
+            "sent_at_utc",
+            "message_body",
+            "source_provenance",
+            "source_message_sha256",
+        ],
+        rows,
+    )
+    normalized_hash = _sha256_file(normalized_csv_path)
+    report = {
+        "schema_version": ANDROID_SMS_NORMALIZATION_VERSION,
+        "pipeline_version": GHANA_PIPELINE_VERSION,
+        "source_document_count": len(source_paths),
+        "source_document_sha256": sorted(document_hashes),
+        "source_document_message_counts": dict(sorted(document_message_counts.items())),
+        "parsed_message_count": parsed_message_count,
+        "selected_occurrence_count": selected_occurrence_count,
+        "selected_unique_message_count": len(rows),
+        "exact_overlap_duplicate_count": duplicate_count,
+        "ignored_sender_message_count": ignored_sender_count,
+        "ignored_direction_message_count": ignored_direction_count,
+        "provider_family_counts": dict(sorted(provider_counts.items())),
+        "approved_sender_counts": dict(sorted(sender_counts.items())),
+        "normalized_csv_sha256": normalized_hash,
+        "raw_sender_values_written_to_private_csv": True,
+        "unapproved_conversation_content_written": False,
+        "splits_frozen": False,
+        "training_eligible": False,
+        "training_executed": False,
+    }
+    _atomic_json(report_path, report)
+    return AndroidSmsNormalizationOutputs(
+        normalized_csv_path,
+        normalized_hash,
+        report_path,
+        parsed_message_count,
+        len(rows),
+        duplicate_count,
+    )
+
+
 def deidentify_message_text(value: str) -> tuple[str, dict[str, int]]:
     """Tokenise high-risk values while preserving wording and spelling signals."""
 
@@ -790,7 +981,9 @@ _MESSAGE_POST_GREETING_NAME = re.compile(
     r"^((?i:Hello),\s+)([A-Z][A-Z'-]+(?:\s+[A-Z][A-Z'-]+){1,5})(,\s+)"
 )
 _IPV4 = re.compile(r"(?<!\d)(?:\d{1,3}\.){3}\d{1,3}(?!\d)")
-_MONEY_SUFFIX = re.compile(r"(?i)\b\d[\d,]*(?:\.\d{1,2})?\s*(?:GHS|GH\u20B5|GH\u00A2)\b")
+_MONEY_SUFFIX = re.compile(r"(?i)\b\d[\d,]*(?:\.\d{1,4})?\s*(?:GHS|GHC|GH\u20B5|GH\u00A2)\b")
+_NUMERIC_DATE = re.compile(r"(?<!\d)\d{4}[-/]\d{1,2}[-/]\d{1,2}(?!\d)")
+_CLOCK_TIME = re.compile(r"(?<!\d)(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?!\d)")
 _MESSAGE_TRANSACTION_CUES: Final = (
     "payment made",
     "payment received",
@@ -801,6 +994,12 @@ _MESSAGE_TRANSACTION_CUES: Final = (
     "airtime recharge",
     "successfully purchased",
     "transaction id",
+    " confirmed.",
+    "bundle purchase request",
+    "transaction failed",
+    "you bought",
+    "you have received",
+    "you have withdrawn",
     "fee charged",
     "reversal",
 )
@@ -872,6 +1071,8 @@ def _deidentify_owner_message(value: str) -> tuple[str, list[dict[str, str]]]:
         ("AMOUNT", _MONEY_SUFFIX),
         ("REFERENCE", _LONG_REFERENCE),
         ("REFERENCE", _IPV4),
+        ("TIMESTAMP", _NUMERIC_DATE),
+        ("TIMESTAMP", _CLOCK_TIME),
     ):
         text = pattern.sub(replacement(kind), text)
     for field in sorted(fields, key=lambda item: len(item["raw"]), reverse=True):
@@ -885,7 +1086,7 @@ def _deidentify_owner_message(value: str) -> tuple[str, list[dict[str, str]]]:
 
 def _message_template_group(sanitized_text: str) -> str:
     template = re.sub(
-        r"\[(?:ENTITY|URL|EMAIL|PHONE|AMOUNT|REFERENCE|REFERENCE_TEXT)_\d{3}\]",
+        r"\[(?:ENTITY|URL|EMAIL|PHONE|AMOUNT|REFERENCE|REFERENCE_TEXT|TIMESTAMP)_\d{3}\]",
         "[VALUE]",
         sanitized_text,
     )
@@ -903,8 +1104,10 @@ def export_private_imazing_genuine_corpus(
     repository_root: Path,
     reviewer_id: str,
     expected_sender_label: str = "MobileMoney",
+    expected_sender_labels: frozenset[str] | None = None,
+    expected_source_provenance: str = "owner_iphone_local_backup",
 ) -> PrivateMessageCorpusOutputs:
-    """Export owner-authentic messages to raw and deduplicated private text CSVs."""
+    """Export normalized owner-authentic messages to private text CSVs."""
 
     reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
     _require_outside_repository(output_root, repository_root, "private message CSV corpus")
@@ -916,6 +1119,18 @@ def export_private_imazing_genuine_corpus(
     if _sha256_file(source_csv) != expected_source_hash:
         raise GhanaPrivateError("private message source identity changed")
     indexed_by_row: dict[int, dict[str, object]] = {}
+    allowed_senders = {
+        value.strip().casefold()
+        for value in (expected_sender_labels or frozenset({expected_sender_label}))
+        if value.strip()
+    }
+    if not allowed_senders:
+        raise GhanaPrivateError("private message sender boundary is invalid")
+    if expected_source_provenance not in {
+        "owner_iphone_local_backup",
+        "owner_android_local_backup",
+    }:
+        raise GhanaPrivateError("private message source provenance is invalid")
     for record_object in records:
         record = cast(dict[str, object], record_object)
         row_number = record.get("source_row_number")
@@ -930,6 +1145,7 @@ def export_private_imazing_genuine_corpus(
     raw_rows: list[dict[str, object]] = []
     sanitized_by_hash: dict[str, dict[str, object]] = {}
     category_counts: Counter[str] = Counter()
+    provider_counts: Counter[str] = Counter()
     group_counts: Counter[str] = Counter()
     excluded_secret_count = 0
     try:
@@ -957,11 +1173,10 @@ def export_private_imazing_genuine_corpus(
             if indexed is None:
                 raise GhanaPrivateError("private message row is absent from its index")
             if (
-                row.get("sender_identifier", "").strip().casefold()
-                != expected_sender_label.casefold()
+                row.get("sender_identifier", "").strip().casefold() not in allowed_senders
                 or row.get("service") != "SMS"
                 or row.get("direction") != "incoming"
-                or row.get("source_provenance") != "owner_iphone_local_backup"
+                or row.get("source_provenance") != expected_source_provenance
             ):
                 raise GhanaPrivateError("private message authenticity boundary changed")
             if _MESSAGE_SECRET.search(raw_text):
@@ -978,9 +1193,14 @@ def export_private_imazing_genuine_corpus(
                 else "official_service_message"
             )
             category_counts[category] += 1
+            provider_family = row.get("provider_family", "MTN_MOMO").strip()
+            if re.fullmatch(r"[A-Z][A-Z0-9_]{2,39}", provider_family) is None:
+                raise GhanaPrivateError("private message provider family is invalid")
+            provider_counts[provider_family] += 1
             group_id = _message_template_group(sanitized)
             group_counts[group_id] += 1
             sanitized_hash = _sha256_bytes(sanitized.casefold().encode())
+            deduplication_hash = _sha256_bytes(f"{provider_family}:{sanitized.casefold()}".encode())
             record_id = indexed.get("message_id")
             if not isinstance(record_id, str):
                 raise GhanaPrivateError("private message identifier is invalid")
@@ -991,6 +1211,7 @@ def export_private_imazing_genuine_corpus(
                     "sent_at_utc": row.get("sent_at_utc", ""),
                     "source_group_id": group_id,
                     "label": "GENUINE",
+                    "provider_family": provider_family,
                     "message_category": category,
                     "raw_message_text": raw_text.strip(),
                     "fields_json": json.dumps(fields, ensure_ascii=False, separators=(",", ":")),
@@ -999,12 +1220,13 @@ def export_private_imazing_genuine_corpus(
                     "review_state": "owner_message_text_pending_second_review",
                 }
             )
-            existing = sanitized_by_hash.get(sanitized_hash)
+            existing = sanitized_by_hash.get(deduplication_hash)
             if existing is None:
-                sanitized_by_hash[sanitized_hash] = {
+                sanitized_by_hash[deduplication_hash] = {
                     "record_id": record_id,
                     "source_group_id": group_id,
                     "label": "GENUINE",
+                    "provider_family": provider_family,
                     "sender_kind": "alphanumeric_label",
                     "message_category": category,
                     "sanitized_text": sanitized,
@@ -1025,6 +1247,7 @@ def export_private_imazing_genuine_corpus(
         "sent_at_utc",
         "source_group_id",
         "label",
+        "provider_family",
         "message_category",
         "raw_message_text",
         "fields_json",
@@ -1036,6 +1259,7 @@ def export_private_imazing_genuine_corpus(
         "record_id",
         "source_group_id",
         "label",
+        "provider_family",
         "sender_kind",
         "message_category",
         "sanitized_text",
@@ -1074,6 +1298,7 @@ def export_private_imazing_genuine_corpus(
             "secret_bearing_message_excluded_count": excluded_secret_count,
             "template_group_count": len(group_counts),
             "message_category_counts": dict(sorted(category_counts.items())),
+            "provider_family_counts": dict(sorted(provider_counts.items())),
             "raw_csv_sha256": raw_hash,
             "sanitized_csv_sha256": sanitized_hash,
             "second_review_required": True,
@@ -2175,7 +2400,11 @@ def review_private_text_corpora(
                 if (
                     _EMAIL.search(text)
                     or _PHONE.search(text)
+                    or _MONEY.search(text)
+                    or _MONEY_SUFFIX.search(text)
                     or _IPV4.search(text)
+                    or _NUMERIC_DATE.search(text)
+                    or _CLOCK_TIME.search(text)
                     or _MESSAGE_SECRET.search(text)
                     or malformed_placeholder.search(text)
                 ):
@@ -2198,6 +2427,7 @@ def review_private_text_corpora(
                         "source_corpus": source_name,
                         "source_kind": source_row.get("source_kind") or "owner_sms",
                         "label": label,
+                        "provider_family": source_row.get("provider_family") or "UNKNOWN",
                         "sender_kind": source_row.get("sender_kind") or "unknown",
                         "message_category": source_row.get("message_category") or "",
                         "indicators": source_row.get("indicators") or "",
@@ -2232,6 +2462,7 @@ def review_private_text_corpora(
             "source_corpus",
             "source_kind",
             "label",
+            "provider_family",
             "sender_kind",
             "message_category",
             "indicators",

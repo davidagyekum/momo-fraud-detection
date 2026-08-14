@@ -29,27 +29,71 @@
   "network_acquisition_executed": false,
   "owner_message_text_corpus": {
     "deduplicated_category_counts": {
-      "official_service_message": 64,
-      "transaction_confirmation": 52
+      "official_service_message": 62,
+      "transaction_confirmation": 44
     },
-    "deduplicated_csv_sha256": "4a93e9cbd7e72f5e5d8c40e66577f65cb644e020a9493acc6eb82cefb6dca684",
-    "deduplicated_record_count": 116,
-    "exact_duplicate_occurrence_count": 2512,
-    "message_index_sha256": "848abc389cb1c4663cd79ffc7ddb1575aba0a69557286153ecaa940de7fe3c22",
-    "message_report_sha256": "2300fadd73bef7f349c3c92e2b071cabcbb93d05c431d95e183102443a5c5f1e",
+    "deduplicated_csv_sha256": "54e84f5ef16baf0dca28d5d133b77a5467186281c6dc843f18824f9bb537c3da",
+    "deduplicated_record_count": 106,
+    "exact_duplicate_occurrence_count": 2522,
+    "message_index_sha256": "a851b9a200957fce07784fe12ffb5dbbaf88c06f39f5469578b17b0fd7487c34",
+    "message_report_sha256": "227a256f95e24f241669bbf06aa6b83da3970febbb272652a36bafbd8607c41b",
     "pending_second_review_count": 0,
     "raw_category_counts": {
       "official_service_message": 178,
       "transaction_confirmation": 2450
     },
-    "raw_csv_sha256": "5d4a7499b99e3072744082816404442d325b3a0d95db9b759a8e20e0bce49b76",
+    "raw_csv_sha256": "8837d966163a65f9389ca7c9c3f2f0075399c8f70f9518da69311a306377efaa",
     "raw_record_count": 2628,
     "residual_direct_identifier_pattern_hits": 0,
-    "second_review_approved_count": 116,
+    "second_review_approved_count": 106,
     "secret_bearing_message_excluded_count": 26,
-    "source_group_policy": "template_family_plus_owner_train_only_pending_review",
+    "source_group_policy": "template_family_plus_single_owner_train_only_reviewed",
     "template_group_count": 90,
     "training_eligible_count": 0
+  },
+  "android_owner_message_text_corpus": {
+    "approved_sender_counts": {
+      "MobileMoney": 342,
+      "T Cash": 59,
+      "T-CASH": 72,
+      "Telecel": 217
+    },
+    "deduplicated_category_counts": {
+      "official_service_message": 125,
+      "transaction_confirmation": 34
+    },
+    "deduplicated_csv_sha256": "cdc3cebbb45a5a910fa883a93141a506919d70f4e148c52c4812c275ab8e6201",
+    "deduplicated_provider_counts": {
+      "MTN_MOMO": 29,
+      "TELECEL_CASH": 130
+    },
+    "deduplicated_record_count": 159,
+    "exact_duplicate_occurrence_count": 527,
+    "message_index_sha256": "5c679d269c8c7239244e4d9dd0c1685951e539bf1446a3a24ffa580191f5a18e",
+    "message_report_sha256": "86584cb1d1c97cd75e525016018dcd82a89d06f10847c4c21b0722373453f34a",
+    "normalization_report_sha256": "a6566992008eeb7f542994373694843d026914e695b0ed49f60ef5f053478fba",
+    "normalized_csv_sha256": "28b5247ba6f81688eaaa63d044ea10743b0e5c8ef6739e682055c6cd2c1d362c",
+    "parsed_xml_message_count": 1224,
+    "raw_category_counts": {
+      "official_service_message": 287,
+      "transaction_confirmation": 399
+    },
+    "raw_csv_sha256": "83c3d1a347516937619fd5a9c3affe18aefe261790c9d9b19aa5a6f2b523405c",
+    "raw_provider_counts": {
+      "MTN_MOMO": 338,
+      "TELECEL_CASH": 348
+    },
+    "raw_record_count": 686,
+    "residual_direct_identifier_pattern_hits": 0,
+    "second_review_approved_count": 159,
+    "secret_bearing_message_excluded_count": 4,
+    "selected_unique_message_count": 690,
+    "source_document_count": 2,
+    "source_overlap_duplicate_count": 342,
+    "template_group_count": 150,
+    "training_eligible_count": 0,
+    "unapproved_conversation_message_count": 192,
+    "unapproved_conversation_content_written": false
   },
   "ocr_text_corpus": {
     "deidentified_csv_sha256": "1a2c272b109138fabef7404ff1d116d5e80c694575a044bb61ce2990169f7a5a",
@@ -67,17 +111,18 @@
   "reviewed_text_corpus": {
     "approved_label_counts": {
       "FRAUDULENT": 10,
-      "GENUINE": 118,
+      "GENUINE": 267,
       "SUSPICIOUS": 1
     },
-    "approved_record_count": 129,
+    "approved_record_count": 278,
     "approved_source_counts": {
-      "owner_messages": 116,
+      "owner_android_messages": 159,
+      "owner_iphone_messages": 106,
       "screenshot_ocr": 13
     },
     "excluded_record_count": 0,
-    "manifest_sha256": "54797f4a096150f6192419824aaf36aa14ae28bd663746e4d6ab8cf796ccd075",
-    "reviewed_csv_sha256": "2ea57d65423411a2fe9a69c68d19d7837d5a6091b97c10ecbd19695975de9dfa",
+    "manifest_sha256": "01fae3073d0ac2bef19c4fa1127a2f68f8b6745b60abd7c49366e1c636701bf3",
+    "reviewed_csv_sha256": "f63d5d8df0d5d8bb845a8d307d0a19ede47c549163b8d658329b54c9041b5a58",
     "splits_frozen": false,
     "training_eligible_count": 0
   },
