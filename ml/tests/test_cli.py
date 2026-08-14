@@ -335,7 +335,7 @@ def test_cli_validates_standard_notebooks_and_colab_locks(capsys) -> None:  # ty
         )
         == 0
     )
-    assert len(json.loads(capsys.readouterr().out)["locks"]) == 3
+    assert len(json.loads(capsys.readouterr().out)["locks"]) == 4
 
 
 def test_cli_reports_recorded_notebook_and_lock_drift(tmp_path: Path, capsys) -> None:  # type: ignore[no-untyped-def]

@@ -121,6 +121,34 @@ PR14 loader and PR15 verifier both reject `locked_test` before PR20. PR15's
 binary score does not fabricate the fixed public three-class probability
 vector; ADR-032 preserves the compatibility boundary for PR19.
 
+## Logical PR17 OCR benchmark and parser
+
+`ocr_parser.py` implements conservative Ghana MoMo amount, recipient/wallet,
+reference, timestamp, status and provider parsing. It preserves raw OCR
+evidence, flags ambiguous reference characters and date order, never defaults
+an unknown status to success, and returns an inconclusive result when critical
+fields are missing or below the frozen confidence threshold.
+
+`ocr_benchmark.py` provides a shared adapter result for Tesseract 5, EasyOCR
+and PaddleOCR, deterministic preprocessing, CER/WER and exact normalized field
+metrics, the Section 9 weighted selector, release gates, a two-stage validation
+screen and integrity-checked selected-bundle replay. The private bundle builder
+accepts only explicit records returned by the PR16 train/validation loader; a
+test ID or unknown binding fails closed.
+
+The output-free `06_benchmark_ocr.ipynb` is owner-operated in Google Colab. It
+expects the content-hashed private development ZIP in
+`MyDrive/momo-fraud/private-governance/ghana-private/`, benchmarks three source
+groups before the full 33-record controlled-real validation pass, and writes
+only private Drive reports. It does not train a recognizer. The five-record
+locked test is absent from the ZIP and unavailable through every PR17 loader.
+No approved tampered screenshot derivatives currently exist, so the required
+tampered slice remains an explicit blocker instead of a fabricated metric.
+
+The repository gate validates only code, fictitious fixtures, locks and the
+stripped notebook. Actual engine versions, latency and accuracy exist only
+after the owner completes the Colab run and returns its safe report hashes.
+
 ## P12 pre-training commands
 
 Validate the frozen binary image task and exact 224×224 RGB preprocessing contract:

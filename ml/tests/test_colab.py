@@ -490,7 +490,7 @@ def test_sync_verified_file_checks_source_and_destination(tmp_path: Path, monkey
 def test_lock_contract_records_exact_repository_files() -> None:
     contract = install_lock_contract(REPOSITORY_ROOT)
     assert contract["schema_version"] == "colab-lock-contract-v1"
-    assert len(contract["locks"]) == 3  # type: ignore[arg-type]
+    assert len(contract["locks"]) == 4  # type: ignore[arg-type]
     assert all(len(lock["sha256"]) == 64 for lock in contract["locks"])  # type: ignore[union-attr]
 
 

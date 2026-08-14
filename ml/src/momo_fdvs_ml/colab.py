@@ -800,6 +800,7 @@ def install_lock_contract(repository_root: Path) -> dict[str, object]:
 
     relative_paths = (
         "ml/requirements-runtime.lock",
+        "ml/requirements-ocr.lock",
         "ml/requirements-training.lock",
         "ml/requirements-dev.lock",
     )

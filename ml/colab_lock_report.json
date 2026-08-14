@@ -1,14 +1,20 @@
 {
   "install_order": [
     "ml/requirements-runtime.lock",
+    "ml/requirements-ocr.lock",
     "ml/requirements-training.lock",
     "ml/requirements-dev.lock"
   ],
   "locks": [
     {
       "path": "ml/requirements-runtime.lock",
-      "requirement_count": 12,
-      "sha256": "486c85c17a9d07136a5366ea5f05cb5c952f77527bb84aeb60faeeddf6b1b3c5"
+      "requirement_count": 14,
+      "sha256": "669492c17b7263a010240edcb94f1b04b00804cb8f6285c9fdfba367cbfae6b3"
+    },
+    {
+      "path": "ml/requirements-ocr.lock",
+      "requirement_count": 4,
+      "sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515"
     },
     {
       "path": "ml/requirements-training.lock",

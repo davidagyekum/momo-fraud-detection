@@ -1,0 +1,60 @@
+{
+  "benchmark_executed": false,
+  "branch": "codex/p17-ocr-benchmark",
+  "code_base_sha": "b1284e37f8b4e6a38587fee68a44ed8a74203323",
+  "configuration": {
+    "path": "ml/configs/ocr_benchmark_v1.json",
+    "sha256": "ecd7d7845b130cf657c0bdca57b9bf0eae9b47da4afbc6086b5970d35e95e2c9"
+  },
+  "data_boundary": {
+    "controlled_real_test_record_count": 5,
+    "development_manifest_sha256": "1ba8c58e1c29b77a46ba3cc54da7843dd84f090fdb2e731704091162d556d644",
+    "development_record_count": 58,
+    "development_split_counts": {
+      "train": 25,
+      "validation": 33
+    },
+    "governed_derivative_count": 2,
+    "locked_test_included": false,
+    "private_archive_sha256": "3370f7d38f6e56e995ba48e9808db669bbfe5a646923215a9c4834e7fab5afb2",
+    "private_archive_size_bytes": 3106402,
+    "private_bytes_committed": false,
+    "source_split_manifest_sha256": "3c2bd2e3727b62f0a61f01a7eebcbe49da7ed0ac124a8f765d471533d867d941"
+  },
+  "engines": [
+    {
+      "engine": "tesseract",
+      "license": "Apache-2.0",
+      "required_major_version": 5,
+      "version_measured": false
+    },
+    {
+      "engine": "easyocr",
+      "license": "Apache-2.0",
+      "package_pin": "1.7.2",
+      "version_measured": false
+    },
+    {
+      "engine": "paddleocr",
+      "license": "Apache-2.0",
+      "package_pin": "3.7.0",
+      "runtime_pin": "paddlepaddle==3.3.1",
+      "version_measured": false
+    }
+  ],
+  "locked_test_accessed": false,
+  "metrics": null,
+  "notebook": {
+    "outputs_stripped": true,
+    "path": "ml/notebooks/colab/06_benchmark_ocr.ipynb",
+    "sha256": "427d482926142efe6f627df901c46dde8dd860b9ecd4dcd33c10c71a8c278141"
+  },
+  "package_locks": {
+    "ocr_sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515",
+    "runtime_sha256": "669492c17b7263a010240edcb94f1b04b00804cb8f6285c9fdfba367cbfae6b3"
+  },
+  "schema_version": "pr17-ocr-benchmark-preparation-evidence-v1",
+  "selection_bundle_created": false,
+  "tampered_derivative_slice_available": false,
+  "training_executed": false
+}

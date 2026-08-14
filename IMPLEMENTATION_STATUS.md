@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p16-ghana-screenshot-dataset`
-- Base SHA: `f4862e32756a9b9ebde106a2eaf4993ba875b33a`
+- Current work branch: `codex/p17-ocr-benchmark`
+- Base SHA: `b1284e37f8b4e6a38587fee68a44ed8a74203323`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-14`
-- CI status: `Logical PR16 ML gate passes locally with 538 tests at 90.09% branch-aware coverage; the repository orchestrator remains subject to the documented inactive Node/npm toolchain mismatch. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
+- CI status: `Logical PR17 ML gate passes locally with 591 tests at 90.00% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The secret/prohibited-artifact scan passes 540 candidate files. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR16 private Ghana text pilot — Split Frozen; image pilot remains in progress`
-- Next exact task: `STOP before Colab as requested. After explicit owner confirmation, begin PR17 OCR benchmark preparation using only authoritative private split v3 train/validation assignments. Keep the five-record controlled-real test locked. Separately retain the PR16 image-pilot blocker: OCR-first originals have no approved image-training derivatives and controlled-real suspicious validation/test coverage is unavailable.`
+- Current phase: `Logical PR17 OCR benchmark/parser — Colab execution pending`
+- Next exact task: `Commit and push the PR17 foundation, upload the exact private development ZIP to the restricted Drive governance path, pin the notebook to the pushed SHA and run ml/notebooks/colab/06_benchmark_ocr.ipynb. Use only 25 train and 33 validation screenshot records; the five controlled-real test records must remain absent and inaccessible.`
 
 ## PR10-PR13 reconciliation status
 
@@ -82,6 +82,16 @@
 - QA/split boundary: a private reviewed artifact records 418 approvals: 106 iPhone owner-message, 159 Android owner-message, 63 screenshot-OCR and 90 corrected synthetic rows. Readiness passes at 34/30 controlled-real and 30/20 synthetic groups. Authoritative private split v3 (`3c2bd2e3…`) assigns 362 records to train, 51 to validation and five controlled-real records to the locked test; 23/6/5 controlled groups and 24/6/0 synthetic groups are group-disjoint, while all 222 owner template groups remain train-only under one participant lineage. The development loader verifies the manifest hash and cannot return test rows.
 - Coverage limitation: controlled-real group support is 31 fraudulent, three genuine and one suspicious. Genuine therefore appears in all splits, but suspicious controlled-real evidence can remain only in train without leakage. Synthetic suspicious validation rows are supplementary and do not repair the missing controlled-real validation/test slice. The text split is a pipeline pilot, not a representative Ghanaian evaluation set.
 - Verification: the registered ML gate passes formatting, Ruff, strict mypy, 538 tests at 90.09% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 532 candidates. Repository orchestration remains subject to the previously documented inactive pinned Node/npm versions in the shared doctor; the security suite retains its already-documented unregistered marker. No model fitting, locked-test access, metric or promotion claim is made.
+
+## Logical PR17 OCR benchmark and parser
+
+- Engine foundation: common, typed adapters normalise Tesseract, EasyOCR and PaddleOCR output into one token/text schema. Optional engine imports and runtime incompatibilities fail safely without inventing a result. Runtime versions are recorded only by the actual Colab run.
+- Preprocessing/parser: deterministic original, normalised, contrast, adaptive-threshold and field-crop variants feed a versioned Ghana MoMo parser. The parser preserves raw values privately, lowers confidence for OCR ambiguity, normalises timestamps with an explicit Africa/Accra clock, never maps an unknown status to success and returns inconclusive when critical evidence is unavailable.
+- Evaluation/selection: CER, WER and exact normalised field metrics use a frozen weighted contract. A three-source-group screen selects one finalist per engine before the full 33-record clean validation pass. Required-engine absence, latency/accuracy gate failure, replay mismatch or integrity drift prevents `validated` status.
+- Private-data boundary: a verified archive outside Git contains 58 development records (25 train, 33 validation), including only two explicitly governed crop derivatives. Its manifest SHA-256 is `1ba8c58e…` and archive SHA-256 is `3370f7d3…`. The five controlled-real test records are not packaged; raw images, OCR truth and values remain private.
+- Colab boundary: `ml/notebooks/colab/06_benchmark_ocr.ipynb` is output-free, installs the dedicated four-lock dependency contract, verifies the immutable checkout/private archive/config identities and prohibits recognizer training, locked-test access and promotion. Model weights are cached only in restricted Drive storage.
+- Honesty boundary: preparation evidence explicitly records `benchmark_executed=false`, `training_executed=false`, `locked_test_accessed=false`, `metrics=null` and `selection_bundle_created=false`. The current run can measure only clean validation; no approved tampered-image derivative slice exists, so robustness selection remains blocked rather than estimated.
+- Verification: the registered ML gate passes formatting, Ruff, strict mypy, 591 tests at 90.00% branch-aware coverage, governance, lock, notebook and controlled-data checks. The secret/prohibited-artifact scan passes 540 candidate files.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -156,7 +166,9 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 | B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
 | PR15-MOMTSIM-V2-RUNTIME | Logical PR15 optional stress run | Repeated free-Colab backend disconnections prevented the first full-data logistic fit from completing; only the dummy-prior checkpoint was atomically saved. | No MoMTSim v2 model bundle or completed-run comparison exists. | Preserve the incomplete checkpoint and explicit deferral; rely only on the completed PaySim and MoMTSim v1 synthetic evidence. | Project owner supplies a paid/long-running runtime if the optional retry is desired. | Retry unchanged on a durable runtime, or introduce and document a separately versioned bounded configuration; never relabel the partial run as complete. |
-| PR16-GHANA-PRIVATE | Logical PR16 | Independent text review approves 265 owner-account, 42 screenshot-OCR and 90 corrected synthetic rows. The synthetic 30-group gate passes, but only 13 controlled-real screenshot groups exist versus the enforced 30. The owner accounts remain one train-only participant lineage; the latest 19-friend/22-unique-image addition counts as one group because its file mapping was lost; image 6 remains unpermitted. | Ghana split freezing and adaptation cannot start; no current record is training eligible. | Keep Ghana-private disabled/non-training, preserve conservative unmapped-batch lineages and keep private artifacts outside Git. | Project owner/data steward supplies at least 17 additional permission-attested controlled-real source groups with preserved mappings and stronger suspicious coverage. | Reach at least 30 controlled-real groups, explicitly enable approved records, freeze leakage-safe partitions and then stop for owner confirmation before Colab training. |
+| PR16-CONTROLLED-SUSPICIOUS | Logical PR16/PR20 | Only one independent controlled-real suspicious group exists. | A leakage-safe controlled-real suspicious validation/test slice is unavailable. | Report synthetic suspicious validation only as supplementary and make no representative three-class claim. | Project owner/data steward supplies at least two more independently mapped suspicious groups. | Expand the controlled-real corpus before any strong three-class final claim. |
+| PR16-IMAGE-PILOT | Logical PR16/PR18 | OCR-first originals have no broadly approved image-training derivatives. | The image/tamper pilot and image-model training set are incomplete. | Keep originals private and image-ineligible; use text/OCR evidence only. | Project owner/data steward defines separately consented controlled screenshots and governed edits. | Create reviewed derivatives/masks under explicit consent before PR18 fitting. |
+| PR17-TAMPERED-SLICE | Logical PR17 | No approved tampered-image derivative validation slice exists. | PR17 can compare clean OCR only and cannot satisfy the tampered-slice robustness gate. | Keep any selected bundle experimental and report the missing slice explicitly. | Project owner/data steward approves controlled edits from suitable consented originals. | Build grouped governed tampered variants, then rerun the same versioned benchmark without opening the locked test. |
 
 ## Active known limitations
 
@@ -171,16 +183,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-14-PR16-unmapped-friend-batch.md`
-- Summary: `Registered 22 newly unique consented genuine screenshots without image derivatives, preserved the unmapped 19-friend submission as one conservative group, rebuilt the 397-row reviewed corpus, and stopped at 13/30 controlled-real groups.`
+- Handoff file: `docs/handoffs/2026-08-14-PR17-ocr-benchmark-preparation.md`
+- Summary: `Prepared a test-excluding private OCR development archive and a pinned three-engine Colab benchmark/parser foundation. No benchmark, training, locked-test access or metric has occurred.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read the PR16 section of `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, the private-data governance documents and `docs/evidence/PR15_TRANSACTION_TRAINING_COLAB.json` before handling any private source.
-4. Confirm the pushed PR15 head and clean worktree, then create `codex/p16-ghana-screenshot-dataset` from the intended base.
+3. Read the PR17 section of `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-035 and `docs/evidence/PR17_OCR_BENCHMARK_PREPARATION.json` before running the benchmark.
+4. Confirm the pushed PR17 head and clean worktree, then pin `ml/notebooks/colab/06_benchmark_ocr.ipynb` to that immutable commit.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve the three exact PR14 Drive bundles and the completed PaySim/MoMTSim v1 PR15 bundles. Keep all locked-test partitions sealed and unavailable for decisions before PR20; keep the v2 run explicitly incomplete.
-8. Preserve the completed 397-row reviewed text artifact, the corrected 30-group/90-row synthetic v3 corpus and the 42-row screenshot OCR layer. The readiness report remains blocked at 13/30 controlled-real groups; obtain at least 17 more permission-attested groups with preserved participant-to-file mapping and stronger suspicious coverage before eligibility or split freezing. No raw private data, consent record or downloaded image may enter Git, and stop before any Colab training.
+8. Upload only the exact private `pr17-ocr-development.zip` archive (SHA-256 `3370f7d38f6e56e995ba48e9808db669bbfe5a646923215a9c4834e7fab5afb2`) to the restricted Drive governance path. Run the clean train/validation benchmark only; keep all five controlled-real test records inaccessible, preserve raw values outside Git and retain experimental status while the tampered derivative slice is unavailable.

@@ -9,9 +9,12 @@ description = "Governed dataset and reproducibility tooling for MoMo-FDVS"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "joblib==1.5.3",
+  "numpy==2.5.2",
+  "opencv-python-headless==4.14.0.94",
   "pandas==3.0.3",
   "Pillow==12.3.0",
   "pyarrow==25.0.1",
+  "pytesseract==0.3.13",
   "scikit-learn==1.9.0",
 ]
 
@@ -28,6 +31,11 @@ dev = [
 training = [
   "tensorflow==2.21.0",
   "xgboost==3.3.0",
+]
+ocr = [
+  "easyocr==1.7.2",
+  "paddleocr==3.7.0",
+  "paddlepaddle==3.3.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -59,7 +67,17 @@ module = ["PIL.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["joblib.*", "pandas", "pandas.*", "sklearn.*", "tensorflow.*"]
+module = [
+  "cv2.*",
+  "easyocr.*",
+  "joblib.*",
+  "paddleocr.*",
+  "pandas",
+  "pandas.*",
+  "pytesseract.*",
+  "sklearn.*",
+  "tensorflow.*",
+]
 ignore_missing_imports = true
 
 [tool.ruff]
