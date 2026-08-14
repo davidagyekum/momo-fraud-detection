@@ -29,15 +29,15 @@
 - Consumes: existing `ParserResult`, `ParsedField`, `score_parser_result()`, and `run_ocr_parser_ceiling_diagnostic()`.
 - Produces: expectations for `compare_parser_result(parser, truth) -> dict[str, FieldComparison | None]` and v3 aggregate report fields.
 
-- [ ] **Step 1: Add direct comparison tests with fictional values**
+- [x] **Step 1: Add direct comparison tests with fictional values**
 
   Add synthetic parser-result fixtures covering wallet exact, wallet mismatch with unavailable name, name truth, both truth fields, absent truth, and conflicting duplicate truth. Assert literal aggregate/truth/observed field names, availability, warnings, match state, subtype, and name-first secondary-truth behavior.
 
-- [ ] **Step 2: Add diagnostic regression tests**
+- [x] **Step 2: Add diagnostic regression tests**
 
   Patch only the deterministic parser boundary with complete `ParserResult` objects so a wallet-truth record proves that outcome and warning aggregation use `recipient_wallet`. Assert the v3 schema, subtype counts, secondary-truth count, observed-field warning map, denominator equality, privacy flags, and absence of all fictional values and record IDs from serialized output.
 
-- [ ] **Step 3: Run the focused tests and capture RED**
+- [x] **Step 3: Run the focused tests and capture RED**
 
   Run:
 
@@ -58,19 +58,19 @@
 - Produces: `compare_parser_result(parser: ParserResult, truth: Mapping[str, object]) -> dict[str, FieldComparison | None]`.
 - Preserves: `score_parser_result(parser, truth) -> dict[str, bool | None]`.
 
-- [ ] **Step 1: Fail closed on conflicting duplicate truth**
+- [x] **Step 1: Fail closed on conflicting duplicate truth**
 
   Change `_truth_fields()` so repeated identical normalized values remain accepted while conflicting non-empty normalized values raise `OCRBenchmarkError` without embedding the private value in the exception.
 
-- [ ] **Step 2: Add the immutable comparison object and builder**
+- [x] **Step 2: Add the immutable comparison object and builder**
 
   Build ordinary fields against their same-named parser output. Build aggregate recipient against `recipient` for name truth or `recipient_wallet` for wallet truth. Raise `OCRBenchmarkError` with a bounded observed-field name if the required parser field is absent.
 
-- [ ] **Step 3: Preserve the scoring API as a projection**
+- [x] **Step 3: Preserve the scoring API as a projection**
 
   Implement `score_parser_result()` solely from `compare_parser_result()` so no caller observes a score-contract change.
 
-- [ ] **Step 4: Run direct focused tests and capture GREEN**
+- [x] **Step 4: Run direct focused tests and capture GREEN**
 
   Run the smallest new test selection, then the full benchmark test file. Expected: all tests pass with no parser behavior change.
 
@@ -85,19 +85,19 @@
 - Adds `recipient_truth_subtype_counts`, `recipient_secondary_truth_present_count`, and `parser_warning_counts_by_observed_field`.
 - Preserves the flat `parser_warning_counts` compatibility aggregate unless repository tests or consumers prove it unsafe.
 
-- [ ] **Step 1: Consume comparisons in the diagnostic loop**
+- [x] **Step 1: Consume comparisons in the diagnostic loop**
 
   Derive exact/mismatch/unavailable from `matched` and `available`; derive warnings from `comparison.warnings`; aggregate only allowlisted field/subtype names and canonical warning codes.
 
-- [ ] **Step 2: Enforce aggregate invariants before writing**
+- [x] **Step 2: Enforce aggregate invariants before writing**
 
   Verify each field outcome total equals its scored count and recipient subtype totals equal the recipient scored count. Raise a bounded `OCRBenchmarkError` before `_write_json()` on invariant failure.
 
-- [ ] **Step 3: Emit only safe v3 aggregate fields**
+- [x] **Step 3: Emit only safe v3 aggregate fields**
 
   Keep all comparison values in memory. Serialize counts, versions, hashes, rates, and the five explicit false privacy/training/locked-test flags only.
 
-- [ ] **Step 4: Run focused and full tests**
+- [x] **Step 4: Run focused and full tests**
 
   Run:
 
@@ -120,7 +120,7 @@
 **Interfaces:**
 - Produces: a coherent Stage 1 commit and exact handoff for the owner-operated parser-ceiling v3 run.
 
-- [ ] **Step 1: Run the phase quality gates**
+- [x] **Step 1: Run the phase quality gates**
 
   Run:
 
@@ -134,15 +134,14 @@
 
   Record exact outputs, counts, durations, branch, baseline SHA, and privacy boundaries. Do not claim the private denominator of 32 is verified until the owner-operated run occurs.
 
-- [ ] **Step 2: Inspect repository and migration state**
+- [x] **Step 2: Inspect repository and migration state**
 
   Run `git diff --check`, `git diff`, `git status --short --branch`, and the repository's migration-state check if it is part of `scripts/verify_ml.py`. Confirm no private artifact or package extraction entered the worktree.
 
-- [ ] **Step 3: Update handoff documentation**
+- [x] **Step 3: Update handoff documentation**
 
   Record RED and GREEN evidence, changed files, no database/API/parser behavior change, no training, no locked-test access, and the exact next owner-operated v3 validation command/runbook boundary.
 
-- [ ] **Step 4: Commit and push**
+- [x] **Step 4: Commit and push**
 
   Commit as `fix(ocr): align recipient comparison contract`, push `codex/p17-ocr-benchmark`, and report the exact base SHA, head SHA, branch, commands, results, and any blocked hosted CI state.
-
