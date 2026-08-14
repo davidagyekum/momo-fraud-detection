@@ -1,5 +1,7 @@
 # Codex Session Handoff
 
+> Superseded for current corpus counts by `2026-08-14-PR16-unmapped-friend-batch.md`; retained as historical evidence.
+
 ## Session identity
 
 - Date: 2026-08-14, Africa/Lagos

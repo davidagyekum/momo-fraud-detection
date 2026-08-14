@@ -30,6 +30,7 @@ from momo_fdvs_ml.ghana_pipeline import (
     initialize_owner_consent,
     load_development_records,
     normalize_android_sms_backups,
+    prepare_consented_screenshot_text_only_review,
     prepare_online_candidate_text_only_review,
     quarantine_online_candidate,
     record_private_ocr_ground_truth,
@@ -274,6 +275,126 @@ def test_pending_deidentification_does_not_write_private_working_copy(tmp_path: 
     assert index["records"][0]["working_relative_path"] is None
     assert report["working_copy_count"] == 0
     assert report["deidentification_pending_count"] == 1
+
+
+def test_consented_screenshot_text_only_review_preserves_group_and_skips_derivative(
+    tmp_path: Path,
+) -> None:
+    _image(tmp_path / "raw/friend.png", phase=14)
+    record = _record(
+        image_id="GHIMG_FRIEND_0014",
+        source_path="friend.png",
+        participant=_hash("unmapped-consented-friend-batch"),
+        group="GHGROUP_FRIEND_BATCH_0014",
+    )
+    record["deidentification_status"] = "pending"
+    outputs = _ingest(tmp_path, [record])
+
+    prepare_consented_screenshot_text_only_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        image_id="GHIMG_FRIEND_0014",
+        provisional_label="genuine_candidate",
+        sender_kind="alphanumeric_label",
+        indicators=["branded_sender_context", "normal_transaction_language"],
+        reviewer_id="REVIEWER_FRIEND_LABEL_001",
+    )
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert indexed["source_group_id"] == "GHGROUP_FRIEND_BATCH_0014"
+    assert indexed["working_sha256"] is None
+    assert indexed["image_derivative_policy"] == ("excluded_use_private_original_for_ocr_only")
+    assert indexed["annotation_state"] == "needs_second_review"
+    assert indexed["training_eligible"] is False
+
+    record_second_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        record_id="GHIMG_FRIEND_0014",
+        decision="approve",
+        reviewer_id="REVIEWER_FRIEND_LABEL_002",
+        reason_code="GENUINE_TRANSACTION_CONFIRMED_001",
+    )
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
+    assert indexed["final_annotation"]["label"] == "GENUINE"
+
+
+@pytest.mark.parametrize("case", ["schema", "consent", "quarantine", "derivative"])
+def test_consented_screenshot_text_only_review_rejects_unsafe_state(
+    tmp_path: Path, case: str
+) -> None:
+    _image(tmp_path / "raw/friend.png", phase=15)
+    record = _record(
+        image_id="GHIMG_FRIEND_0015",
+        source_path="friend.png",
+        participant=_hash("consented-friend"),
+        group="GHGROUP_FRIEND_BATCH_0015",
+    )
+    record["deidentification_status"] = "pending"
+    outputs = _ingest(tmp_path, [record])
+    index = json.loads(outputs.index_path.read_text(encoding="utf-8"))
+    if case == "schema":
+        index["schema_version"] = "unknown"
+    elif case == "consent":
+        index["records"][0]["consent_scope"] = "unknown"
+    elif case == "quarantine":
+        index["records"][0]["workflow_state"] = "quarantined"
+    else:
+        index["records"][0]["working_sha256"] = _hash("derivative")
+    _write_json(outputs.index_path, index)
+
+    with pytest.raises(GhanaPrivateError):
+        prepare_consented_screenshot_text_only_review(
+            index_path=outputs.index_path,
+            report_path=outputs.report_path,
+            image_id="GHIMG_FRIEND_0015",
+            provisional_label="genuine_candidate",
+            sender_kind="alphanumeric_label",
+            indicators=["normal_transaction_language"],
+            reviewer_id="REVIEWER_FRIEND_LABEL_001",
+        )
+
+
+def test_consented_screenshot_text_review_preserves_near_duplicate_image_quarantine(
+    tmp_path: Path,
+) -> None:
+    first = _image(tmp_path / "raw/first.png", phase=21)
+    second = tmp_path / "raw/second.png"
+    second.write_bytes(first.read_bytes())
+    records = [
+        _record(
+            image_id="GHIMG_FRIEND_NEAR_0001",
+            source_path="first.png",
+            participant=_hash("friend-batch"),
+            group="GHGROUP_FRIEND_BATCH_0021",
+        ),
+        _record(
+            image_id="GHIMG_FRIEND_NEAR_0002",
+            source_path="second.png",
+            participant=_hash("friend-batch"),
+            group="GHGROUP_FRIEND_BATCH_0021",
+        ),
+    ]
+    for record in records:
+        record["deidentification_status"] = "pending"
+    outputs = _ingest(tmp_path, records)
+    index = json.loads(outputs.index_path.read_text(encoding="utf-8"))
+    duplicate = index["records"][1]
+    duplicate["quarantine_reason"] = "near_duplicate_of:GHIMG_FRIEND_NEAR_0001"
+    _write_json(outputs.index_path, index)
+
+    prepare_consented_screenshot_text_only_review(
+        index_path=outputs.index_path,
+        report_path=outputs.report_path,
+        image_id="GHIMG_FRIEND_NEAR_0002",
+        provisional_label="genuine_candidate",
+        sender_kind="cropped_unknown",
+        indicators=["normal_transaction_language"],
+        reviewer_id="REVIEWER_FRIEND_LABEL_001",
+    )
+    indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][1]
+    assert indexed["workflow_state"] == "quarantined"
+    assert indexed["image_quarantine_preserved"] is True
+    assert indexed["annotation_state"] == "needs_second_review"
 
 
 @pytest.mark.parametrize(
@@ -1730,6 +1851,7 @@ def test_private_ocr_truth_exports_raw_and_deidentified_text_without_image_deriv
     truth = json.loads(result.truth_path.read_text(encoding="utf-8"))
     indexed = json.loads(outputs.index_path.read_text(encoding="utf-8"))["records"][0]
     assert truth["full_transcript"].endswith("Reference 1")
+    assert truth["localization_quality"] == "field_verified"
     assert indexed["ocr_ground_truth"]["contains_private_values"] is True
     assert "full_transcript" not in indexed["ocr_ground_truth"]
     assert indexed["annotation_state"] == "ocr_truth_pending_second_review"

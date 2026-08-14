@@ -1599,6 +1599,77 @@ def prepare_online_candidate_text_only_review(
     _refresh_annotation_report(report_path, records)
 
 
+def prepare_consented_screenshot_text_only_review(
+    *,
+    index_path: Path,
+    report_path: Path,
+    image_id: str,
+    provisional_label: str,
+    sender_kind: str,
+    indicators: Sequence[str],
+    reviewer_id: str,
+) -> None:
+    """Prepare a consented private screenshot for OCR without creating an image derivative."""
+
+    reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    if provisional_label not in PROVISIONAL_LABELS:
+        raise GhanaPrivateError("provisional label is invalid")
+    if sender_kind not in SENDER_KINDS:
+        raise GhanaPrivateError("sender kind is invalid")
+    indicator_set = set(indicators)
+    if not indicator_set or not indicator_set.issubset(FRAUD_INDICATORS):
+        raise GhanaPrivateError("fraud indicators are invalid")
+    index = _load_object(index_path)
+    if index.get("schema_version") != PRIVATE_INDEX_VERSION:
+        raise GhanaPrivateError("private screenshot index is unsupported")
+    records = index.get("records")
+    if not isinstance(records, list):
+        raise GhanaPrivateError("private screenshot records are invalid")
+    matches = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("image_id") == image_id
+    ]
+    if len(matches) != 1:
+        raise GhanaPrivateError("private screenshot was not found uniquely")
+    record = matches[0]
+    if record.get("consent_scope") not in {"internal_only", "release_approved"}:
+        raise GhanaPrivateError("private screenshot consent is not confirmed")
+    _expect_opaque_id(record.get("permission_reference"), "permission_reference")
+    _expect_sha256(record.get("participant_id_hash"), "participant_id_hash")
+    _expect_opaque_id(record.get("source_group_id"), "source_group_id")
+    workflow_state = record.get("workflow_state")
+    near_duplicate_image = workflow_state == "quarantined" and str(
+        record.get("quarantine_reason", "")
+    ).startswith("near_duplicate_of:")
+    if workflow_state == "withdrawn" or (
+        workflow_state == "quarantined" and not near_duplicate_image
+    ):
+        raise GhanaPrivateError("private screenshot is not available for text review")
+    if record.get("working_sha256") is not None:
+        raise GhanaPrivateError("text-only review cannot replace an existing image derivative")
+    record["provisional_annotation"] = {
+        "label": provisional_label,
+        "sender_kind": sender_kind,
+        "indicators": sorted(indicator_set),
+        "reviewer_id": reviewer,
+    }
+    record["source_group_review"] = {
+        "reason_code": "CONSENTED_SOURCE_GROUP_PRESERVED_001",
+        "reviewer_id": reviewer,
+    }
+    record["image_derivative_policy"] = "excluded_use_private_original_for_ocr_only"
+    record["image_training_eligible"] = False
+    record["image_quarantine_preserved"] = near_duplicate_image
+    record["deidentification_status"] = "text_only_ocr_pending_label_review"
+    if not near_duplicate_image:
+        record["workflow_state"] = "needs_second_annotation"
+    record["annotation_state"] = "needs_second_review"
+    record["training_eligible"] = False
+    _atomic_json(index_path, index)
+    _refresh_annotation_report(report_path, records)
+
+
 def record_provisional_annotation(
     *,
     index_path: Path,
@@ -2087,10 +2158,13 @@ def record_private_ocr_ground_truth(
     fields: Sequence[Mapping[str, object]],
     reviewer_id: str,
     repository_root: Path,
+    localization_quality: str = "field_verified",
 ) -> PrivateOcrTruthOutputs:
     """Store exact OCR truth privately without modifying or deriving the source image."""
 
     reviewer = _expect_opaque_id(reviewer_id, "reviewer_id")
+    if localization_quality not in {"field_verified", "coarse_full_image"}:
+        raise GhanaPrivateError("private OCR localization quality is invalid")
     _require_outside_repository(truth_root, repository_root, "private OCR truth")
     if not isinstance(transcript, str) or not transcript.strip() or len(transcript) > 10_000:
         raise GhanaPrivateError("private OCR transcript is invalid")
@@ -2183,6 +2257,7 @@ def record_private_ocr_ground_truth(
         "full_transcript": transcript.strip(),
         "fields": normalized_fields,
         "reviewer_id": reviewer,
+        "localization_quality": localization_quality,
         "contains_private_values": True,
         "training_executed": False,
     }
@@ -2197,6 +2272,7 @@ def record_private_ocr_ground_truth(
         "field_count": len(normalized_fields),
         "sensitive_field_count": sum(field["sensitive"] is True for field in normalized_fields),
         "reviewer_id": reviewer,
+        "localization_quality": localization_quality,
         "contains_private_values": True,
         "second_review_required": True,
     }
