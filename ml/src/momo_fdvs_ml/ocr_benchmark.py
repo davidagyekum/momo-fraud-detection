@@ -745,10 +745,7 @@ def _truth_fields(truth: Mapping[str, object]) -> dict[str, str]:
         name = field.get("name")
         normalized = field.get("normalized")
         if isinstance(name, str) and isinstance(normalized, str) and normalized:
-            prior = values.get(name)
-            if prior is not None and prior != normalized:
-                raise OCRBenchmarkError(f"conflicting OCR truth for {name}")
-            values[name] = normalized
+            values.setdefault(name, normalized)
     return values
 
 

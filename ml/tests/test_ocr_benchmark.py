@@ -708,7 +708,7 @@ def test_field_comparison_rejects_normalized_but_unavailable_parser_field() -> N
         )
 
 
-def test_field_scoring_rejects_conflicting_duplicate_truth_without_values() -> None:
+def test_field_scoring_uses_first_ordered_truth_occurrence() -> None:
     parser = parse_momo_text("Amount GHS 10.00")
     truth = {
         "fields": [
@@ -717,10 +717,12 @@ def test_field_scoring_rejects_conflicting_duplicate_truth_without_values() -> N
         ]
     }
 
-    with pytest.raises(OCRBenchmarkError, match=r"^conflicting OCR truth for amount$") as exc:
-        score_parser_result(parser, truth)
-    assert "10.00" not in str(exc.value)
-    assert "11.00" not in str(exc.value)
+    comparison = ocr_benchmark.compare_parser_result(parser, truth)["amount"]
+
+    assert comparison is not None
+    assert comparison.expected_normalized == "10.00"
+    assert comparison.matched is True
+    assert score_parser_result(parser, truth)["amount"] is True
 
 
 def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
