@@ -648,6 +648,73 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
     assert report["report_sha256"] == _canonical(report, "report_sha256")
 
 
+def test_parser_ceiling_diagnostic_reports_sparse_truth_without_inventing_denominators(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["field_scored_record_count"] == {
+        "amount": 1,
+        "reference": 1,
+        "timestamp": 0,
+        "recipient": 0,
+    }
+    assert report["field_exact"] == {
+        "amount": 1.0,
+        "reference": 1.0,
+        "timestamp": None,
+        "recipient": None,
+    }
+    assert report["required_field_scored_record_count"] == 0
+    assert report["required_field_parse_success"] is None
+
+
+def test_parser_ceiling_diagnostic_rejects_invalid_execution_boundaries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+    with pytest.raises(OCRBenchmarkError, match="clock must be timezone-aware"):
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            now=datetime(2026, 8, 14),
+        )
+
+    monkeypatch.setattr(ocr_benchmark, "load_ocr_development_bundle", lambda *_args, **_kw: ())
+    with pytest.raises(OCRBenchmarkError, match="has no validation records"):
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+
 def _metric_row(
     *,
     matches: dict[str, bool | None] | None = None,
