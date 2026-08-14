@@ -163,6 +163,6 @@ Run: `.venv\Scripts\python.exe scripts/verify.py --ml`
 
 Record any already-known doctor-only blocker separately from the ML result.
 
-- [ ] **Step 4: Inspect state and publish**
+- [x] **Step 4: Inspect state and publish**
 
 Run `git diff --check`, inspect `git diff` and `git status`, commit with `fix(ml): repair PR17 OCR validation`, and push `codex/p17-ocr-benchmark` without force.

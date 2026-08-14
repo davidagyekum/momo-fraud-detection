@@ -9,9 +9,9 @@
 - Base SHA: `b1284e37f8b4e6a38587fee68a44ed8a74203323`
 - Session starting SHA: `e58a4873b5e58c8345efd77790acc665f26d88e1`
 - Work branch: `codex/p17-ocr-benchmark`
-- Final head SHA: containing commit; exact SHA is reported after publication
+- Repair implementation head SHA: `928f0cdae986428b747bd1839bb0a75d7d02404b`; the documentation-only closure head is reported in the final response
 - Pull request: existing PR17 branch; no new pull request created in this repair session
-- Push status: pending final publication step
+- Push status: repair implementation commit pushed successfully to `origin/codex/p17-ocr-benchmark`
 - Worktree status: normal repository worktree; preserve for the owner-operated Colab rerun
 
 ## Scope completed
@@ -69,7 +69,7 @@
 - Private-data impact: no private image, OCR truth, raw text or private path was committed; the synthetic Paddle diagnostic used a generated non-private image
 - Upload/storage impact: unchanged restricted Drive archive and model-weight cache boundary
 - Audit events: failed validation and repair recorded in the public redacted evidence document and ADR-036
-- Security checks: final secret/prohibited-artifact scan passed 551 candidate files
+- Security checks: final secret/prohibited-artifact scan passed 550 candidate files
 
 ## Verification performed
 
@@ -80,7 +80,7 @@
 | `.venv\\Scripts\\python.exe -m pytest ml/tests/test_ocr_benchmark.py ml/tests/test_colab_ocr.py ml/tests/test_notebooks.py --no-cov -q` | PASS | 49 passed | 6.0 s |
 | `.venv\\Scripts\\python.exe scripts\\verify_ml.py` | PASS | 614 tests; 90.05% branch-aware coverage; format, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass | 122.3 s |
 | `.venv\\Scripts\\python.exe scripts\\verify.py --ml` | ML/secret PASS; wrapper non-zero at known doctor | 614 tests at 90.05%; 550 candidates at that wrapper run; Node/npm pin mismatch and missing host Tesseract remain | 115.2 s |
-| `.venv\\Scripts\\python.exe scripts\\check_secrets.py` | PASS | 551 candidate files after final handoff creation | 3.5 s |
+| `.venv\\Scripts\\python.exe scripts\\check_secrets.py` | PASS | 550 candidate files on the committed repair tree | 3.9 s |
 
 Skipped/blocked checks and reason: live Colab validation is intentionally pending the pushed immutable commit. Local Tesseract execution is not applicable because the repair targets the controlled Colab bootstrap. Hosted GitHub jobs cannot start while the repository owner's Actions account is locked by billing.
 
@@ -107,9 +107,9 @@ Skipped/blocked checks and reason: live Colab validation is intentionally pendin
 session starting SHA: e58a4873b5e58c8345efd77790acc665f26d88e1
 branch: codex/p17-ocr-benchmark
 git status --short before commit: modified/new PR17 repair code, tests and documentation only
-push output: pending final publication step
+push output: e58a487..928f0cd  codex/p17-ocr-benchmark -> codex/p17-ocr-benchmark
 ```
 
 ## Next exact task
 
-Open `ml/notebooks/colab/06_benchmark_ocr.ipynb` at the pushed immutable repair commit, set `TARGET_COMMIT` to that SHA, keep `RUN_BENCHMARK=True`, execute from the first cell, obey an explicit runtime-restart gate if shown, and run only the 33 development validation records. Stop before any locked-test or training action and return the safe screen/full report summary.
+Open `ml/notebooks/colab/06_benchmark_ocr.ipynb` at pushed immutable repair commit `928f0cdae986428b747bd1839bb0a75d7d02404b`, set `TARGET_COMMIT` to that SHA, keep `RUN_BENCHMARK=True`, execute from the first cell, obey an explicit runtime-restart gate if shown, and run only the 33 development validation records. Stop before any locked-test or training action and return the safe screen/full report summary.
