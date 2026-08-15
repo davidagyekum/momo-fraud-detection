@@ -43,6 +43,7 @@ from momo_fdvs_ml.ocr_parser import parse_momo_text
 TRAIN_ID = "GHDEV_TRAIN_0001"
 VALIDATION_ID = "GHDEV_VALIDATION_0001"
 TEST_ID = "GHLOCK_TEST_0001"
+IMPLEMENTATION_COMMIT_SHA = "1" * 40
 
 
 def _canonical(value: dict[str, object], field: str) -> str:
@@ -755,12 +756,18 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
         development_manifest_path=manifest_path,
         output_path=output,
         repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
         now=datetime(2026, 8, 14, tzinfo=UTC),
     )
 
     report = json.loads(output.read_text(encoding="utf-8"))
     serialized = json.dumps(report)
-    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v3"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v4"
+    assert report["diagnostic_contract_version"] == "ghana-ocr-mismatch-attribution-v1"
+    assert report["implementation_commit_sha"] == IMPLEMENTATION_COMMIT_SHA
+    assert report["development_manifest_sha256"] == manifest["manifest_sha256"]
+    assert report["source_split_manifest_sha256"] == manifest["source_split_manifest_sha256"]
     assert report["partition"] == "validation"
     assert report["record_count"] == 1
     assert report["field_scored_record_count"] == {
@@ -793,6 +800,115 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
     assert report["report_sha256"] == _canonical(report, "report_sha256")
 
 
+def test_parser_ceiling_diagnostic_attributes_truth_in_suppressed_amount_pool(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "Amount GHS 20.00\nTransfer value GHS 10.00"
+    truth["fields"] = [{"name": "amount", "normalized": "10.00"}]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["mismatch_attribution_counts"]["amount"] == {
+        "exact_selected": 0,
+        "no_valid_currency_candidate": 0,
+        "truth_in_active_pool_not_exact": 0,
+        "truth_in_suppressed_currency_pool": 1,
+        "truth_absent_all_candidate_pools": 0,
+    }
+    assert report["amount_candidate_count_buckets"] == {
+        "labelled": {"0": 0, "1": 1, "2": 0, "3_plus": 0},
+        "currency": {"0": 0, "1": 0, "2": 1, "3_plus": 0},
+        "active": {"0": 0, "1": 1, "2": 0, "3_plus": 0},
+    }
+    assert report["amount_candidate_pool_presence"] == {
+        "labelled_nonempty": 1,
+        "currency_nonempty": 1,
+        "both_nonempty": 1,
+        "labelled_active": 1,
+        "currency_fallback_active": 0,
+    }
+    assert "20.00" not in json.dumps(report)
+    assert "10.00" not in json.dumps(report)
+
+
+@pytest.mark.parametrize("implementation_commit_sha", ["f" * 39, "F" * 40, "not-a-commit-sha"])
+def test_parser_ceiling_diagnostic_rejects_malformed_implementation_identity(
+    tmp_path: Path, implementation_commit_sha: str
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    with pytest.raises(OCRBenchmarkError):
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=implementation_commit_sha,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("source_split_manifest_sha256", [None, "not-a-sha256"])
+def test_parser_ceiling_diagnostic_rejects_invalid_source_split_identity(
+    tmp_path: Path, source_split_manifest_sha256: str | None
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if source_split_manifest_sha256 is None:
+        manifest.pop("source_split_manifest_sha256")
+        manifest["manifest_sha256"] = _canonical(manifest, "manifest_sha256")
+    else:
+        manifest["source_split_manifest_sha256"] = source_split_manifest_sha256
+    _write_json(manifest_path, manifest)
+    output = private / "results" / "parser-ceiling.json"
+
+    with pytest.raises(OCRBenchmarkError):
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    assert not output.exists()
+
+
 def test_parser_ceiling_diagnostic_separates_outcomes_and_counts_stable_warnings(
     tmp_path: Path,
 ) -> None:
@@ -822,12 +938,13 @@ def test_parser_ceiling_diagnostic_separates_outcomes_and_counts_stable_warnings
         development_manifest_path=manifest_path,
         output_path=output,
         repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
         now=datetime(2026, 8, 14, tzinfo=UTC),
     )
 
     report = json.loads(output.read_text(encoding="utf-8"))
     serialized = json.dumps(report)
-    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v3"
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v4"
     assert report["field_outcome_counts"] == {
         "amount": {"exact": 1, "mismatch": 0, "unavailable": 0},
         "reference": {"exact": 0, "mismatch": 1, "unavailable": 0},
@@ -885,12 +1002,13 @@ def test_parser_ceiling_diagnostic_uses_wallet_field_for_outcome_and_warning_agg
         development_manifest_path=manifest_path,
         output_path=output,
         repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
         now=datetime(2026, 8, 14, tzinfo=UTC),
     )
 
     report = json.loads(output.read_text(encoding="utf-8"))
     serialized = json.dumps(report)
-    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v3"
+    assert report["schema_version"] == "ghana-ocr-parser-ceiling-report-v4"
     assert report["field_scored_record_count"]["recipient"] == 1
     assert report["field_outcome_counts"]["recipient"] == {
         "exact": 0,
@@ -946,6 +1064,7 @@ def test_parser_ceiling_diagnostic_rejects_noncanonical_warning_codes(
             development_manifest_path=manifest_path,
             output_path=output,
             repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
             now=datetime(2026, 8, 14, tzinfo=UTC),
         )
     assert not output.exists()
@@ -968,6 +1087,7 @@ def test_parser_ceiling_diagnostic_reports_sparse_truth_without_inventing_denomi
         development_manifest_path=manifest_path,
         output_path=output,
         repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
         now=datetime(2026, 8, 14, tzinfo=UTC),
     )
 
@@ -1009,6 +1129,7 @@ def test_parser_ceiling_diagnostic_rejects_invalid_execution_boundaries(
             development_manifest_path=manifest_path,
             output_path=output,
             repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
             now=datetime(2026, 8, 14),
         )
 
@@ -1018,6 +1139,7 @@ def test_parser_ceiling_diagnostic_rejects_invalid_execution_boundaries(
             development_manifest_path=manifest_path,
             output_path=output,
             repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
             now=datetime(2026, 8, 14, tzinfo=UTC),
         )
 

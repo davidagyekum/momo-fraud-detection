@@ -28,14 +28,17 @@ from momo_fdvs_ml.ocr_parser import (
     FIELD_CONFIDENCE_THRESHOLD,
     OCR_FIELD_SCHEMA_VERSION,
     OCR_PARSER_VERSION,
+    AmountCandidateSnapshot,
     ParserResult,
+    _amount_candidate_snapshot,
     parse_momo_text,
 )
 
 OCR_ADAPTER_SCHEMA_VERSION: Final = "ocr-adapter-result-v1"
 OCR_DEVELOPMENT_BUNDLE_VERSION: Final = "ghana-ocr-development-bundle-v1"
 OCR_BENCHMARK_REPORT_VERSION: Final = "ghana-ocr-benchmark-report-v2"
-OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v3"
+OCR_PARSER_CEILING_REPORT_VERSION: Final = "ghana-ocr-parser-ceiling-report-v4"
+OCR_MISMATCH_ATTRIBUTION_VERSION: Final = "ghana-ocr-mismatch-attribution-v1"
 OCR_SELECTED_BUNDLE_VERSION: Final = "ghana-ocr-selected-bundle-v2"
 OCR_BENCHMARK_VERSION: Final = "ghana-ocr-benchmark-v1"
 OCR_BENCHMARK_CONFIG_VERSION: Final = "ocr-benchmark-config-v2"
@@ -62,6 +65,16 @@ RELEASE_GATES: Final = {
     "required_field_parse_success": 0.90,
 }
 _PARSER_WARNING_CODE: Final = re.compile(r"[A-Z][A-Z0-9_]{2,63}")
+_COMMIT_SHA: Final = re.compile(r"[0-9a-f]{40}")
+_SHA256: Final = re.compile(r"[0-9a-f]{64}")
+_COUNT_BUCKETS: Final = ("0", "1", "2", "3_plus")
+_AMOUNT_ATTRIBUTION_CATEGORIES: Final = (
+    "exact_selected",
+    "no_valid_currency_candidate",
+    "truth_in_active_pool_not_exact",
+    "truth_in_suppressed_currency_pool",
+    "truth_absent_all_candidate_pools",
+)
 _PARSER_COMPARISON_FIELDS: Final = (
     "amount",
     "reference",
@@ -765,6 +778,36 @@ class FieldComparison:
     secondary_truth_present: bool = False
 
 
+def _candidate_count_bucket(values: Sequence[str]) -> str:
+    count = len(values)
+    if count == 0:
+        return "0"
+    if count == 1:
+        return "1"
+    if count == 2:
+        return "2"
+    return "3_plus"
+
+
+def _classify_amount_attribution(
+    comparison: FieldComparison,
+    snapshot: AmountCandidateSnapshot,
+) -> str:
+    if comparison.matched:
+        return "exact_selected"
+    truth = comparison.expected_normalized
+    labelled = set(snapshot.labelled_distinct_normalized)
+    currency = set(snapshot.currency_distinct_normalized)
+    active = set(snapshot.active_distinct_normalized)
+    if not labelled and not currency:
+        return "no_valid_currency_candidate"
+    if truth in active:
+        return "truth_in_active_pool_not_exact"
+    if snapshot.active_source == "labelled" and truth not in labelled and truth in currency:
+        return "truth_in_suppressed_currency_pool"
+    return "truth_absent_all_candidate_pools"
+
+
 def _make_field_comparison(
     *,
     aggregate_field: str,
@@ -992,14 +1035,31 @@ def run_ocr_parser_ceiling_diagnostic(
     development_manifest_path: Path,
     output_path: Path,
     repository_root: Path,
+    implementation_commit_sha: str,
     now: datetime | None = None,
 ) -> Path:
     """Measure parser performance on verified transcripts without persisting private values."""
 
+    if (
+        not isinstance(implementation_commit_sha, str)
+        or _COMMIT_SHA.fullmatch(implementation_commit_sha) is None
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling implementation identity is invalid")
     _require_private_path(development_manifest_path, repository_root, "development manifest")
     _require_private_path(output_path, repository_root, "OCR parser ceiling report")
     if now is not None and now.tzinfo is None:
         raise OCRBenchmarkError("OCR parser ceiling clock must be timezone-aware")
+    development_manifest = _load_object(development_manifest_path)
+    development_manifest_sha256 = development_manifest.get("manifest_sha256")
+    source_split_manifest_sha256 = development_manifest.get("source_split_manifest_sha256")
+    if (
+        not isinstance(development_manifest_sha256, str)
+        or _SHA256.fullmatch(development_manifest_sha256) is None
+        or development_manifest_sha256 != _canonical_hash(development_manifest, "manifest_sha256")
+        or not isinstance(source_split_manifest_sha256, str)
+        or _SHA256.fullmatch(source_split_manifest_sha256) is None
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling development identity is invalid")
     root = development_manifest_path.parent.resolve()
     records = load_ocr_development_bundle(development_manifest_path, partition="validation")
     if not records:
@@ -1015,6 +1075,20 @@ def run_ocr_parser_ceiling_diagnostic(
         "recipient_wallet_truth": 0,
     }
     recipient_secondary_truth_present_count = 0
+    amount_candidate_pool_presence = {
+        "labelled_nonempty": 0,
+        "currency_nonempty": 0,
+        "both_nonempty": 0,
+        "labelled_active": 0,
+        "currency_fallback_active": 0,
+    }
+    amount_candidate_count_buckets = {
+        pool: {bucket: 0 for bucket in _COUNT_BUCKETS}
+        for pool in ("labelled", "currency", "active")
+    }
+    amount_mismatch_attribution_counts = {
+        category: 0 for category in _AMOUNT_ATTRIBUTION_CATEGORIES
+    }
     required_matches: list[bool] = []
     inconclusive: list[bool] = []
     for record in records:
@@ -1030,6 +1104,30 @@ def run_ocr_parser_ceiling_diagnostic(
             now=now or datetime.now(UTC),
         )
         comparisons = compare_parser_result(parser, truth)
+        amount_comparison = comparisons["amount"]
+        if amount_comparison is not None:
+            snapshot = _amount_candidate_snapshot(transcript)
+            labelled = snapshot.labelled_distinct_normalized
+            currency = snapshot.currency_distinct_normalized
+            active = snapshot.active_distinct_normalized
+            if labelled:
+                amount_candidate_pool_presence["labelled_nonempty"] += 1
+            if currency:
+                amount_candidate_pool_presence["currency_nonempty"] += 1
+            if labelled and currency:
+                amount_candidate_pool_presence["both_nonempty"] += 1
+            if snapshot.active_source == "labelled":
+                amount_candidate_pool_presence["labelled_active"] += 1
+            else:
+                amount_candidate_pool_presence["currency_fallback_active"] += 1
+            for pool, candidates in (
+                ("labelled", labelled),
+                ("currency", currency),
+                ("active", active),
+            ):
+                amount_candidate_count_buckets[pool][_candidate_count_bucket(candidates)] += 1
+            attribution = _classify_amount_attribution(amount_comparison, snapshot)
+            amount_mismatch_attribution_counts[attribution] += 1
         for field in FIELD_WEIGHTS:
             for warning in parser.fields[field].warnings:
                 if _PARSER_WARNING_CODE.fullmatch(warning) is None:
@@ -1070,11 +1168,35 @@ def run_ocr_parser_ceiling_diagnostic(
             raise OCRBenchmarkError(f"OCR field outcome total is invalid for {field}")
     if sum(recipient_truth_subtype_counts.values()) != len(matches_by_field["recipient"]):
         raise OCRBenchmarkError("OCR recipient truth subtype total is invalid")
+    amount_scored_count = len(matches_by_field["amount"])
+    if sum(amount_mismatch_attribution_counts.values()) != amount_scored_count:
+        raise OCRBenchmarkError("OCR amount attribution total is invalid")
+    if any(
+        sum(buckets.values()) != amount_scored_count
+        for buckets in amount_candidate_count_buckets.values()
+    ):
+        raise OCRBenchmarkError("OCR amount candidate bucket total is invalid")
+    if (
+        amount_candidate_pool_presence["both_nonempty"]
+        > amount_candidate_pool_presence["labelled_nonempty"]
+        or amount_candidate_pool_presence["both_nonempty"]
+        > amount_candidate_pool_presence["currency_nonempty"]
+        or (
+            amount_candidate_pool_presence["labelled_active"]
+            + amount_candidate_pool_presence["currency_fallback_active"]
+            != amount_scored_count
+        )
+    ):
+        raise OCRBenchmarkError("OCR amount candidate presence total is invalid")
     report: dict[str, object] = {
         "schema_version": OCR_PARSER_CEILING_REPORT_VERSION,
+        "diagnostic_contract_version": OCR_MISMATCH_ATTRIBUTION_VERSION,
         "benchmark_version": OCR_BENCHMARK_VERSION,
         "parser_version": OCR_PARSER_VERSION,
         "field_schema_version": OCR_FIELD_SCHEMA_VERSION,
+        "implementation_commit_sha": implementation_commit_sha,
+        "development_manifest_sha256": development_manifest_sha256,
+        "source_split_manifest_sha256": source_split_manifest_sha256,
         "partition": "validation",
         "record_count": len(records),
         "field_scored_record_count": {
@@ -1092,6 +1214,9 @@ def run_ocr_parser_ceiling_diagnostic(
         },
         "recipient_truth_subtype_counts": recipient_truth_subtype_counts,
         "recipient_secondary_truth_present_count": (recipient_secondary_truth_present_count),
+        "amount_candidate_pool_presence": amount_candidate_pool_presence,
+        "amount_candidate_count_buckets": amount_candidate_count_buckets,
+        "mismatch_attribution_counts": {"amount": amount_mismatch_attribution_counts},
         "required_field_scored_record_count": len(required_matches),
         "required_field_parse_success": (
             statistics.fmean(required_matches) if required_matches else None
