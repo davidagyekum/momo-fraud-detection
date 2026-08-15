@@ -17,7 +17,7 @@ This is measurement work only. It does not tune parsing, initialize OCR engines,
 - Preserve every public `ParserResult` and `ParsedField` value, warning, confidence, semantic reason, and inconclusive decision for the same input.
 - Preserve all parser-ceiling v3 fields and semantics, including flat warning compatibility and warning attribution by selected observed field.
 - Operate only on the private development bundle's validation partition.
-- Keep `RUN_BENCHMARK = False`; the owner-operated notebook path remains cells 1-4 and stops before all OCR adapters.
+- Keep `RUN_BENCHMARK = False`; the owner instruction is: first four code cells, ending with parser-ceiling; stop before adapter code cell.
 - Do not use secondary recipient truth to override the selected primary comparison subfield.
 - Defer timestamp repair because only one validation record currently has timestamp truth.
 - Do not add parser candidates, relax normalization, alter candidate precedence, or change matching behavior.
@@ -191,7 +191,7 @@ The owner-operated Colab path remains:
 3. validate the archive and manifest without printing rows;
 4. run only the parser-ceiling v4 cell and print aggregate JSON.
 
-The notebook remains output-free in Git, pins the implementation commit, passes that commit explicitly to the diagnostic, and keeps `RUN_BENCHMARK = False`. It stops before OCR adapters and cannot request the test partition.
+The notebook remains output-free in Git, pins the implementation commit, passes that commit explicitly to the diagnostic, and keeps `RUN_BENCHMARK = False`. The owner instruction is: first four code cells, ending with parser-ceiling; stop before adapter code cell. The diagnostic cannot request the test partition.
 
 Only an owner-returned, hash-valid aggregate v4 report may update repository evidence. If the private run is unavailable during the fast lane, documentation records `private_v4_execution_pending=true`, parser v1 remains experimental, and work proceeds to PR18 using confirmed/corrected OCR fields and explicit partial/inconclusive behavior.
 

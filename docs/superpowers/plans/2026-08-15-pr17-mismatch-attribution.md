@@ -15,7 +15,7 @@
 - The diagnostic may read only the development bundle's `validation` partition; the five locked-test records remain physically unavailable.
 - Do not initialize OCR engines, import model runtimes, train, promote, or alter parser behavior.
 - Persist no transcript, truth value, observed value, candidate value, record ID, source-group ID, filename, or private path.
-- Keep `RUN_BENCHMARK = False`; the owner notebook parser-ceiling path stays in cells 1-4 and stops before adapters.
+- Keep `RUN_BENCHMARK = False`; the owner instruction is: first four code cells, ending with parser-ceiling; stop before adapter code cell.
 - Use `ghana-ocr-parser-ceiling-report-v4` and `ghana-ocr-mismatch-attribution-v1` exactly.
 - Preserve all parser-ceiling v3 aggregate meanings, including flat warning counts across every parse.
 - Every category map uses fixed keys; each partition and bucket total must equal its truth-scored denominator.
@@ -773,7 +773,7 @@ training_executed=false
 private_v4_execution_pending=true
 ```
 
-The handoff must name the implementation commit, notebook commit, exact gates, expected owner cells 1-4, `RUN_BENCHMARK=False`, and the stop-before-adapters boundary. Do not update aggregate evidence with synthetic test results.
+The handoff must name the implementation commit, notebook commit, exact gates, `RUN_BENCHMARK=False`, and this owner instruction: first four code cells, ending with parser-ceiling; stop before adapter code cell. Do not update aggregate evidence with synthetic test results.
 
 - [ ] **Step 5: Commit documentation and push PR17**
 
@@ -808,6 +808,6 @@ Do not merge, force-push, or branch PR18 from `main`. PR18 must start from this 
 
 ## Owner-Operated Evidence Checkpoint
 
-After Task 6, the owner runs notebook cells 1-4 only and returns the aggregate v4 JSON. Verify the canonical self-hash, identity fields, exact category allowlists, denominator totals, and false privacy/training/locked-test flags before updating repository evidence.
+After Task 6, the owner instruction is: first four code cells, ending with parser-ceiling; stop before adapter code cell. The owner returns the aggregate v4 JSON. Verify the canonical self-hash, identity fields, exact category allowlists, denominator totals, and false privacy/training/locked-test flags before updating repository evidence.
 
 If one cause is dominant with non-trivial support, design at most one bounded parser behavior change through a new test-first cycle. Otherwise freeze parser v1 as experimental and immediately create the separate PR18 analysis-product design from the final PR17 head.

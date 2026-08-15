@@ -3,37 +3,37 @@
 ## Session identity
 
 - Date/time: `2026-08-15T10:31:48+01:00`
-- Phase/sub-phase: Logical PR17 parser-ceiling v4 mismatch-attribution implementation
+- Phase/sub-phase: Logical PR17 parser-ceiling v4 final-review repairs
 - Repository: `davidagyekum/momo-fraud-detection`
 - Base branch: `main`
 - Merge-base SHA: `2a9f1eb0aebff4770d4a1717db42d09ead91f97b`
 - Work branch: `codex/p17-ocr-benchmark`
-- Task 6 starting head SHA: `a99839d69a141f420f97dd298ce517bb074aa6d2`
-- Immutable v4 runtime implementation SHA: `22a30a5adb713f7ddf6902ccc5387e203363c5f8`
-- Output-free notebook commit SHA: `9ac6d4dbb70e6822d08fe4d87e4629802fd09dce`
-- Notebook policy/test head before closeout: `bcaa179106774606c7a765a27ab8b4063d260c53`
+- Final-review starting head SHA: `0f722cd344197e50400948f83ea3df83fcbf8968`
+- Immutable hardened v4 runtime implementation SHA: `bf042c3a0f6e18a2777f85d7b9d3d5131ae31d93`
+- Output-free repinned notebook commit SHA: `8afac88b18b61641e82597f41e2a305edc55c534`
+- Notebook SHA-256: `6e18482277846a9790014594ee285529813aa4580a4db8f6f86f9545bdbf2ae7`
 - Initial publication head: `initial_publication_head=824935c8db2345e0399c7567a93854842ed73e8c`
-- Documentation-correction head: this file cannot embed the SHA of the commit that contains its own correction without changing that SHA; the exact current head is authoritative in PR #15 metadata and its `current_pr_head=<40-hex SHA>` body marker after each corrective push
+- Final-review documentation head: this file cannot embed the SHA of the commit that contains its own correction without changing that SHA; the exact current head is authoritative in PR #15's `current_pr_head=<40-hex SHA>` body marker after the final corrective push
 - Pull request: [PR #15 — feat(ocr): complete governed OCR benchmark and parser diagnostics](https://github.com/davidagyekum/momo-fraud-detection/pull/15), open for review and not merged at initial publication
-- Push status: verified; `824935c8db2345e0399c7567a93854842ed73e8c` was pushed to `origin/codex/p17-ocr-benchmark`, and local/remote tracking heads matched exactly
-- Worktree status: clean tracking branch after initial publication; subsequent documentation-only correction is published on the same PR branch
+- Prior push status: verified through `0f722cd344197e50400948f83ea3df83fcbf8968`; final-review publication follows the runtime, notebook and documentation commit sequence below
+- Worktree status at documentation preparation: clean after the runtime and notebook commits; documentation changes are the final local commit before push
 
 ## Scope completed
 
 - Requirement IDs: `NFR-ACC-001`, `NFR-PRIV-001`, `NFR-MNT-001`
 - Backlog task IDs: logical PR17 parser-ceiling mismatch attribution
 - Goal: implement a validation-only parser-ceiling v4 report that attributes amount, recipient and reference failures using aggregate-only evidence while preserving parser v1 outputs and the sealed-test boundary
-- Actual completed work: exposed immutable private amount candidate pools without changing active parser selection; added v4 run identity, aggregate amount pool presence/count buckets and mutually exclusive field attribution; added bounded recipient/reference truth-presence logic and deferred timestamp attribution; validated exact nested allowlists, types, totals, identities and false-only privacy flags before self-hash and atomic output; pinned the output-free owner notebook to the immutable runtime commit; and completed fresh local gates. The private owner-operated v4 execution remains pending.
+- Actual completed work: preserved raw labelled-source activation when the valid labelled pool is empty; validated labelled/currency zero buckets without deriving active presence from their union; made manifest/truth/hash/write failures generic, unchained and path-free; cleaned failed atomic writes; terminated anchored references before unstructured prose; removed only surrounding recipient punctuation; repinned the output-free owner notebook to the hardened runtime; and completed fresh local gates. Parser output behavior is unchanged and the private owner-operated v4 execution remains pending.
 
 ## Changed files
 
 | Path | Change | Why |
 |---|---|---|
 | `ml/src/momo_fdvs_ml/ocr_parser.py` | Added frozen private amount-candidate snapshot and refactored `parse_amount` to consume its unchanged active pool | Expose both labelled and currency pools to diagnostics without changing public parser output |
-| `ml/src/momo_fdvs_ml/ocr_benchmark.py` | Added v4 identities, aggregate mismatch attribution, fixed allowlists, denominator/privacy validation and pre-write self-hashing | Produce a deterministic aggregate-only diagnostic that fails closed |
+| `ml/src/momo_fdvs_ml/ocr_benchmark.py` | Corrected raw-active amount validation, private I/O failures, atomic-write cleanup, anchored reference termination and surrounding recipient punctuation | Preserve the reviewed aggregate contract while failing closed without private leakage |
 | `ml/tests/test_ocr_parser.py` | Added complete output/confidence parity and dual-pool discovery coverage | Prove parser behavior remains stable |
-| `ml/tests/test_ocr_benchmark.py` | Added identity, attribution, boundary, privacy, denominator, deterministic-hash and no-adapter tests | Verify every v4 behavior and rejection boundary |
-| `ml/notebooks/colab/06_benchmark_ocr.ipynb` | Pinned `TARGET_COMMIT`, passed the implementation SHA and added v4 invariant assertions | Provide the owner-operated cells 1-4 runner without enabling the engine benchmark |
+| `ml/tests/test_ocr_benchmark.py` | Added end-to-end amount/reference regressions, punctuation coverage and private manifest/truth/hash/write failure tests | Prove every final-review repair and no-output privacy boundary |
+| `ml/notebooks/colab/06_benchmark_ocr.ipynb` | Repinned `TARGET_COMMIT` to the hardened runtime | Provide the owner-operated first four code cells through parser-ceiling without enabling adapters |
 | `ml/notebooks/colab/notebook_report.json` | Updated the canonical output-free notebook hash | Preserve notebook drift detection |
 | `ml/tests/test_notebooks.py` | Bound the parsed diagnostic call and cell ordering to the immutable pin | Prevent silent notebook pin or adapter-boundary drift |
 | `IMPLEMENTATION_STATUS.md` | Recorded local v4 implementation and pending owner execution | Keep status honest and actionable |
@@ -54,7 +54,7 @@
 - Endpoints added/changed: none
 - OpenAPI/client regenerated: not applicable
 - Breaking change: none; parser-ceiling v4 is an additive offline diagnostic contract and public parser v1 outputs remain unchanged
-- Error/permission behaviour: v4 validation fails closed with generic structural errors and writes nothing on invalid identity, schema, count, denominator or privacy state
+- Error/permission behaviour: v4 validation and private I/O fail closed with stable generic `OCRBenchmarkError` messages, no chained path-bearing cause and no new output on malformed/unreadable JSON, hash-read or write failure
 
 ## UI
 
@@ -67,8 +67,8 @@
 ## OCR/image/ML/verification
 
 - Pipeline/model/rule/template versions: `schema_version=ghana-ocr-parser-ceiling-report-v4`; `diagnostic_contract_version=ghana-ocr-mismatch-attribution-v1`; parser remains `ghana-momo-parser-v1`
-- Immutable implementation identity: runtime `22a30a5adb713f7ddf6902ccc5387e203363c5f8`; notebook `9ac6d4dbb70e6822d08fe4d87e4629802fd09dce`; notebook SHA-256 `c6bdf72156a708e88b8e27813d13ea2b76dd3ec7558f3cfaa84c5d577db0db76`
-- Metrics actually measured in this implementation session: repository tests only—150 focused tests and 704 registered ML tests; 90.08% branch-aware repository coverage. These are software verification results, not OCR accuracy or mismatch-attribution evidence.
+- Immutable implementation identity: runtime `bf042c3a0f6e18a2777f85d7b9d3d5131ae31d93`; notebook `8afac88b18b61641e82597f41e2a305edc55c534`; notebook SHA-256 `6e18482277846a9790014594ee285529813aa4580a4db8f6f86f9545bdbf2ae7`
+- Metrics actually measured in this final-review session: repository tests only—160 focused tests and 714 registered ML tests; 90.15% branch-aware repository coverage. These are software verification results, not OCR accuracy or mismatch-attribution evidence.
 - Required state: `parser_behavior_changed=false`; `locked_test_accessed=false`; `training_executed=false`; `private_v4_execution_pending=true`
 - Limitations: no private v4 report has been produced or verified; v3 report `194dead2…` remains the latest private aggregate evidence. No approved tampered-image validation slice exists. Timestamp and all-required private support remain historically sparse.
 - No fabricated or unavailable evidence: no synthetic aggregate test result is promoted as dataset evidence; no private metric, parser improvement, deployment, model promotion or provider-wide claim is made.
@@ -80,27 +80,27 @@
 - Task 3 text attribution RED: 13 failed, one passed and 46 were deselected because reference/text helpers and timestamp attribution were absent. GREEN: 14 passed and 46 were deselected; the combined parser/benchmark suite passed 105 tests.
 - Task 4 fail-closed RED: 28 failed, one passed and 59 were deselected before `_validate_parser_ceiling_report` existed. A separate warning-allowlist RED failed one of ten tests until the explicit allowlist was added. GREEN: all focused validation tests and the then-current 137-test parser/benchmark suite passed.
 - Task 5 notebook RED: one focused test failed because `implementation_commit_sha=TARGET_COMMIT` was absent. GREEN: the focused test and all 19 notebook tests passed with zero notebook-policy issues.
-- Closeout repairs: repository formatter review made only three line-wrap changes; coverage-boundary tests increased the registered gate from a truthful 89.85% failure to 90.08% without changing production behavior.
+- Final-review RED: one focused command produced `9 failed, 105 deselected`. The failures were exactly the missing anchored helper, false recipient wrapper evidence, raw-labelled/valid-empty amount rejection, manufactured longer-reference truth presence, three filename-leaking manifest/truth errors, and two raw `PermissionError` hash/write escapes.
+- Final-review GREEN: the same focused selection passed `9 passed, 105 deselected`; the added unreadable-truth call-path regression passed; the complete OCR parser/benchmark suite passed 160 tests; Ruff format/lint and strict mypy passed before runtime commit `bf042c3a…`.
+- Notebook repin RED/GREEN: the AST-binding test failed because code cell 1 still pinned `22a30a5a…`, then passed after repinning to `bf042c3a…`; all 19 notebook tests and the zero-issue notebook policy passed before notebook commit `8afac88b…`.
 
 ## Security/privacy
 
 - Access-control impact: none; this is an offline validation-only diagnostic
 - Private-data impact: candidate values, transcript text, truth/observed values, record/source identifiers, filenames and private paths remain loop-local or unavailable and are forbidden from output
-- Upload/storage impact: no raw image or private artifact is written; validated aggregate JSON uses the existing atomic output path only during the future owner run
+- Upload/storage impact: no raw image or private artifact is written; validated aggregate JSON uses same-directory temporary output and atomic replacement, and failed writes remove the temporary file without creating the target
 - Audit events: immutable implementation SHA, development-manifest hash, source-split hash and canonical report self-hash are mandatory v4 identities
-- Security checks: exact top-level/nested key allowlists, nonnegative integer counts with boolean rejection, all partition totals, privacy flags and generic non-echoing errors are tested; the required pre-documentation scan passed 559 candidate files and the final post-documentation scan passed 560
+- Security checks: exact top-level/nested key allowlists, nonnegative integer counts with boolean rejection, all partition totals, privacy flags and generic non-echoing errors are tested; malformed/unreadable manifest and truth, hash-read and failed-write paths disclose no injected filename, record ID, full path or cause; the fresh scan passed 560 candidate files
 
 ## Verification performed
 
 | Command | Result | Counts/summary | Duration |
 |---|---|---|---|
-| `.\.venv\Scripts\python.exe -m pytest ml/tests/test_ocr_parser.py ml/tests/test_ocr_benchmark.py -q --no-cov` | PASS, exit 0 | 150 passed | 3.90 s |
-| `.\.venv\Scripts\python.exe scripts/verify_ml.py` | PASS, exit 0 | 48 files formatted; Ruff pass; strict mypy pass over 25 source files; 704 tests passed with 2,433 dependency deprecation warnings; 90.08% coverage; governance, acquisition readiness, lock, notebook and controlled-data checks pass | 64.23 s tests plus deterministic gates |
-| `.\.venv\Scripts\python.exe scripts/check_secrets.py` | PASS, exit 0 | required pre-documentation run scanned 559 candidate files | 1.79 s |
-| `.\.venv\Scripts\python.exe scripts/check_secrets.py` after documentation edits | PASS, exit 0 | final run scanned 560 candidate files | 1.86 s |
-| `.\.venv\Scripts\python.exe scripts/verify.py --ml` | PARTIAL / expected host-doctor failure, exit 1 | secret scan passes; nested ML verification passes 704 tests at 90.08%; host doctor fails two required runtime pins | 117.35 s ML section plus wrapper |
-| `.\.venv\Scripts\python.exe scripts/verify_ml.py` after documentation edits | PASS, exit 0 | final integration check repeats 48-file format, Ruff, strict mypy, 704 tests and 90.08% coverage plus deterministic gates | 64.25 s tests plus gates |
-| `git diff --check; git status --short; git diff -- <scoped production/test/notebook files>` | PASS, exit 0 | no output before documentation edits; tracked worktree was clean | <1 s |
+| `.\.venv\Scripts\python.exe -m pytest ml/tests/test_ocr_parser.py ml/tests/test_ocr_benchmark.py -q --no-cov` | PASS, exit 0 | 160 passed | 5.11 s |
+| `.\.venv\Scripts\python.exe scripts/verify_ml.py` | PASS, exit 0 | 48 files formatted; Ruff pass; strict mypy pass over 25 source files; 714 tests passed with 2,433 dependency deprecation warnings; 90.15% coverage; governance, acquisition readiness, lock, notebook and controlled-data checks pass | 98.58 s tests plus deterministic gates |
+| `.\.venv\Scripts\python.exe scripts/check_secrets.py` | PASS, exit 0 | 560 candidate files scanned | 2.9 s wall time |
+| `.\.venv\Scripts\python.exe scripts/verify.py --ml` | PARTIAL / expected host-doctor failure, exit 1 | secret scan passes; nested ML verification passes 714 tests at 90.15%; host doctor fails the required Node/npm pins | 143.76 s ML section plus wrapper |
+| `git diff --check 0f722cd..HEAD; git status --short --branch; git diff --stat 0f722cd..HEAD` | PASS, exit 0 | runtime and notebook commits only before documentation edits; branch ahead by two | <1 s |
 
 Skipped/blocked checks and reason:
 
@@ -112,7 +112,7 @@ Skipped/blocked checks and reason:
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR17-PRIVATE-V4-PENDING | Required evidence | The v4 implementation is locally verified, but no owner-operated private aggregate report exists | Mismatch causes cannot yet support a parser-change decision | Preserve parser v1 and v3 as latest private evidence | Project owner | Run notebook cells 1-4 only and return aggregate v4 JSON |
+| PR17-PRIVATE-V4-PENDING | Required evidence | The v4 implementation is locally verified, but no owner-operated private aggregate report exists | Mismatch causes cannot yet support a parser-change decision | Preserve parser v1 and v3 as latest private evidence | Project owner | First four code cells, ending with parser-ceiling; stop before adapter code cell, then return aggregate v4 JSON |
 | PR17-TAMPERED-SLICE | Required evidence | No approved tampered-image derivative validation slice exists | Robustness selection remains blocked | Keep bundle experimental/non-promotable | Project owner/data steward | Govern suitable controlled edits before robustness benchmarking |
 | B-CI-001 | External | GitHub Actions jobs cannot start because of the repository-owner billing lock | Hosted CI cannot independently reproduce local gates | Preserve exact local commands/results | Repository owner | Resolve account lock and rerun hosted checks |
 | HOST-ML-WRAPPER | Local environment | Frontend Node/npm pins and host Tesseract are unavailable; optional PostgreSQL CLI is absent | Top-level `verify.py --ml` remains non-zero although its ML and secret sections pass | Use the registered ML gate and Colab's pinned OCR runtime | Workstation owner | Activate pinned frontend runtime or use the documented container/Colab tools when those phases require them |
@@ -128,9 +128,9 @@ Skipped/blocked checks and reason:
 ## Git evidence
 
 ```text
-task closeout base/head before docs: a99839d69a141f420f97dd298ce517bb074aa6d2
-runtime implementation: 22a30a5adb713f7ddf6902ccc5387e203363c5f8
-notebook commit: 9ac6d4dbb70e6822d08fe4d87e4629802fd09dce
+final-review base: 0f722cd344197e50400948f83ea3df83fcbf8968
+runtime implementation: bf042c3a0f6e18a2777f85d7b9d3d5131ae31d93
+notebook commit: 8afac88b18b61641e82597f41e2a305edc55c534
 branch: codex/p17-ocr-benchmark
 initial_publication_head=824935c8db2345e0399c7567a93854842ed73e8c
 initial push: 2a27ade..824935c  codex/p17-ocr-benchmark -> codex/p17-ocr-benchmark
@@ -139,13 +139,14 @@ initial remote head: 824935c8db2345e0399c7567a93854842ed73e8c
 pull request: https://github.com/davidagyekum/momo-fraud-detection/pull/15
 pull request initial status: OPEN, not merged
 documentation correction: exact resulting head is recorded as current_pr_head=<40-hex SHA> in PR #15 metadata/body because a commit cannot self-embed its own SHA
+final-review publication sequence: runtime commit -> notebook commit -> docs(handoff): record final PR17 review repairs -> push -> verify local==remote -> prepend exact current_pr_head to PR #15 body
 ```
 
 ## Owner-operated evidence checkpoint / next exact task
 
-1. In signed-in Google Colab, check out exact runtime commit `22a30a5adb713f7ddf6902ccc5387e203363c5f8` through the pinned notebook flow.
-2. Run cells 1-4 only in `ml/notebooks/colab/06_benchmark_ocr.ipynb`.
-3. Confirm `RUN_BENCHMARK = False` and stop before any `TesseractAdapter`, `EasyOCRAdapter` or `PaddleOCRAdapter` construction.
+1. In signed-in Google Colab, check out exact runtime commit `bf042c3a0f6e18a2777f85d7b9d3d5131ae31d93` through the pinned notebook flow.
+2. Owner instruction: first four code cells, ending with parser-ceiling; stop before adapter code cell.
+3. Confirm `RUN_BENCHMARK = False`; do not construct `TesseractAdapter`, `EasyOCRAdapter` or `PaddleOCRAdapter`.
 4. Return only the aggregate `ghana-ocr-parser-ceiling-report-v4` JSON; do not return transcripts, field/candidate values, identifiers, filenames or paths.
 5. Independently verify the canonical self-hash, `ghana-ocr-mismatch-attribution-v1` identity, immutable code and manifest hashes, exact category allowlists, every denominator total and all five false privacy/training/locked-test flags before updating repository evidence.
 6. If one cause is dominant with non-trivial support, design at most one bounded parser behavior change through a new RED/GREEN cycle. Otherwise freeze parser v1 as experimental and begin PR18 analysis-product design from the final PR17 head.

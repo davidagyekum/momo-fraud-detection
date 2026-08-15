@@ -96,7 +96,7 @@ Skipped/blocked checks and reason:
 
 | ID | Severity | Description | Impact | Safe fallback | Owner/input | Next action |
 |---|---|---|---|---|---|---|
-| PR17-V3-RERUN | Required evidence | No valid parser-ceiling v3 report exists after the compatibility stop | Corrected recipient and field outcome aggregates remain unavailable | Preserve v2 as historical evidence and make no corrected metric claim | Project owner/model steward | Run cells 1–4 only at `a4dc60d0…` and return the aggregate JSON/hash |
+| PR17-V3-RERUN | Required evidence | No valid parser-ceiling v3 report exists after the compatibility stop | Corrected recipient and field outcome aggregates remain unavailable | Preserve v2 as historical evidence and make no corrected metric claim | Project owner/model steward | First four code cells, ending with parser-ceiling; stop before adapter code cell, at `a4dc60d0…`, then return the aggregate JSON/hash |
 | PR17-TAMPERED-SLICE | Required evidence | No approved tampered-image validation slice exists | Robustness selection remains blocked | Keep the selected bundle experimental | Project owner/data steward | Govern suitable controlled edits before any robustness benchmark |
 
 ## Documentation updated
@@ -118,4 +118,4 @@ push output: pending at handoff authoring time
 
 ## Next exact task
 
-Open `ml/notebooks/colab/06_benchmark_ocr.ipynb` from the pushed branch revision, confirm `TARGET_COMMIT` is `a4dc60d0d4ada44c7c5bad4fe3103f0964ead4eb`, and run cells 1–4 only against the unchanged private development archive. Do not run cells 5–7. Return only the aggregate cell-4 JSON/hash. Confirm record count 33, each field outcome total equals its scored denominator, recipient subtype totals equal the recipient denominator, all privacy/training/locked-test flags are false and the report self-hash verifies. Stop on any new exception, denominator drift or value/identifier leakage; do not start Stage 2 line reconstruction yet.
+Open `ml/notebooks/colab/06_benchmark_ocr.ipynb` from the pushed branch revision and confirm `TARGET_COMMIT` is `a4dc60d0d4ada44c7c5bad4fe3103f0964ead4eb`. Owner instruction: first four code cells, ending with parser-ceiling; stop before adapter code cell. Use the unchanged private development archive and return only the aggregate parser-ceiling JSON/hash. Confirm record count 33, each field outcome total equals its scored denominator, recipient subtype totals equal the recipient denominator, all privacy/training/locked-test flags are false and the report self-hash verifies. Stop on any new exception, denominator drift or value/identifier leakage; do not start Stage 2 line reconstruction yet.
