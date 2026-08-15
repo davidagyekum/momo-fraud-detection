@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import zipfile
@@ -128,6 +129,40 @@ def _private_fixture(tmp_path: Path) -> tuple[Path, Path, Path, dict[str, Path],
             },
         )
     return repository, private, split, bindings, truth_root
+
+
+def _valid_parser_ceiling_report(tmp_path: Path) -> dict[str, object]:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+    report = json.loads(output.read_text(encoding="utf-8"))
+    report.pop("report_sha256")
+    return report
+
+
+def _assert_parser_ceiling_report_rejected(
+    report: dict[str, object],
+    *,
+    private_values: tuple[str, ...] = (),
+) -> None:
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark._validate_parser_ceiling_report(report)
+    message = str(error.value)
+    assert message.startswith("OCR parser ceiling ")
+    assert all(value not in message for value in private_values)
 
 
 def _tesseract_data() -> dict[str, list[object]]:
@@ -882,6 +917,259 @@ def test_parser_ceiling_diagnostic_is_aggregate_redacted_and_validation_only(
     assert "ABC12345" not in serialized
     assert VALIDATION_ID not in serialized
     assert report["report_sha256"] == _canonical(report, "report_sha256")
+
+
+@pytest.mark.parametrize(
+    ("path", "key", "private_value"),
+    [
+        ((), "debug_transcript", "PRIVATE TRANSCRIPT FRAGMENT"),
+        (
+            ("mismatch_attribution_counts", "amount"),
+            "PRIVATE_AMOUNT_10_00",
+            "PRIVATE_AMOUNT_10_00",
+        ),
+        (("amount_candidate_count_buckets", "active"), "4", "4"),
+        (("parser_warning_counts",), "PRIVATE_WARNING_CODE", "PRIVATE_WARNING_CODE"),
+    ],
+)
+def test_parser_ceiling_report_allowlist_rejects_unexpected_keys_without_echoing_values(
+    tmp_path: Path,
+    path: tuple[str, ...],
+    key: str,
+    private_value: str,
+) -> None:
+    report = copy.deepcopy(_valid_parser_ceiling_report(tmp_path))
+    target: dict[str, object] = report
+    for part in path:
+        target = target[part]  # type: ignore[assignment]
+    target[key] = 1 if path else private_value
+
+    _assert_parser_ceiling_report_rejected(report, private_values=(private_value,))
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "outcome_partition",
+        "presence_exceeds_denominator",
+        "both_exceeds_labelled",
+    ],
+)
+def test_parser_ceiling_report_denominator_relationships_fail_closed(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    report = _valid_parser_ceiling_report(tmp_path)
+    if mutation == "outcome_partition":
+        report["field_outcome_counts"]["amount"]["exact"] += 1  # type: ignore[index,operator]
+    elif mutation == "presence_exceeds_denominator":
+        denominator = report["field_scored_record_count"]["amount"]  # type: ignore[index]
+        report["amount_candidate_pool_presence"]["labelled_nonempty"] = (  # type: ignore[index]
+            denominator + 1  # type: ignore[operator]
+        )
+    else:
+        report["amount_candidate_pool_presence"]["labelled_nonempty"] = 0  # type: ignore[index]
+        report["amount_candidate_pool_presence"]["both_nonempty"] = 1  # type: ignore[index]
+
+    _assert_parser_ceiling_report_rejected(report)
+
+
+@pytest.mark.parametrize(
+    ("path", "invalid_count"),
+    [
+        (("record_count",), True),
+        (("recipient_secondary_truth_present_count",), -1),
+    ],
+)
+def test_parser_ceiling_report_count_type_requires_nonnegative_integer_not_bool(
+    tmp_path: Path,
+    path: tuple[str, ...],
+    invalid_count: object,
+) -> None:
+    report = _valid_parser_ceiling_report(tmp_path)
+    report[path[0]] = invalid_count
+
+    _assert_parser_ceiling_report_rejected(report)
+
+
+@pytest.mark.parametrize(
+    "identity",
+    [
+        "schema_version",
+        "diagnostic_contract_version",
+        "benchmark_version",
+        "parser_version",
+        "field_schema_version",
+        "implementation_commit_sha",
+        "development_manifest_sha256",
+        "source_split_manifest_sha256",
+        "partition",
+    ],
+)
+def test_parser_ceiling_report_metadata_requires_every_identity(
+    tmp_path: Path,
+    identity: str,
+) -> None:
+    report = _valid_parser_ceiling_report(tmp_path)
+    report.pop(identity)
+
+    _assert_parser_ceiling_report_rejected(report)
+
+
+@pytest.mark.parametrize(
+    "flag",
+    [
+        "raw_text_persisted",
+        "field_values_persisted",
+        "record_identifiers_persisted",
+        "locked_test_accessed",
+        "training_executed",
+    ],
+)
+def test_parser_ceiling_report_privacy_flags_must_remain_false(
+    tmp_path: Path,
+    flag: str,
+) -> None:
+    report = _valid_parser_ceiling_report(tmp_path)
+    report[flag] = True
+
+    _assert_parser_ceiling_report_rejected(report)
+
+
+@pytest.mark.parametrize(
+    "forbidden_key",
+    [
+        "record_id",
+        "source_group_id",
+        "truth_value",
+        "candidate_values",
+        "private_path",
+        "full_transcript",
+    ],
+)
+def test_parser_ceiling_report_privacy_allowlist_rejects_forbidden_fields_without_echo(
+    tmp_path: Path,
+    forbidden_key: str,
+) -> None:
+    report = _valid_parser_ceiling_report(tmp_path)
+    private_value = "PRIVATE VALUE FROM VALIDATION RECORD"
+    report[forbidden_key] = private_value
+
+    _assert_parser_ceiling_report_rejected(
+        report,
+        private_values=(forbidden_key, private_value),
+    )
+
+
+def test_parser_ceiling_report_validation_precedes_self_hash_and_atomic_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+    calls: list[str] = []
+    real_validate = ocr_benchmark._validate_parser_ceiling_report
+    real_hash = ocr_benchmark._canonical_hash
+    real_write = ocr_benchmark._write_json
+
+    def validate(report: dict[str, object]) -> None:
+        calls.append("validate")
+        real_validate(report)
+
+    def canonical_hash(report: dict[str, object], hash_field: str) -> str:
+        calls.append("hash")
+        return real_hash(report, hash_field)
+
+    def write_json(path: Path, report: object) -> None:
+        calls.append("write")
+        real_write(path, report)
+
+    monkeypatch.setattr(ocr_benchmark, "_validate_parser_ceiling_report", validate)
+    monkeypatch.setattr(ocr_benchmark, "_canonical_hash", canonical_hash)
+    monkeypatch.setattr(ocr_benchmark, "_write_json", write_json)
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    assert calls[-3:] == ["validate", "hash", "write"]
+
+
+def test_parser_ceiling_report_self_hash_is_deterministic_with_fixed_aware_clock(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    outputs = (
+        private / "results" / "parser-ceiling-first.json",
+        private / "results" / "parser-ceiling-second.json",
+    )
+    reports: list[dict[str, object]] = []
+    for output in outputs:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+        reports.append(json.loads(output.read_text(encoding="utf-8")))
+
+    assert reports[0] == reports[1]
+    assert reports[0]["report_sha256"] == _canonical(reports[0], "report_sha256")
+    assert reports[1]["report_sha256"] == _canonical(reports[1], "report_sha256")
+
+
+def test_parser_ceiling_diagnostic_does_not_touch_adapters_models_training_or_locked_test(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    def forbidden(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("forbidden adapter or model boundary touched")
+
+    for adapter_name in ("TesseractAdapter", "EasyOCRAdapter", "PaddleOCRAdapter"):
+        monkeypatch.setattr(ocr_benchmark, adapter_name, forbidden)
+    monkeypatch.setattr(ocr_benchmark.importlib, "import_module", forbidden)
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["partition"] == "validation"
+    assert report["locked_test_accessed"] is False
+    assert report["training_executed"] is False
 
 
 def test_parser_ceiling_diagnostic_attributes_truth_in_suppressed_amount_pool(

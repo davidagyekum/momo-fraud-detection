@@ -68,6 +68,25 @@ RELEASE_GATES: Final = {
     "required_field_parse_success": 0.90,
 }
 _PARSER_WARNING_CODE: Final = re.compile(r"[A-Z][A-Z0-9_]{2,63}")
+_PARSER_WARNING_CODES: Final = frozenset(
+    {
+        "AMOUNT_AMBIGUOUS",
+        "AMOUNT_NOT_FOUND",
+        "DATE_ORDER_AMBIGUOUS_DAY_FIRST_USED",
+        "RECIPIENT_FORMAT_INVALID",
+        "RECIPIENT_NOT_FOUND",
+        "REFERENCE_FORMAT_INVALID",
+        "REFERENCE_NOT_FOUND",
+        "REFERENCE_OI_AMBIGUITY_PRESERVED",
+        "TIMESTAMP_FORMAT_INVALID",
+        "TIMESTAMP_NOT_FOUND",
+        "WALLET_AMBIGUOUS",
+        "WALLET_FORMAT_INVALID",
+        "WALLET_NOT_FOUND",
+        "WALLET_UNAVAILABLE",
+        "WALLET_UNLABELLED",
+    }
+)
 _COMMIT_SHA: Final = re.compile(r"[0-9a-f]{40}")
 _SHA256: Final = re.compile(r"[0-9a-f]{64}")
 _COUNT_BUCKETS: Final = ("0", "1", "2", "3_plus")
@@ -104,6 +123,56 @@ _PARSER_COMPARISON_FIELDS: Final = (
     "timestamp",
     "recipient",
     "recipient_wallet",
+)
+_PARSER_CEILING_FIELDS: Final = ("amount", "reference", "timestamp", "recipient")
+_FIELD_OUTCOME_KEYS: Final = ("exact", "mismatch", "unavailable")
+_RECIPIENT_TRUTH_SUBTYPE_KEYS: Final = (
+    "recipient_name_truth",
+    "recipient_wallet_truth",
+)
+_AMOUNT_POOL_PRESENCE_KEYS: Final = (
+    "labelled_nonempty",
+    "currency_nonempty",
+    "both_nonempty",
+    "labelled_active",
+    "currency_fallback_active",
+)
+_AMOUNT_CANDIDATE_POOLS: Final = ("labelled", "currency", "active")
+_ATTRIBUTION_FIELDS: Final = ("amount", "recipient", "reference", "timestamp")
+_PRIVACY_BOUNDARY_FLAGS: Final = (
+    "raw_text_persisted",
+    "field_values_persisted",
+    "record_identifiers_persisted",
+    "locked_test_accessed",
+    "training_executed",
+)
+_PARSER_CEILING_REPORT_KEYS: Final = frozenset(
+    {
+        "schema_version",
+        "diagnostic_contract_version",
+        "benchmark_version",
+        "parser_version",
+        "field_schema_version",
+        "implementation_commit_sha",
+        "development_manifest_sha256",
+        "source_split_manifest_sha256",
+        "partition",
+        "record_count",
+        "field_scored_record_count",
+        "field_exact",
+        "field_outcome_counts",
+        "parser_warning_counts",
+        "parser_warning_counts_by_observed_field",
+        "recipient_truth_subtype_counts",
+        "recipient_secondary_truth_present_count",
+        "amount_candidate_pool_presence",
+        "amount_candidate_count_buckets",
+        "mismatch_attribution_counts",
+        "required_field_scored_record_count",
+        "required_field_parse_success",
+        "parser_inconclusive_rate",
+        *_PRIVACY_BOUNDARY_FLAGS,
+    }
 )
 
 
@@ -210,6 +279,236 @@ def _canonical_hash(value: Mapping[str, object], hash_field: str) -> str:
     canonical.pop(hash_field, None)
     encoded = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _require_count(value: object, *, label: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise OCRBenchmarkError(f"OCR parser ceiling {label} count is invalid")
+    return value
+
+
+def _require_count_map(
+    value: object,
+    *,
+    keys: Sequence[str],
+    label: str,
+) -> dict[str, int]:
+    if not isinstance(value, dict) or set(value) != set(keys):
+        raise OCRBenchmarkError(f"OCR parser ceiling {label} keys are invalid")
+    counts: dict[str, int] = {}
+    for key in keys:
+        counts[key] = _require_count(value[key], label=label)
+    return counts
+
+
+def _require_partition_total(
+    counts: Mapping[str, int],
+    *,
+    denominator: int,
+    label: str,
+) -> None:
+    if sum(counts.values()) != denominator:
+        raise OCRBenchmarkError(f"OCR parser ceiling {label} total is invalid")
+
+
+def _require_rate(value: object, *, allow_none: bool, label: str) -> float | None:
+    if value is None and allow_none:
+        return None
+    if not isinstance(value, float) or not 0.0 <= value <= 1.0:
+        raise OCRBenchmarkError(f"OCR parser ceiling {label} rate is invalid")
+    return value
+
+
+def _require_warning_count_map(value: object, *, label: str) -> dict[str, int]:
+    if not isinstance(value, dict):
+        raise OCRBenchmarkError(f"OCR parser ceiling {label} keys are invalid")
+    counts: dict[str, int] = {}
+    for key, count in value.items():
+        if not isinstance(key, str) or key not in _PARSER_WARNING_CODES:
+            raise OCRBenchmarkError(f"OCR parser ceiling {label} keys are invalid")
+        counts[key] = _require_count(count, label=label)
+    return counts
+
+
+def _validate_parser_ceiling_report(report: Mapping[str, object]) -> None:
+    """Fail closed unless a complete pre-hash parser-ceiling v4 report is safe."""
+
+    if set(report) != _PARSER_CEILING_REPORT_KEYS:
+        raise OCRBenchmarkError("OCR parser ceiling report keys are invalid")
+    if (
+        report["schema_version"] != OCR_PARSER_CEILING_REPORT_VERSION
+        or report["diagnostic_contract_version"] != OCR_MISMATCH_ATTRIBUTION_VERSION
+        or report["benchmark_version"] != OCR_BENCHMARK_VERSION
+        or report["parser_version"] != OCR_PARSER_VERSION
+        or report["field_schema_version"] != OCR_FIELD_SCHEMA_VERSION
+        or report["partition"] != "validation"
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling metadata identity is invalid")
+    if (
+        not isinstance(report["implementation_commit_sha"], str)
+        or _COMMIT_SHA.fullmatch(report["implementation_commit_sha"]) is None
+        or not isinstance(report["development_manifest_sha256"], str)
+        or _SHA256.fullmatch(report["development_manifest_sha256"]) is None
+        or not isinstance(report["source_split_manifest_sha256"], str)
+        or _SHA256.fullmatch(report["source_split_manifest_sha256"]) is None
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling reproducibility identity is invalid")
+
+    record_count = _require_count(report["record_count"], label="record")
+    if record_count == 0:
+        raise OCRBenchmarkError("OCR parser ceiling record total is invalid")
+    denominators = _require_count_map(
+        report["field_scored_record_count"],
+        keys=_PARSER_CEILING_FIELDS,
+        label="field scored record",
+    )
+    if any(count > record_count for count in denominators.values()):
+        raise OCRBenchmarkError("OCR parser ceiling field scored record total is invalid")
+
+    field_exact = report["field_exact"]
+    if not isinstance(field_exact, dict) or set(field_exact) != set(_PARSER_CEILING_FIELDS):
+        raise OCRBenchmarkError("OCR parser ceiling field exact keys are invalid")
+
+    field_outcomes = report["field_outcome_counts"]
+    if not isinstance(field_outcomes, dict) or set(field_outcomes) != set(_PARSER_CEILING_FIELDS):
+        raise OCRBenchmarkError("OCR parser ceiling field outcome keys are invalid")
+    for field in _PARSER_CEILING_FIELDS:
+        outcome_counts = _require_count_map(
+            field_outcomes[field],
+            keys=_FIELD_OUTCOME_KEYS,
+            label=f"{field} field outcome",
+        )
+        _require_partition_total(
+            outcome_counts,
+            denominator=denominators[field],
+            label=f"{field} field outcome",
+        )
+        exact_rate = _require_rate(
+            field_exact[field],
+            allow_none=denominators[field] == 0,
+            label=f"{field} field exact",
+        )
+        if denominators[field] == 0:
+            if exact_rate is not None:
+                raise OCRBenchmarkError(f"OCR parser ceiling {field} field exact rate is invalid")
+        elif exact_rate != outcome_counts["exact"] / denominators[field]:
+            raise OCRBenchmarkError(f"OCR parser ceiling {field} field exact rate is invalid")
+
+    _require_warning_count_map(report["parser_warning_counts"], label="parser warning")
+    warning_counts_by_field = report["parser_warning_counts_by_observed_field"]
+    if not isinstance(warning_counts_by_field, dict) or not set(warning_counts_by_field).issubset(
+        _PARSER_COMPARISON_FIELDS
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling observed-field warning keys are invalid")
+    for field in _PARSER_COMPARISON_FIELDS:
+        if field in warning_counts_by_field:
+            _require_warning_count_map(
+                warning_counts_by_field[field],
+                label=f"{field} observed-field warning",
+            )
+
+    recipient_subtypes = _require_count_map(
+        report["recipient_truth_subtype_counts"],
+        keys=_RECIPIENT_TRUTH_SUBTYPE_KEYS,
+        label="recipient truth subtype",
+    )
+    _require_partition_total(
+        recipient_subtypes,
+        denominator=denominators["recipient"],
+        label="recipient truth subtype",
+    )
+    secondary_truth_count = _require_count(
+        report["recipient_secondary_truth_present_count"],
+        label="recipient secondary truth present",
+    )
+    if secondary_truth_count > recipient_subtypes["recipient_name_truth"]:
+        raise OCRBenchmarkError("OCR parser ceiling recipient secondary truth total is invalid")
+
+    presence = _require_count_map(
+        report["amount_candidate_pool_presence"],
+        keys=_AMOUNT_POOL_PRESENCE_KEYS,
+        label="amount candidate pool presence",
+    )
+    amount_denominator = denominators["amount"]
+    if (
+        any(count > amount_denominator for count in presence.values())
+        or presence["both_nonempty"] > presence["labelled_nonempty"]
+        or presence["both_nonempty"] > presence["currency_nonempty"]
+        or presence["both_nonempty"]
+        < presence["labelled_nonempty"] + presence["currency_nonempty"] - amount_denominator
+        or presence["labelled_active"] != presence["labelled_nonempty"]
+        or presence["labelled_active"] + presence["currency_fallback_active"] != amount_denominator
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling amount candidate presence total is invalid")
+
+    candidate_buckets = report["amount_candidate_count_buckets"]
+    if not isinstance(candidate_buckets, dict) or set(candidate_buckets) != set(
+        _AMOUNT_CANDIDATE_POOLS
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling amount candidate bucket keys are invalid")
+    validated_buckets: dict[str, dict[str, int]] = {}
+    for pool in _AMOUNT_CANDIDATE_POOLS:
+        validated_buckets[pool] = _require_count_map(
+            candidate_buckets[pool],
+            keys=_COUNT_BUCKETS,
+            label=f"{pool} amount candidate bucket",
+        )
+        _require_partition_total(
+            validated_buckets[pool],
+            denominator=amount_denominator,
+            label=f"{pool} amount candidate bucket",
+        )
+    active_nonempty = (
+        presence["labelled_nonempty"] + presence["currency_nonempty"] - presence["both_nonempty"]
+    )
+    if (
+        validated_buckets["labelled"]["0"] != amount_denominator - presence["labelled_nonempty"]
+        or validated_buckets["currency"]["0"] != amount_denominator - presence["currency_nonempty"]
+        or validated_buckets["active"]["0"] != amount_denominator - active_nonempty
+    ):
+        raise OCRBenchmarkError("OCR parser ceiling amount candidate bucket presence is invalid")
+
+    attributions = report["mismatch_attribution_counts"]
+    if not isinstance(attributions, dict) or set(attributions) != set(_ATTRIBUTION_FIELDS):
+        raise OCRBenchmarkError("OCR parser ceiling mismatch attribution keys are invalid")
+    attribution_keys = {
+        "amount": _AMOUNT_ATTRIBUTION_CATEGORIES,
+        "recipient": _TEXT_ATTRIBUTION_CATEGORIES,
+        "reference": _TEXT_ATTRIBUTION_CATEGORIES,
+        "timestamp": ("deferred_insufficient_support",),
+    }
+    for field in _ATTRIBUTION_FIELDS:
+        attribution_counts = _require_count_map(
+            attributions[field],
+            keys=attribution_keys[field],
+            label=f"{field} mismatch attribution",
+        )
+        _require_partition_total(
+            attribution_counts,
+            denominator=denominators[field],
+            label=f"{field} mismatch attribution",
+        )
+
+    required_denominator = _require_count(
+        report["required_field_scored_record_count"],
+        label="required field scored record",
+    )
+    if required_denominator > min(denominators.values()):
+        raise OCRBenchmarkError("OCR parser ceiling required field scored record total is invalid")
+    required_rate = _require_rate(
+        report["required_field_parse_success"],
+        allow_none=required_denominator == 0,
+        label="required field parse success",
+    )
+    if (required_denominator == 0) != (required_rate is None):
+        raise OCRBenchmarkError("OCR parser ceiling required field parse success rate is invalid")
+    _require_rate(
+        report["parser_inconclusive_rate"],
+        allow_none=False,
+        label="parser inconclusive",
+    )
+    if any(report[flag] is not False for flag in _PRIVACY_BOUNDARY_FLAGS):
+        raise OCRBenchmarkError("OCR parser ceiling privacy boundary is invalid")
 
 
 def _load_object(path: Path) -> dict[str, object]:
@@ -1358,6 +1657,7 @@ def run_ocr_parser_ceiling_diagnostic(
         "locked_test_accessed": False,
         "training_executed": False,
     }
+    _validate_parser_ceiling_report(report)
     report["report_sha256"] = _canonical_hash(report, "report_sha256")
     _write_json(output_path, report)
     return output_path
