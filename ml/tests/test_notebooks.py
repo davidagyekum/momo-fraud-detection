@@ -71,7 +71,7 @@ def test_pr17_parser_ceiling_notebook_is_pinned_and_stops_before_adapters() -> N
         else str(cell.get("source", ""))
         for cell in code_cells
     ]
-    assert 'TARGET_COMMIT = "22a30a5adb713f7ddf6902ccc5387e203363c5f8"' in code_sources[0]
+    assert 'TARGET_COMMIT = "bf042c3a0f6e18a2777f85d7b9d3d5131ae31d93"' in code_sources[0]
     assert "RUN_BENCHMARK = False" in code_sources[0]
     diagnostic_calls = [
         call
