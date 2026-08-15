@@ -165,6 +165,17 @@ def _assert_parser_ceiling_report_rejected(
     assert all(value not in message for value in private_values)
 
 
+def _assert_private_io_error(
+    error: pytest.ExceptionInfo[OCRBenchmarkError],
+    *,
+    expected_message: str,
+    private_values: tuple[str, ...],
+) -> None:
+    assert str(error.value) == expected_message
+    assert error.value.__cause__ is None
+    assert all(value not in str(error.value) for value in private_values)
+
+
 def _tesseract_data() -> dict[str, list[object]]:
     return {
         "text": ["Reference", "ABC12345"],
@@ -619,6 +630,11 @@ def test_reference_like_spans_preserve_boundaries(
     assert ocr_benchmark._reference_like_spans(transcript) == expected
 
 
+def test_anchored_reference_spans_stop_before_unstructured_prose() -> None:
+    assert ocr_benchmark._anchored_reference_spans("ABC 12345 status text") == ("ABC12345",)
+    assert ocr_benchmark._reference_like_spans("Reference: ABC 12345 status text") == ("ABC12345",)
+
+
 @pytest.mark.parametrize(
     ("comparison", "truth_present", "expected"),
     [
@@ -729,6 +745,25 @@ def test_recipient_truth_presence_rejects_mismatched_comparison_contract(
 
     with pytest.raises(OCRBenchmarkError, match=r"recipient .* is invalid"):
         ocr_benchmark._recipient_truth_present(comparison, "Recipient: Demo Person")
+
+
+def test_recipient_name_truth_presence_removes_only_surrounding_punctuation() -> None:
+    comparison = ocr_benchmark.FieldComparison(
+        "recipient",
+        "recipient_name",
+        "recipient",
+        "«ANNE-MARIE O'NEIL»",
+        "OTHER PERSON",
+        False,
+        True,
+        (),
+        truth_subtype="recipient_name_truth",
+    )
+
+    assert ocr_benchmark._recipient_truth_present(
+        comparison,
+        "Recipient: (Anne-Marie O'Neil),",
+    )
 
 
 def test_field_scoring_uses_normalized_truth_and_excludes_unavailable_fields() -> None:
@@ -1288,6 +1323,56 @@ def test_parser_ceiling_diagnostic_attributes_truth_in_suppressed_amount_pool(
     assert "10.00" not in json.dumps(report)
 
 
+def test_parser_ceiling_accepts_raw_labelled_active_with_no_valid_labelled_amount(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "Amount GHS 1000000000.00\nGHS 20.00"
+    truth["fields"] = [{"name": "amount", "normalized": "20.00"}]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["amount_candidate_pool_presence"] == {
+        "labelled_nonempty": 0,
+        "currency_nonempty": 1,
+        "both_nonempty": 0,
+        "labelled_active": 1,
+        "currency_fallback_active": 0,
+    }
+    assert report["amount_candidate_count_buckets"] == {
+        "labelled": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+        "currency": {"0": 0, "1": 1, "2": 0, "3_plus": 0},
+        "active": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+    }
+    assert report["mismatch_attribution_counts"]["amount"] == {
+        "exact_selected": 0,
+        "no_valid_currency_candidate": 0,
+        "truth_in_active_pool_not_exact": 0,
+        "truth_in_suppressed_currency_pool": 1,
+        "truth_absent_all_candidate_pools": 0,
+    }
+    assert report["report_sha256"] == _canonical(report, "report_sha256")
+    assert output.is_file()
+
+
 @pytest.mark.parametrize(
     ("transcript", "truth_amount", "attribution", "expected_bucket_counts"),
     [
@@ -1398,6 +1483,269 @@ def test_parser_ceiling_reference_fragments_do_not_create_truth_presence(
         "truth_present_not_selected": 0,
         "truth_absent_transcript": 0,
     }
+
+
+def test_parser_ceiling_anchored_reference_prose_does_not_manufacture_truth(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "Reference: ABC 12345 status text"
+    truth["fields"] = [{"name": "reference", "normalized": "ABC12345STATUS"}]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["mismatch_attribution_counts"]["reference"] == {
+        "exact_selected": 0,
+        "truth_present_parser_unavailable": 0,
+        "truth_absent_parser_unavailable": 1,
+        "selected_contains_truth": 0,
+        "truth_contains_selected": 0,
+        "truth_present_not_selected": 0,
+        "truth_absent_transcript": 0,
+    }
+
+
+def test_parser_ceiling_malformed_manifest_error_is_generic_and_creates_no_output(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private = tmp_path / "owner-secret-private-root"
+    manifest_path = private / "manifest-GHPRIVATE_RECORD_0042.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text("{", encoding="utf-8")
+    output = private / "results" / "report-GHPRIVATE_RECORD_0042.json"
+
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    _assert_private_io_error(
+        error,
+        expected_message="unable to read JSON object",
+        private_values=(str(private), manifest_path.name, "GHPRIVATE_RECORD_0042"),
+    )
+    assert not output.exists()
+
+
+def test_parser_ceiling_unreadable_manifest_error_is_generic_and_creates_no_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private = tmp_path / "owner-secret-private-root"
+    manifest_path = private / "manifest-GHPRIVATE_RECORD_0043.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text("{}", encoding="utf-8")
+    output = private / "results" / "report-GHPRIVATE_RECORD_0043.json"
+    real_read_text = Path.read_text
+
+    def guarded_read_text(path: Path, *args: object, **kwargs: object) -> str:
+        if path.resolve() == manifest_path.resolve():
+            raise PermissionError(13, "private path denied", str(path))
+        return real_read_text(path, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(Path, "read_text", guarded_read_text)
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    _assert_private_io_error(
+        error,
+        expected_message="unable to read JSON object",
+        private_values=(str(private), manifest_path.name, "GHPRIVATE_RECORD_0043"),
+    )
+    assert not output.exists()
+
+
+def test_parser_ceiling_malformed_truth_error_is_generic_and_creates_no_output(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "owner-secret-bundle",
+        repository_root=repository,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    validation_record = next(
+        record for record in manifest["records"] if record["record_id"] == VALIDATION_ID
+    )
+    bundled_truth = manifest_path.parent / validation_record["truth_path"]
+    bundled_truth.write_text("{", encoding="utf-8")
+    validation_record["truth_sha256"] = hashlib.sha256(bundled_truth.read_bytes()).hexdigest()
+    manifest["manifest_sha256"] = _canonical(manifest, "manifest_sha256")
+    _write_json(manifest_path, manifest)
+    output = private / "results" / "report-GHPRIVATE_RECORD_0044.json"
+
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    _assert_private_io_error(
+        error,
+        expected_message="unable to read JSON object",
+        private_values=(str(private), bundled_truth.name, VALIDATION_ID),
+    )
+    assert not output.exists()
+
+
+def test_parser_ceiling_unreadable_truth_error_is_generic_and_creates_no_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "owner-secret-bundle",
+        repository_root=repository,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    validation_record = next(
+        record for record in manifest["records"] if record["record_id"] == VALIDATION_ID
+    )
+    bundled_truth = (manifest_path.parent / validation_record["truth_path"]).resolve()
+    output = private / "results" / "report-GHPRIVATE_RECORD_0047.json"
+    real_read_text = Path.read_text
+
+    def guarded_read_text(path: Path, *args: object, **kwargs: object) -> str:
+        if path.resolve() == bundled_truth:
+            raise PermissionError(13, "private path denied", str(path))
+        return real_read_text(path, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(Path, "read_text", guarded_read_text)
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    _assert_private_io_error(
+        error,
+        expected_message="unable to read JSON object",
+        private_values=(str(private), bundled_truth.name, VALIDATION_ID),
+    )
+    assert not output.exists()
+
+
+def test_parser_ceiling_hash_read_error_is_generic_and_creates_no_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "owner-secret-bundle",
+        repository_root=repository,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    validation_record = next(
+        record for record in manifest["records"] if record["record_id"] == VALIDATION_ID
+    )
+    bundled_truth = (manifest_path.parent / validation_record["truth_path"]).resolve()
+    output = private / "results" / "report-GHPRIVATE_RECORD_0045.json"
+    real_open = Path.open
+
+    def guarded_open(path: Path, *args: object, **kwargs: object):  # type: ignore[no-untyped-def]
+        if path.resolve() == bundled_truth:
+            raise PermissionError(13, "private path denied", str(path))
+        return real_open(path, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(Path, "open", guarded_open)
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    _assert_private_io_error(
+        error,
+        expected_message="unable to hash file",
+        private_values=(str(private), bundled_truth.name, VALIDATION_ID),
+    )
+    assert not output.exists()
+
+
+def test_parser_ceiling_failed_atomic_write_is_generic_and_leaves_no_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "owner-secret-bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "report-GHPRIVATE_RECORD_0046.json"
+
+    def denied_replace(source: object, destination: object) -> None:
+        raise PermissionError(13, "private output denied", str(destination))
+
+    monkeypatch.setattr(ocr_benchmark.os, "replace", denied_replace)
+    with pytest.raises(OCRBenchmarkError) as error:
+        ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+            development_manifest_path=manifest_path,
+            output_path=output,
+            repository_root=repository,
+            implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+            now=datetime(2026, 8, 14, tzinfo=UTC),
+        )
+
+    _assert_private_io_error(
+        error,
+        expected_message="unable to write JSON output",
+        private_values=(str(private), output.name, "GHPRIVATE_RECORD_0046"),
+    )
+    assert not output.exists()
+    assert not tuple(output.parent.glob(".*.tmp"))
 
 
 def test_parser_ceiling_timestamp_attribution_is_deferred(

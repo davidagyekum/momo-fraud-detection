@@ -15,6 +15,7 @@ import time
 import unicodedata
 import zipfile
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -267,11 +268,14 @@ class _PaddlePipeline(Protocol):
 
 
 def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+        return digest.hexdigest()
+    except OSError:
+        raise OCRBenchmarkError("unable to hash file") from None
 
 
 def _canonical_hash(value: Mapping[str, object], hash_field: str) -> str:
@@ -436,7 +440,7 @@ def _validate_parser_ceiling_report(report: Mapping[str, object]) -> None:
         or presence["both_nonempty"] > presence["currency_nonempty"]
         or presence["both_nonempty"]
         < presence["labelled_nonempty"] + presence["currency_nonempty"] - amount_denominator
-        or presence["labelled_active"] != presence["labelled_nonempty"]
+        or presence["labelled_nonempty"] > presence["labelled_active"]
         or presence["labelled_active"] + presence["currency_fallback_active"] != amount_denominator
     ):
         raise OCRBenchmarkError("OCR parser ceiling amount candidate presence total is invalid")
@@ -458,13 +462,9 @@ def _validate_parser_ceiling_report(report: Mapping[str, object]) -> None:
             denominator=amount_denominator,
             label=f"{pool} amount candidate bucket",
         )
-    active_nonempty = (
-        presence["labelled_nonempty"] + presence["currency_nonempty"] - presence["both_nonempty"]
-    )
     if (
         validated_buckets["labelled"]["0"] != amount_denominator - presence["labelled_nonempty"]
         or validated_buckets["currency"]["0"] != amount_denominator - presence["currency_nonempty"]
-        or validated_buckets["active"]["0"] != amount_denominator - active_nonempty
     ):
         raise OCRBenchmarkError("OCR parser ceiling amount candidate bucket presence is invalid")
 
@@ -514,20 +514,25 @@ def _validate_parser_ceiling_report(report: Mapping[str, object]) -> None:
 def _load_object(path: Path) -> dict[str, object]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise OCRBenchmarkError(f"unable to read {path.name}") from exc
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        raise OCRBenchmarkError("unable to read JSON object") from None
     if not isinstance(value, dict):
-        raise OCRBenchmarkError(f"{path.name} must contain an object")
+        raise OCRBenchmarkError("JSON content must contain an object")
     return value
 
 
 def _write_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    temporary.write_text(
-        json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
-    )
-    os.replace(temporary, path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary.write_text(
+            json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
+        )
+        os.replace(temporary, path)
+    except OSError:
+        with suppress(OSError):
+            temporary.unlink(missing_ok=True)
+        raise OCRBenchmarkError("unable to write JSON output") from None
 
 
 def _require_private_path(path: Path, repository_root: Path, label: str) -> None:
@@ -1139,16 +1144,25 @@ def _valid_reference_span(value: str) -> str | None:
     return normalized
 
 
+def _anchored_reference_spans(value: str) -> tuple[str, ...]:
+    spans: list[str] = []
+    tokens = value.split()
+    for end in range(1, len(tokens) + 1):
+        token = tokens[end - 1]
+        if spans and token.isalpha():
+            break
+        if (normalized := _valid_reference_span(" ".join(tokens[:end]))) is not None:
+            spans.append(normalized)
+    return tuple(dict.fromkeys(spans))
+
+
 def _reference_like_spans(text: str) -> tuple[str, ...]:
     spans: list[str] = []
     for raw_line in text.splitlines():
         line = unicodedata.normalize("NFKC", raw_line)
         anchored = _REFERENCE_LINE_ANCHOR.search(line)
         if anchored is not None:
-            tokens = anchored.group(1).split()
-            for end in range(1, len(tokens) + 1):
-                if (value := _valid_reference_span(" ".join(tokens[:end]))) is not None:
-                    spans.append(value)
+            spans.extend(_anchored_reference_spans(anchored.group(1)))
         else:
             for match in _REFERENCE_UNANCHORED.finditer(line):
                 if (value := _valid_reference_span(match.group(1))) is not None:
@@ -1180,18 +1194,21 @@ def _classify_text_attribution(
     return "truth_present_not_selected" if truth_present else "truth_absent_transcript"
 
 
+def _normalize_recipient_name_evidence(value: str) -> str:
+    normalized = re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value)).strip()
+    while normalized and unicodedata.category(normalized[0]).startswith("P"):
+        normalized = normalized[1:].lstrip()
+    while normalized and unicodedata.category(normalized[-1]).startswith("P"):
+        normalized = normalized[:-1].rstrip()
+    return normalized.upper()
+
+
 def _recipient_truth_present(comparison: FieldComparison, transcript: str) -> bool:
     if comparison.truth_subtype == "recipient_name_truth":
         if comparison.observed_field != "recipient":
             raise OCRBenchmarkError("OCR recipient observed field is invalid")
-        normalized_text = (
-            re.sub(r"\s+", " ", unicodedata.normalize("NFKC", transcript)).strip().upper()
-        )
-        normalized_truth = (
-            re.sub(r"\s+", " ", unicodedata.normalize("NFKC", comparison.expected_normalized))
-            .strip()
-            .upper()
-        )
+        normalized_text = _normalize_recipient_name_evidence(transcript)
+        normalized_truth = _normalize_recipient_name_evidence(comparison.expected_normalized)
         return normalized_truth in normalized_text
     if comparison.truth_subtype == "recipient_wallet_truth":
         if comparison.observed_field != "recipient_wallet":
