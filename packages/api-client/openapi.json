@@ -491,6 +491,19 @@
         ],
         "type": "object"
       },
+      "AnalysisReportCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "default": "HTML",
+            "enum": [
+              "HTML"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AnalysisRisk": {
         "additionalProperties": false,
         "properties": {
@@ -1191,6 +1204,134 @@
         ],
         "type": "object"
       },
+      "Notification": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "read_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/NotificationTarget"
+              }
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "message",
+          "read_at",
+          "target",
+          "title",
+          "type"
+        ],
+        "type": "object"
+      },
+      "NotificationEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Notification"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "NotificationListData": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "NotificationListEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NotificationListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "NotificationTarget": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "type": "object"
+      },
       "OCRConfirmationData": {
         "additionalProperties": false,
         "properties": {
@@ -1531,6 +1672,38 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "ReadAllData": {
+        "additionalProperties": false,
+        "properties": {
+          "marked_read": {
+            "type": "integer"
+          },
+          "unread_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "marked_read",
+          "unread_count"
+        ],
+        "type": "object"
+      },
+      "ReadAllEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReadAllData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
         "type": "object"
       },
       "ReadinessComponents": {
@@ -2034,6 +2207,81 @@
         ],
         "type": "object"
       },
+      "ReportArtifact": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "download_url": {
+            "nullable": true,
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "report_type": {
+            "type": "string"
+          },
+          "sha256": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis_run_id",
+          "download_url",
+          "expires_at",
+          "generated_at",
+          "id",
+          "replayed",
+          "report_type",
+          "sha256",
+          "status",
+          "transaction_id"
+        ],
+        "type": "object"
+      },
+      "ReportEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReportArtifact"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "ResetPassword": {
         "additionalProperties": false,
         "properties": {
@@ -2365,6 +2613,34 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/TransactionUploadData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "UnreadCountData": {
+        "additionalProperties": false,
+        "properties": {
+          "unread_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unread_count"
+        ],
+        "type": "object"
+      },
+      "UnreadCountEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UnreadCountData"
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
@@ -3972,6 +4248,144 @@
         ]
       }
     },
+    "/api/v1/notifications": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unread",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "List only the authenticated user's notifications.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadAllEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Idempotently mark all of the authenticated user's notifications read.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return the authenticated user's unread count.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "notification_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Idempotently mark one owned notification as read.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
     "/api/v1/ready": {
       "get": {
         "responses": {
@@ -4004,6 +4418,30 @@
           "api-v1"
         ]
       }
+    },
+    "/api/v1/reports/{report_id}/download": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Download an owned ready report with integrity and privacy controls.",
+        "tags": [
+          "reports-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "report_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
     },
     "/api/v1/transactions": {
       "get": {
@@ -4603,6 +5041,63 @@
         }
       ]
     },
+    "/api/v1/transactions/{transaction_id}/reports": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisReportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Generate or replay an owner-scoped immutable analysis report.",
+        "tags": [
+          "reports-v1"
+        ]
+      }
+    },
     "/api/v1/version": {
       "get": {
         "responses": {
@@ -4643,6 +5138,14 @@
     {
       "description": "Owner fraud reporting and append-only investigator casework",
       "name": "casework-v1"
+    },
+    {
+      "description": "Owner-scoped in-app notifications",
+      "name": "notifications-v1"
+    },
+    {
+      "description": "Private immutable analysis reports",
+      "name": "reports-v1"
     },
     {
       "description": "Administrator user management",

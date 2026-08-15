@@ -44,6 +44,7 @@ def upgrade() -> None:
         sa.Column("analysis_run_id", postgresql.UUID(as_uuid=True)),
     )
     op.add_column("report_artifacts", sa.Column("source_version", sa.Integer()))
+    op.alter_column("report_artifacts", "sha256", existing_type=sa.String(64), nullable=True)
     op.create_foreign_key(
         "fk_report_artifacts_analysis_run_id_analysis_runs",
         "report_artifacts",
@@ -72,6 +73,8 @@ def downgrade() -> None:
     )
     op.drop_column("report_artifacts", "source_version")
     op.drop_column("report_artifacts", "analysis_run_id")
+    op.execute("UPDATE report_artifacts SET sha256 = repeat('0', 64) WHERE sha256 IS NULL")
+    op.alter_column("report_artifacts", "sha256", existing_type=sa.String(64), nullable=False)
 
     op.drop_constraint("uq_notifications_user_id_dedupe_key", "notifications", type_="unique")
     op.drop_column("notifications", "dedupe_key")

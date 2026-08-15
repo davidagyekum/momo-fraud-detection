@@ -17,6 +17,7 @@ from momo_fdvs.extensions import db
 from momo_fdvs.models import (
     FraudCase,
     FraudRuleSet,
+    Notification,
     OCRConfirmation,
     OCRResult,
     ReferenceImportBatch,
@@ -234,6 +235,16 @@ def test_start_replay_poll_and_owner_visibility(app: Flask) -> None:
     assert replay.status_code == 202
     assert replay.json["data"]["analysis_run_id"] == run_id
     assert replay.json["data"]["replayed"] is True
+
+    with app.app_context():
+        notifications = db.session.scalars(
+            select(Notification).where(
+                Notification.user_id == uuid.UUID(owner["user"]["id"]),
+                Notification.target_id == uuid.UUID(run_id),
+            )
+        ).all()
+        assert len(notifications) == 1
+        assert notifications[0].type == "ANALYSIS_COMPLETED"
 
     detail = client.get(f"/api/v1/analyses/{run_id}", headers=_headers(owner))
     assert detail.status_code == 200, detail.get_data(as_text=True)

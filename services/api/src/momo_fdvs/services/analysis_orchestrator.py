@@ -32,6 +32,7 @@ from momo_fdvs.models import (
 from momo_fdvs.services.audit import audit_event
 from momo_fdvs.services.image_forensics import ImageForensicsFailure, run_image_forensics
 from momo_fdvs.services.image_model import ImageModelFailure, predict_image_tampering
+from momo_fdvs.services.notifications import notify_analysis_outcome
 from momo_fdvs.services.risk_policy import (
     AnalysisPolicyInput,
     ModelPolicySignal,
@@ -632,6 +633,13 @@ def run_analysis(
             )
         )
         run.current_stage = "FINALIZE"
+        notify_analysis_outcome(
+            user_id=user.id,
+            transaction_id=transaction.id,
+            analysis_run_id=run.id,
+            analysis_status=policy_result.status,
+            risk_band=policy_result.band.value,
+        )
         audit_event(
             "analysis.completed",
             "SUCCESS",

@@ -129,7 +129,7 @@ class ReportArtifact(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         CheckConstraint(
             "status IN ('GENERATING', 'READY', 'FAILED', 'EXPIRED')", name="status_valid"
         ),
-        CheckConstraint("char_length(sha256) = 64", name="sha256_length"),
+        CheckConstraint("sha256 IS NULL OR char_length(sha256) = 64", name="sha256_length"),
         CheckConstraint(
             "(report_type = 'ANALYSIS' AND transaction_id IS NOT NULL AND case_id IS NULL) OR "
             "(report_type = 'CASE' AND case_id IS NOT NULL) OR "
@@ -157,7 +157,7 @@ class ReportArtifact(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     )
     source_version: Mapped[int | None] = mapped_column(Integer)
     object_key: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
-    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    sha256: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="GENERATING")
     generated_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="RESTRICT")

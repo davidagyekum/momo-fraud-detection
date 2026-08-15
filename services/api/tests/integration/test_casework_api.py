@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from momo_fdvs.models import (
     CaseEvent,
     FraudCase,
     Notification,
+    ReportArtifact,
     Role,
     Transaction,
     User,
@@ -59,7 +61,12 @@ def _login(client: Any, user: User) -> dict[str, Any]:
     return cast(dict[str, Any], response.json["data"])
 
 
-def _analysed_owner(app: Flask, client: Any) -> tuple[dict[str, Any], uuid.UUID, uuid.UUID]:
+def _analysed_owner(
+    app: Flask,
+    client: Any,
+    *,
+    risk_summary: str = "Controlled incomplete evidence.",
+) -> tuple[dict[str, Any], uuid.UUID, uuid.UUID]:
     with app.app_context():
         graph = create_complete_graph(db.session)
         user = cast(User, graph["user"])
@@ -78,7 +85,7 @@ def _analysed_owner(app: Flask, client: Any) -> tuple[dict[str, Any], uuid.UUID,
             "policy": {
                 "status": "PARTIAL",
                 "band": "inconclusive",
-                "summary": "Controlled incomplete evidence.",
+                "summary": risk_summary,
                 "policy_version": "controlled-policy-v1",
             }
         }
@@ -373,3 +380,117 @@ def test_investigator_case_state_machine_and_immutable_analysis(app: Flask) -> N
             )
             is not None
         )
+
+
+def test_notification_inbox_is_owner_scoped_and_read_actions_are_idempotent(
+    app: Flask,
+) -> None:
+    client = app.test_client()
+    owner, transaction_id, _run_id = _analysed_owner(app, client)
+    outsider, outsider_transaction_id, _outsider_run_id = _analysed_owner(app, client)
+    owner_case = _open_case(client, owner, transaction_id)
+    _open_case(client, outsider, outsider_transaction_id)
+
+    inbox = client.get("/api/v1/notifications?unread=true", headers=_headers(owner))
+    assert inbox.status_code == 200, inbox.get_data(as_text=True)
+    items = inbox.json["data"]["items"]
+    assert inbox.json["data"]["total"] == 1
+    assert len(items) == 1
+    notification = items[0]
+    assert notification["target"] == {"type": "CASE", "id": owner_case["id"]}
+    assert "delivery_status" not in notification
+    assert "dedupe_key" not in notification
+
+    count = client.get("/api/v1/notifications/unread-count", headers=_headers(owner))
+    assert count.status_code == 200
+    assert count.json["data"]["unread_count"] == 1
+
+    denied = client.post(
+        f"/api/v1/notifications/{notification['id']}/read",
+        headers=_headers(outsider),
+    )
+    assert denied.status_code == 404
+
+    read = client.post(
+        f"/api/v1/notifications/{notification['id']}/read",
+        headers=_headers(owner),
+    )
+    assert read.status_code == 200
+    assert read.json["data"]["read_at"] is not None
+    replay = client.post(
+        f"/api/v1/notifications/{notification['id']}/read",
+        headers=_headers(owner),
+    )
+    assert replay.status_code == 200
+    assert replay.json["data"]["read_at"] == read.json["data"]["read_at"]
+
+    read_all = client.post("/api/v1/notifications/read-all", headers=_headers(owner))
+    assert read_all.status_code == 200
+    assert read_all.json["data"] == {"marked_read": 0, "unread_count": 0}
+    count_after = client.get("/api/v1/notifications/unread-count", headers=_headers(owner))
+    assert count_after.json["data"]["unread_count"] == 0
+
+
+def test_owner_report_is_escaped_hashed_private_and_replayed(app: Flask) -> None:
+    client = app.test_client()
+    owner, transaction_id, run_id = _analysed_owner(
+        app,
+        client,
+        risk_summary='<script>alert("private")</script>',
+    )
+    outsider, _outsider_transaction_id, _outsider_run_id = _analysed_owner(app, client)
+
+    missing_key = client.post(
+        f"/api/v1/transactions/{transaction_id}/reports",
+        headers=_headers(owner),
+        json={"format": "HTML"},
+    )
+    assert missing_key.status_code == 400
+    assert missing_key.json["error"]["code"] == "IDEMPOTENCY_KEY_REQUIRED"
+
+    key = f"report-{uuid.uuid4()}"
+    created = client.post(
+        f"/api/v1/transactions/{transaction_id}/reports",
+        headers=_headers(owner, key),
+        json={"format": "HTML"},
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    report = created.json["data"]
+    assert report["status"] == "READY"
+    assert report["replayed"] is False
+    assert report["download_url"] == f"/api/v1/reports/{report['id']}/download"
+    assert "object_key" not in created.get_data(as_text=True)
+
+    replay = client.post(
+        f"/api/v1/transactions/{transaction_id}/reports",
+        headers=_headers(owner, key),
+        json={"format": "HTML"},
+    )
+    assert replay.status_code == 200
+    assert replay.json["data"]["id"] == report["id"]
+    assert replay.json["data"]["replayed"] is True
+
+    denied = client.get(f"/api/v1/reports/{report['id']}/download", headers=_headers(outsider))
+    assert denied.status_code == 404
+
+    downloaded = client.get(f"/api/v1/reports/{report['id']}/download", headers=_headers(owner))
+    assert downloaded.status_code == 200, downloaded.get_data(as_text=True)
+    assert downloaded.headers["Cache-Control"].startswith("private, no-store")
+    assert downloaded.headers["Pragma"] == "no-cache"
+    assert downloaded.headers["X-Content-Type-Options"] == "nosniff"
+    assert downloaded.headers["Content-Security-Policy"] == "sandbox; default-src 'none'"
+    assert "attachment" in downloaded.headers["Content-Disposition"]
+    html_report = downloaded.get_data(as_text=True)
+    assert "&lt;script&gt;" in html_report
+    assert "<script>" not in html_report
+    assert "Fraud-risk assessment" in html_report
+    assert "Transaction verification" in html_report
+    assert "not a live confirmation" in html_report
+
+    with app.app_context():
+        artifact = db.session.get(ReportArtifact, uuid.UUID(report["id"]))
+        assert artifact is not None
+        assert artifact.owner_user_id == uuid.UUID(owner["user"]["id"])
+        assert artifact.analysis_run_id == run_id
+        assert artifact.sha256 == hashlib.sha256(downloaded.data).hexdigest()
+        assert artifact.object_key not in html_report
