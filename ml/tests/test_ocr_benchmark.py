@@ -687,6 +687,50 @@ def test_text_attribution_containment_priority(
     )
 
 
+def test_text_attribution_rejects_available_comparison_without_observed_value() -> None:
+    comparison = ocr_benchmark.FieldComparison(
+        "reference",
+        "reference",
+        "reference",
+        "ABC12345",
+        None,
+        False,
+        True,
+        (),
+    )
+
+    with pytest.raises(OCRBenchmarkError, match="availability state is invalid"):
+        ocr_benchmark._classify_text_attribution(comparison, truth_present=True)
+
+
+@pytest.mark.parametrize(
+    ("truth_subtype", "observed_field"),
+    [
+        ("recipient_name_truth", "recipient_wallet"),
+        ("recipient_wallet_truth", "recipient"),
+        ("unsupported_truth_subtype", "recipient"),
+    ],
+)
+def test_recipient_truth_presence_rejects_mismatched_comparison_contract(
+    truth_subtype: str,
+    observed_field: str,
+) -> None:
+    comparison = ocr_benchmark.FieldComparison(
+        "recipient",
+        "recipient",
+        observed_field,
+        "DEMO PERSON",
+        None,
+        False,
+        False,
+        (),
+        truth_subtype=truth_subtype,
+    )
+
+    with pytest.raises(OCRBenchmarkError, match=r"recipient .* is invalid"):
+        ocr_benchmark._recipient_truth_present(comparison, "Recipient: Demo Person")
+
+
 def test_field_scoring_uses_normalized_truth_and_excludes_unavailable_fields() -> None:
     parser = parse_momo_text("Amount GHS 10.00 Reference: ABC12345")
     truth = {
@@ -1017,6 +1061,28 @@ def test_parser_ceiling_report_metadata_requires_every_identity(
 
 
 @pytest.mark.parametrize(
+    ("identity", "invalid_value"),
+    [
+        ("schema_version", "ghana-ocr-parser-ceiling-report-v3"),
+        ("diagnostic_contract_version", "unsupported-attribution-contract"),
+        ("benchmark_version", "unsupported-benchmark"),
+        ("parser_version", "unsupported-parser"),
+        ("field_schema_version", "unsupported-field-schema"),
+        ("partition", "train"),
+    ],
+)
+def test_parser_ceiling_report_rejects_wrong_identity_values(
+    tmp_path: Path,
+    identity: str,
+    invalid_value: str,
+) -> None:
+    report = _valid_parser_ceiling_report(tmp_path)
+    report[identity] = invalid_value
+
+    _assert_parser_ceiling_report_rejected(report)
+
+
+@pytest.mark.parametrize(
     "flag",
     [
         "raw_text_persisted",
@@ -1220,6 +1286,80 @@ def test_parser_ceiling_diagnostic_attributes_truth_in_suppressed_amount_pool(
     }
     assert "20.00" not in json.dumps(report)
     assert "10.00" not in json.dumps(report)
+
+
+@pytest.mark.parametrize(
+    ("transcript", "truth_amount", "attribution", "expected_bucket_counts"),
+    [
+        (
+            "No currency candidate",
+            "10.00",
+            "no_valid_currency_candidate",
+            {
+                "labelled": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+                "currency": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+                "active": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+            },
+        ),
+        (
+            "GHS 10.00 and GHS 20.00",
+            "10.00",
+            "truth_in_active_pool_not_exact",
+            {
+                "labelled": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+                "currency": {"0": 0, "1": 0, "2": 1, "3_plus": 0},
+                "active": {"0": 0, "1": 0, "2": 1, "3_plus": 0},
+            },
+        ),
+        (
+            "GHS 10.00 GHS 20.00 GHS 30.00",
+            "99.00",
+            "truth_absent_all_candidate_pools",
+            {
+                "labelled": {"0": 1, "1": 0, "2": 0, "3_plus": 0},
+                "currency": {"0": 0, "1": 0, "2": 0, "3_plus": 1},
+                "active": {"0": 0, "1": 0, "2": 0, "3_plus": 1},
+            },
+        ),
+    ],
+)
+def test_parser_ceiling_diagnostic_attributes_amount_candidate_boundaries(
+    tmp_path: Path,
+    transcript: str,
+    truth_amount: str,
+    attribution: str,
+    expected_bucket_counts: dict[str, dict[str, int]],
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = transcript
+    truth["fields"] = [{"name": "amount", "normalized": truth_amount}]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    amount_attributions = report["mismatch_attribution_counts"]["amount"]
+    assert amount_attributions[attribution] == 1
+    assert sum(amount_attributions.values()) == 1
+    assert report["amount_candidate_count_buckets"] == expected_bucket_counts
+    assert transcript not in json.dumps(report)
+    assert truth_amount not in json.dumps(report)
 
 
 def test_parser_ceiling_reference_fragments_do_not_create_truth_presence(
