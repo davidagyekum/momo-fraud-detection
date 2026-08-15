@@ -36,7 +36,7 @@
 
 **Interfaces:**
 - Consumes: `EvidenceMode`, `RiskBand` and `legacy_risk_from_band` from `momo_fdvs.contracts.evidence`.
-- Produces: `PolicyReason`, `ModelPolicySignal`, `AnalysisPolicyInput`, `AnalysisPolicyResult`, `PolicyFailure`, `load_risk_policy(path: Path) -> LoadedRiskPolicy`, and `evaluate_risk_policy(policy: LoadedRiskPolicy, value: AnalysisPolicyInput) -> AnalysisPolicyResult`. `ModelPolicySignal.kind` is exactly `IMAGE` or `STRUCTURED`; its classmethod is `unavailable(kind: Literal["IMAGE", "STRUCTURED"], reason_code: str) -> ModelPolicySignal`.
+- Produces: `PolicyReason`, `ModelPolicySignal`, `AnalysisPolicyInput`, `AnalysisPolicyResult`, `PolicyFailure`, `load_risk_policy(path: Path, *, expected_sha256: str | None = None) -> LoadedRiskPolicy`, and `evaluate_risk_policy(policy: LoadedRiskPolicy, value: AnalysisPolicyInput) -> AnalysisPolicyResult`. `ModelPolicySignal.kind` is exactly `IMAGE` or `STRUCTURED`; its classmethod is `unavailable(kind: Literal["IMAGE", "STRUCTURED"], reason_code: str) -> ModelPolicySignal`.
 
 - [ ] **Step 1: Write failing policy tests**
 
