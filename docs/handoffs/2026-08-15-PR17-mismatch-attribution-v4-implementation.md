@@ -12,10 +12,11 @@
 - Immutable v4 runtime implementation SHA: `22a30a5adb713f7ddf6902ccc5387e203363c5f8`
 - Output-free notebook commit SHA: `9ac6d4dbb70e6822d08fe4d87e4629802fd09dce`
 - Notebook policy/test head before closeout: `bcaa179106774606c7a765a27ab8b4063d260c53`
-- Final head SHA: documentation closure commit at the pushed branch head
-- Pull request: creation or existing-PR lookup follows the documentation commit and push
-- Push status: pending at handoff authoring time
-- Worktree status: scoped documentation edits pending commit at handoff authoring time
+- Initial publication head: `initial_publication_head=824935c8db2345e0399c7567a93854842ed73e8c`
+- Documentation-correction head: this file cannot embed the SHA of the commit that contains its own correction without changing that SHA; the exact current head is authoritative in PR #15 metadata and its `current_pr_head=<40-hex SHA>` body marker after each corrective push
+- Pull request: [PR #15 — feat(ocr): complete governed OCR benchmark and parser diagnostics](https://github.com/davidagyekum/momo-fraud-detection/pull/15), open for review and not merged at initial publication
+- Push status: verified; `824935c8db2345e0399c7567a93854842ed73e8c` was pushed to `origin/codex/p17-ocr-benchmark`, and local/remote tracking heads matched exactly
+- Worktree status: clean tracking branch after initial publication; subsequent documentation-only correction is published on the same PR branch
 
 ## Scope completed
 
@@ -131,8 +132,13 @@ task closeout base/head before docs: a99839d69a141f420f97dd298ce517bb074aa6d2
 runtime implementation: 22a30a5adb713f7ddf6902ccc5387e203363c5f8
 notebook commit: 9ac6d4dbb70e6822d08fe4d87e4629802fd09dce
 branch: codex/p17-ocr-benchmark
-documentation commit: pending at authoring time
-push output: pending at authoring time
+initial_publication_head=824935c8db2345e0399c7567a93854842ed73e8c
+initial push: 2a27ade..824935c  codex/p17-ocr-benchmark -> codex/p17-ocr-benchmark
+initial local head: 824935c8db2345e0399c7567a93854842ed73e8c
+initial remote head: 824935c8db2345e0399c7567a93854842ed73e8c
+pull request: https://github.com/davidagyekum/momo-fraud-detection/pull/15
+pull request initial status: OPEN, not merged
+documentation correction: exact resulting head is recorded as current_pr_head=<40-hex SHA> in PR #15 metadata/body because a commit cannot self-embed its own SHA
 ```
 
 ## Owner-operated evidence checkpoint / next exact task
