@@ -255,7 +255,11 @@ def test_image_evidence_persists_without_risk_and_diagnostics_are_private(app: F
         headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
     )
     assert response.status_code == 202, response.get_data(as_text=True)
-    data = response.json["data"]
+    started = response.json["data"]
+    evidence_url = f"/api/v1/analyses/{started['analysis_run_id']}/evidence"
+    owner_evidence = client.get(evidence_url, headers=_headers(owner))
+    assert owner_evidence.status_code == 200
+    data = owner_evidence.json["data"]
     assert data["image_evidence"]["status"] == "COMPLETED"
     assert data["image_evidence"]["classification"] is None
     assert data["image_evidence"]["tamper_probability"] is None
@@ -264,13 +268,13 @@ def test_image_evidence_persists_without_risk_and_diagnostics_are_private(app: F
         "supporting_evidence_only": True,
     }
     assert "diagnostic_media" not in data["image_evidence"]
-    assert "IMAGE_ANALYSIS" not in data["unavailable_stages"]
-    assert data["risk"]["status"] == "UNAVAILABLE"
+    deterministic_stage = next(
+        stage for stage in data["stages"] if stage["stage"] == "DETERMINISTIC_IMAGE"
+    )
+    assert deterministic_stage["status"] == "COMPLETED"
+    assert data["risk"]["band"] == "inconclusive"
     assert data["risk"]["class"] is None and data["risk"]["score"] is None
 
-    evidence_url = data["evidence_url"]
-    owner_evidence = client.get(evidence_url, headers=_headers(owner))
-    assert owner_evidence.status_code == 200
     assert "diagnostic_media" not in owner_evidence.json["data"]["image_evidence"]
     outsider = _register(client, "Forensics Outsider")
     assert client.get(evidence_url, headers=_headers(outsider)).status_code == 404
@@ -296,7 +300,7 @@ def test_image_evidence_persists_without_risk_and_diagnostics_are_private(app: F
         assert diagnostic.content_type == "image/png"
         assert diagnostic.headers["Cache-Control"].startswith("private, no-store")
 
-    analysis_id = uuid.UUID(data["analysis_run_id"])
+    analysis_id = uuid.UUID(started["analysis_run_id"])
     with app.app_context():
         run = db.session.get(AnalysisRun, analysis_id)
         result = db.session.scalar(
@@ -305,7 +309,7 @@ def test_image_evidence_persists_without_risk_and_diagnostics_are_private(app: F
         stage = db.session.scalar(
             select(AnalysisStageRun).where(
                 AnalysisStageRun.analysis_run_id == analysis_id,
-                AnalysisStageRun.stage == "IMAGE_ANALYSIS",
+                AnalysisStageRun.stage == "DETERMINISTIC_IMAGE",
             )
         )
         transaction = db.session.get(Transaction, transaction_id)
@@ -363,12 +367,18 @@ def test_missing_private_original_returns_explicit_unavailable_image_state(app: 
         headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
     )
     assert response.status_code == 202
-    assert response.json["data"]["verification"]["status"] in {
+    evidence = client.get(
+        f"/api/v1/analyses/{response.json['data']['analysis_run_id']}/evidence",
+        headers=_headers(owner),
+    )
+    assert evidence.status_code == 200
+    data = evidence.json["data"]
+    assert data["verification"]["status"] in {
         "VERIFIED",
         "UNVERIFIED",
         "MISMATCH",
     }
-    assert response.json["data"]["image_evidence"] == {
+    assert data["image_evidence"] == {
         "classification": None,
         "policy": {
             "single_weak_signal_can_classify_fraud": False,
@@ -379,4 +389,8 @@ def test_missing_private_original_returns_explicit_unavailable_image_state(app: 
         "summary": "Deterministic image evidence was unavailable; no values were invented.",
         "tamper_probability": None,
     }
-    assert "IMAGE_ANALYSIS" in response.json["data"]["unavailable_stages"]
+    deterministic_stage = next(
+        stage for stage in data["stages"] if stage["stage"] == "DETERMINISTIC_IMAGE"
+    )
+    assert deterministic_stage["status"] == "FAILED"
+    assert deterministic_stage["error_code"] == "IMAGE_STORAGE_UNAVAILABLE"

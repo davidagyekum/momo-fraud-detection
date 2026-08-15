@@ -292,8 +292,10 @@ def test_confirmation_preserves_original_and_enforces_analysis_guard(
     )
     assert partial.status_code == 202
     assert partial.json["data"]["status"] == "PARTIAL"
-    assert partial.json["data"]["verification"]["status"] == "UNVERIFIED"
-    assert partial.json["data"]["risk"]["status"] == "UNAVAILABLE"
+    analysis = client.get(partial.json["data"]["poll_url"], headers=_headers(owner))
+    assert analysis.status_code == 200
+    assert analysis.json["data"]["verification"]["status"] == "UNVERIFIED"
+    assert analysis.json["data"]["risk"]["band"] == "inconclusive"
 
     with app.app_context():
         result = db.session.get(OCRResult, uuid.UUID(run["ocr_result_id"]))

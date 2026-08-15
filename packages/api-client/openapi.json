@@ -256,6 +256,87 @@
         ],
         "type": "object"
       },
+      "AnalysisData": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "evidence_summary": {
+            "$ref": "#/components/schemas/AnalysisEvidenceSummary"
+          },
+          "evidence_url": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/AnalysisProgress"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/AnalysisRisk"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "verification": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/VerificationSummary"
+              }
+            ]
+          },
+          "versions": {
+            "$ref": "#/components/schemas/AnalysisVersions"
+          }
+        },
+        "required": [
+          "completed_at",
+          "created_at",
+          "evidence_summary",
+          "evidence_url",
+          "id",
+          "progress",
+          "risk",
+          "status",
+          "transaction_id",
+          "verification",
+          "versions"
+        ],
+        "type": "object"
+      },
+      "AnalysisEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnalysisData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "AnalysisEvidenceData": {
         "additionalProperties": false,
         "properties": {
@@ -267,8 +348,7 @@
             "type": "boolean"
           },
           "configuration_versions": {
-            "additionalProperties": {},
-            "type": "object"
+            "$ref": "#/components/schemas/AnalysisVersions"
           },
           "current_stage": {
             "nullable": true,
@@ -279,13 +359,11 @@
             "type": "object"
           },
           "risk": {
-            "additionalProperties": {},
-            "type": "object"
+            "$ref": "#/components/schemas/AnalysisRisk"
           },
           "stages": {
             "items": {
-              "additionalProperties": {},
-              "type": "object"
+              "$ref": "#/components/schemas/AnalysisStage"
             },
             "type": "array"
           },
@@ -297,9 +375,15 @@
             "type": "string"
           },
           "verification": {
-            "additionalProperties": {},
-            "nullable": true,
-            "type": "object"
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/VerificationSummary"
+              }
+            ]
           }
         },
         "required": [
@@ -328,6 +412,242 @@
         "required": [
           "data",
           "meta"
+        ],
+        "type": "object"
+      },
+      "AnalysisEvidenceSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "automated_evidence_immutable": {
+            "type": "boolean"
+          },
+          "deterministic_image": {
+            "$ref": "#/components/schemas/ComponentStatus"
+          },
+          "image_model": {
+            "$ref": "#/components/schemas/ComponentStatus"
+          },
+          "structured_model": {
+            "$ref": "#/components/schemas/ComponentStatus"
+          }
+        },
+        "required": [
+          "automated_evidence_immutable",
+          "deterministic_image",
+          "image_model",
+          "structured_model"
+        ],
+        "type": "object"
+      },
+      "AnalysisProgress": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_stage_count": {
+            "type": "integer"
+          },
+          "current_stage": {
+            "nullable": true,
+            "type": "string"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisStage"
+            },
+            "type": "array"
+          },
+          "total_stage_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "completed_stage_count",
+          "current_stage",
+          "stages",
+          "total_stage_count"
+        ],
+        "type": "object"
+      },
+      "AnalysisRisk": {
+        "additionalProperties": false,
+        "properties": {
+          "band": {
+            "type": "string"
+          },
+          "class": {
+            "nullable": true,
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "missing_signals": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "policy_version": {
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyReason"
+            },
+            "type": "array"
+          },
+          "score": {
+            "nullable": true,
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "band",
+          "class",
+          "limitations",
+          "missing_signals",
+          "policy_version",
+          "reasons",
+          "score",
+          "status",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "AnalysisStage": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "type": "integer"
+          },
+          "duration_ms": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "error_code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "attempt",
+          "duration_ms",
+          "error_code",
+          "stage",
+          "status"
+        ],
+        "type": "object"
+      },
+      "AnalysisStartData": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "current_stage": {
+            "nullable": true,
+            "type": "string"
+          },
+          "poll_url": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis_run_id",
+          "current_stage",
+          "poll_url",
+          "replayed",
+          "status",
+          "transaction_id"
+        ],
+        "type": "object"
+      },
+      "AnalysisStartEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnalysisStartData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "AnalysisVersions": {
+        "additionalProperties": false,
+        "properties": {
+          "image_forensics_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "image_model_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "ocr_engine_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "ocr_pipeline_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "policy_sha256": {
+            "nullable": true,
+            "type": "string"
+          },
+          "policy_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "rule_set_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "structured_model_version": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "image_forensics_version",
+          "image_model_version",
+          "ocr_engine_version",
+          "ocr_pipeline_version",
+          "policy_sha256",
+          "policy_version",
+          "rule_set_version",
+          "structured_model_version"
         ],
         "type": "object"
       },
@@ -365,6 +685,32 @@
           "version": {
             "default": null,
             "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ComponentStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "model_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "reason_code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
             "type": "string"
           }
         },
@@ -790,80 +1136,23 @@
         },
         "type": "object"
       },
-      "PartialAnalysisData": {
+      "PolicyReason": {
         "additionalProperties": false,
         "properties": {
-          "analysis_id": {
-            "format": "uuid",
+          "code": {
             "type": "string"
           },
-          "analysis_run_id": {
-            "format": "uuid",
+          "severity": {
             "type": "string"
           },
-          "current_stage": {
+          "title": {
             "type": "string"
-          },
-          "evidence_url": {
-            "type": "string"
-          },
-          "image_evidence": {
-            "additionalProperties": {},
-            "type": "object"
-          },
-          "replayed": {
-            "type": "boolean"
-          },
-          "risk": {
-            "additionalProperties": {},
-            "type": "object"
-          },
-          "status": {
-            "type": "string"
-          },
-          "transaction_id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "unavailable_stages": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "verification": {
-            "additionalProperties": {},
-            "type": "object"
           }
         },
         "required": [
-          "analysis_id",
-          "analysis_run_id",
-          "current_stage",
-          "evidence_url",
-          "image_evidence",
-          "replayed",
-          "risk",
-          "status",
-          "transaction_id",
-          "unavailable_stages",
-          "verification"
-        ],
-        "type": "object"
-      },
-      "PartialAnalysisEnvelope": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/PartialAnalysisData"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/Meta"
-          }
-        },
-        "required": [
-          "data",
-          "meta"
+          "code",
+          "severity",
+          "title"
         ],
         "type": "object"
       },
@@ -1622,6 +1911,73 @@
         ],
         "type": "object"
       },
+      "VerificationSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "type": "string"
+          },
+          "candidate_method": {
+            "type": "string"
+          },
+          "disclaimer": {
+            "type": "string"
+          },
+          "field_comparisons": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "label": {
+            "type": "string"
+          },
+          "matched_field_count": {
+            "type": "integer"
+          },
+          "mismatched_field_count": {
+            "type": "integer"
+          },
+          "reference_transaction_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "rule_set_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "verifier_version": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "basis",
+          "candidate_method",
+          "disclaimer",
+          "field_comparisons",
+          "label",
+          "matched_field_count",
+          "mismatched_field_count",
+          "reference_transaction_id",
+          "rule_set_version",
+          "status",
+          "summary",
+          "verifier_version",
+          "warnings"
+        ],
+        "type": "object"
+      },
       "VersionData": {
         "additionalProperties": false,
         "properties": {
@@ -2281,6 +2637,46 @@
         ]
       }
     },
+    "/api/v1/analyses/{analysis_run_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "404": {
+            "description": "Analysis is not visible to the caller."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return the persisted policy result and bounded progress projection.",
+        "tags": [
+          "analyses-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "analysis_run_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/analyses/{analysis_run_id}/evidence": {
       "get": {
         "responses": {
@@ -2811,7 +3207,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PartialAnalysisEnvelope"
+                  "$ref": "#/components/schemas/AnalysisStartEnvelope"
                 }
               }
             },
@@ -2827,7 +3223,7 @@
             "$ref": "#/components/responses/DEFAULT_ERROR"
           }
         },
-        "summary": "Run stored-record verification and expose unavailable risk stages honestly.",
+        "summary": "Run the bounded evidence pipeline for an OCR-confirmed transaction.",
         "tags": [
           "ocr-v1"
         ]
@@ -3116,7 +3512,7 @@
       "name": "admin-users-v1"
     },
     {
-      "description": "Immutable automated analysis evidence",
+      "description": "Persisted immutable analysis results and evidence",
       "name": "analyses-v1"
     },
     {

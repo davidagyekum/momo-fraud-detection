@@ -302,18 +302,16 @@ def test_analysis_persists_verification_separately_from_unavailable_risk(app: Fl
         headers=_headers(owner, key),
     )
     assert response.status_code == 202, response.get_data(as_text=True)
-    data = response.json["data"]
+    started = response.json["data"]
+    detail = client.get(started["poll_url"], headers=_headers(owner))
+    assert detail.status_code == 200
+    data = detail.json["data"]
     assert data["status"] == "PARTIAL"
     assert data["verification"]["status"] == "VERIFIED"
     assert data["verification"]["basis"] == "STORED_IMPORTED_RECORD"
     assert "not live confirmation" in data["verification"]["disclaimer"]
-    assert data["risk"] == {
-        "class": None,
-        "reason_code": "MODEL_AND_RISK_STAGES_NOT_AVAILABLE",
-        "score": None,
-        "status": "UNAVAILABLE",
-        "summary": "Fraud risk has not been calculated in this build.",
-    }
+    assert data["risk"]["band"] == "inconclusive"
+    assert data["risk"]["class"] is None and data["risk"]["score"] is None
 
     replay = client.post(
         f"/api/v1/transactions/{transaction_id}/analyses",
@@ -321,10 +319,10 @@ def test_analysis_persists_verification_separately_from_unavailable_risk(app: Fl
     )
     assert replay.status_code == 202
     assert replay.json["data"]["replayed"] is True
-    assert replay.json["data"]["analysis_id"] == data["analysis_id"]
+    assert replay.json["data"]["analysis_run_id"] == data["id"]
 
     with app.app_context():
-        run = db.session.get(AnalysisRun, uuid.UUID(data["analysis_id"]))
+        run = db.session.get(AnalysisRun, uuid.UUID(data["id"]))
         assert run is not None
         assert run.risk_score is None and run.risk_class is None
         result = db.session.scalar(
@@ -341,7 +339,12 @@ def test_analysis_persists_verification_separately_from_unavailable_risk(app: Fl
         headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
     )
     assert mismatch.status_code == 202
-    assert mismatch.json["data"]["verification"]["status"] == "MISMATCH"
-    amount_comparison = mismatch.json["data"]["verification"]["field_comparisons"]["amount"]
+    mismatch_detail = client.get(mismatch.json["data"]["poll_url"], headers=_headers(owner))
+    assert mismatch_detail.status_code == 200
+    mismatch_data = mismatch_detail.json["data"]
+    assert mismatch_data["verification"]["status"] == "MISMATCH"
+    amount_comparison = mismatch_data["verification"]["field_comparisons"]["amount"]
     assert amount_comparison["reason"] == "FIELD_DIFFERED"
-    assert mismatch.json["data"]["risk"]["status"] == "UNAVAILABLE"
+    assert mismatch_data["risk"]["band"] == "high_risk"
+    assert mismatch_data["risk"]["class"] == "FRAUDULENT"
+    assert mismatch_data["risk"]["score"] is None
