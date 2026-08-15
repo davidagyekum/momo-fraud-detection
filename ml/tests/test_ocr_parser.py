@@ -74,27 +74,31 @@ def test_amount_normalization_and_ambiguity(
 
 
 @pytest.mark.parametrize(
-    ("text", "expected"),
+    ("text", "engine_confidence", "expected"),
     [
-        ("Amount GHS 10.00", ("10.00", "10.00", True, ())),
-        ("Balance GHS 10.00", ("10.00", "10.00", True, ())),
+        ("Amount GHS 10.00", None, ("10.00", "10.00", 0.92, True, ())),
+        ("Balance GHS 10.00", None, ("10.00", "10.00", 0.72, True, ())),
+        ("Amount GHS 10.00", 0.8, ("10.00", "10.00", 0.878, True, ())),
+        ("Balance GHS 10.00", 0.8, ("10.00", "10.00", 0.748, True, ())),
         (
             "Amount GHS 10.00 and total GHS 20.00",
-            ("10.00 | 20.00", None, False, ("AMOUNT_AMBIGUOUS",)),
+            None,
+            ("10.00 | 20.00", None, 0.25, False, ("AMOUNT_AMBIGUOUS",)),
         ),
-        ("Amount GHS 10.00 and fee GHS 10.00", ("10.00", "10.00", True, ())),
-        ("Amount: GHS 1,001.2", ("1,001.2", "1001.20", True, ())),
-        ("Amount GHS 10.123", (None, None, False, ("AMOUNT_NOT_FOUND",))),
-        ("No currency candidate", (None, None, False, ("AMOUNT_NOT_FOUND",))),
-        ("Paid GH¢ 5.00", ("5.00", "5.00", True, ())),
+        ("Amount GHS 10.00 and fee GHS 10.00", None, ("10.00", "10.00", 0.92, True, ())),
+        ("Amount: GHS 1,001.2", None, ("1,001.2", "1001.20", 0.92, True, ())),
+        ("Amount GHS 10.123", None, (None, None, 0.0, False, ("AMOUNT_NOT_FOUND",))),
+        ("No currency candidate", None, (None, None, 0.0, False, ("AMOUNT_NOT_FOUND",))),
+        ("Paid GH¢ 5.00", None, ("5.00", "5.00", 0.92, True, ())),
     ],
 )
 def test_amount_parser_output_parity(
     text: str,
-    expected: tuple[str | None, str | None, bool, tuple[str, ...]],
+    engine_confidence: float | None,
+    expected: tuple[str | None, str | None, float, bool, tuple[str, ...]],
 ) -> None:
-    field = parse_amount(text)
-    assert (field.raw, field.normalized, field.available, field.warnings) == expected
+    field = parse_amount(text, engine_confidence)
+    assert (field.raw, field.normalized, field.confidence, field.available, field.warnings) == expected
 
 
 def test_amount_candidate_snapshot_keeps_suppressed_currency_pool_private() -> None:
@@ -105,6 +109,10 @@ def test_amount_candidate_snapshot_keeps_suppressed_currency_pool_private() -> N
     assert snapshot.currency_distinct_normalized == ("20.00", "10.00")
     assert snapshot.active_source == "labelled"
     assert snapshot.active_distinct_normalized == ("20.00",)
+    field = parse_amount("Amount GHS 20.00\nTransfer value GHS 10.00")
+    assert field.normalized == "20.00"
+    assert field.available is True
+    assert field.warnings == ()
 
 
 def test_reference_preserves_ocr_ambiguity_and_never_silently_corrects() -> None:
