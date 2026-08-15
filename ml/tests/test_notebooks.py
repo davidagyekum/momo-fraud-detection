@@ -64,19 +64,24 @@ def test_committed_standard_notebooks_are_clean_and_match_recorded_report() -> N
 def test_pr17_parser_ceiling_notebook_is_pinned_and_stops_before_adapters() -> None:
     notebook = json.loads((NOTEBOOK_ROOT / "06_benchmark_ocr.ipynb").read_text(encoding="utf-8"))
     code_cells = [cell for cell in notebook["cells"] if cell.get("cell_type") == "code"]
-    source = "\n".join(
+    code_sources = [
         "".join(cell.get("source", []))
         if isinstance(cell.get("source"), list)
         else str(cell.get("source", ""))
         for cell in code_cells
+    ]
+    assert 'TARGET_COMMIT = "22a30a5adb713f7ddf6902ccc5387e203363c5f8"' in code_sources[0]
+    assert "RUN_BENCHMARK = False" in code_sources[0]
+    assert "run_ocr_parser_ceiling_diagnostic(" in code_sources[3]
+    assert "implementation_commit_sha=TARGET_COMMIT" in code_sources[3]
+    adapter_cell_index = next(
+        index
+        for index, source in enumerate(code_sources)
+        if any(
+            name in source for name in ("TesseractAdapter", "EasyOCRAdapter", "PaddleOCRAdapter")
+        )
     )
-    assert "implementation_commit_sha=TARGET_COMMIT" in source
-    assert "RUN_BENCHMARK = False" in source
-    diagnostic_position = source.index("run_ocr_parser_ceiling_diagnostic(")
-    adapter_position = min(
-        source.index(name) for name in ("TesseractAdapter", "EasyOCRAdapter", "PaddleOCRAdapter")
-    )
-    assert diagnostic_position < adapter_position
+    assert adapter_cell_index > 3
     assert all(cell.get("execution_count") is None for cell in code_cells)
     assert all(cell.get("outputs") == [] for cell in code_cells)
 
