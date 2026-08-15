@@ -318,13 +318,13 @@ def parse_reference_csv(content: bytes) -> ImportValidation:
     return ImportValidation(total, valid, errors)
 
 
-def _request_hash(payload: dict[str, Any]) -> str:
+def request_hash(payload: dict[str, Any]) -> str:
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
 
-def _claim_idempotency(
+def claim_idempotency(
     user: User, scope: str, key: str, request_hash: str
 ) -> tuple[IdempotencyRecord, bool]:
     if not 8 <= len(key) <= 200:
@@ -378,12 +378,12 @@ def upload_reference_import(
     display_filename = _clean_csv_filename(filename)
     _decode_csv(content)
     digest = sha256_bytes(content)
-    request_hash = _request_hash({"source_label": label, "file_sha256": digest})
-    record, claimed = _claim_idempotency(
-        user, "POST:/api/v1/admin/reference-imports", idempotency_key, request_hash
+    request_digest = request_hash({"source_label": label, "file_sha256": digest})
+    record, claimed = claim_idempotency(
+        user, "POST:/api/v1/admin/reference-imports", idempotency_key, request_digest
     )
     if not claimed:
-        if record.request_hash != request_hash:
+        if record.request_hash != request_digest:
             raise VerificationFailure(
                 "IDEMPOTENCY_KEY_REUSED",
                 "This Idempotency-Key was already used for a different import.",
@@ -526,11 +526,11 @@ def commit_reference_import(
     idempotency_key: str,
     storage: ObjectStorage,
 ) -> tuple[int, bool]:
-    request_hash = _request_hash({"batch_id": str(batch.id), "action": "commit"})
+    request_digest = request_hash({"batch_id": str(batch.id), "action": "commit"})
     scope = f"POST:/api/v1/admin/reference-imports/{batch.id}/commit"
-    record, claimed = _claim_idempotency(user, scope, idempotency_key, request_hash)
+    record, claimed = claim_idempotency(user, scope, idempotency_key, request_digest)
     if not claimed:
-        if record.resource_id != batch.id or record.request_hash != request_hash:
+        if record.resource_id != batch.id or record.request_hash != request_digest:
             raise VerificationFailure(
                 "IDEMPOTENCY_KEY_REUSED",
                 "This Idempotency-Key was already used for a different commit.",
@@ -861,7 +861,9 @@ def evaluate_verification(confirmed_fields: dict[str, Any]) -> VerificationOutco
     )
 
 
-def _reuse_warnings(transaction: Transaction, reference: ReferenceTransaction | None) -> list[str]:
+def verification_reuse_warnings(
+    transaction: Transaction, reference: ReferenceTransaction | None
+) -> list[str]:
     warnings: list[str] = []
     if reference is not None:
         uses = (
@@ -909,13 +911,13 @@ def run_partial_verification_analysis(
             "Stored-record verification is configured, but no active rule set is available.",
             503,
         )
-    request_hash = _request_hash(
+    request_digest = request_hash(
         {"transaction_id": str(transaction.id), "confirmation_id": str(confirmation.id)}
     )
     scope = f"POST:/api/v1/transactions/{transaction.id}/analyses"
-    record, claimed = _claim_idempotency(user, scope, idempotency_key, request_hash)
+    record, claimed = claim_idempotency(user, scope, idempotency_key, request_digest)
     if not claimed:
-        if record.request_hash != request_hash:
+        if record.request_hash != request_digest:
             raise VerificationFailure(
                 "IDEMPOTENCY_KEY_REUSED",
                 "This Idempotency-Key was already used for a different analysis request.",
@@ -959,7 +961,9 @@ def run_partial_verification_analysis(
     now = datetime.now(UTC)
     outcome = evaluate_verification(confirmation.confirmed_fields)
     warnings = list(
-        dict.fromkeys(outcome.warnings + _reuse_warnings(transaction, outcome.reference))
+        dict.fromkeys(
+            outcome.warnings + verification_reuse_warnings(transaction, outcome.reference)
+        )
     )
     run = AnalysisRun(
         transaction_id=transaction.id,
@@ -968,7 +972,7 @@ def run_partial_verification_analysis(
         current_stage="DETERMINISTIC_EVIDENCE_PROCESSING",
         rule_set_id=rule_set.id,
         idempotency_key_hash=record.key_hash,
-        request_fingerprint=request_hash,
+        request_fingerprint=request_digest,
         attempt_count=1,
         queued_at=now,
         started_at=now,
@@ -1163,12 +1167,15 @@ __all__ = [
     "VerificationFailure",
     "VerificationOutcome",
     "batch_projection",
+    "claim_idempotency",
     "commit_reference_import",
     "evaluate_verification",
     "parse_reference_csv",
     "reference_projection",
+    "request_hash",
     "run_partial_verification_analysis",
     "upload_reference_import",
     "validate_reference_import",
     "verification_projection",
+    "verification_reuse_warnings",
 ]
