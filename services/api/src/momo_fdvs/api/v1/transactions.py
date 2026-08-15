@@ -9,11 +9,24 @@ from typing import Any, cast
 from flask import Response, current_app, g, request, send_file
 from flask.views import MethodView
 from flask_smorest import Blueprint
+from sqlalchemy import func, select
+from sqlalchemy.orm import aliased
 
-from momo_fdvs.api.v1.transaction_schemas import TransactionUploadEnvelopeSchema
+from momo_fdvs.api.v1.analyses import risk_projection
+from momo_fdvs.api.v1.transaction_schemas import (
+    TransactionDetailEnvelopeSchema,
+    TransactionHistoryEnvelopeSchema,
+    TransactionHistoryQuerySchema,
+    TransactionUploadEnvelopeSchema,
+)
 from momo_fdvs.errors import error_response
 from momo_fdvs.extensions import db, limiter
-from momo_fdvs.models import Transaction
+from momo_fdvs.models import (
+    AnalysisRun,
+    OCRConfirmation,
+    Transaction,
+    VerificationResult,
+)
 from momo_fdvs.policies.auth import require_auth, require_roles
 from momo_fdvs.services.audit import audit_event
 from momo_fdvs.services.receipts import (
@@ -99,8 +112,124 @@ def _upload_projection(result: Any) -> dict[str, Any]:
     }
 
 
+_BAND_TO_LEGACY = {
+    "low_risk": "GENUINE",
+    "medium_risk": "SUSPICIOUS",
+    "high_risk": "FRAUDULENT",
+}
+
+
+def _analysis_summary(
+    run: AnalysisRun | None, verification_status: str | None
+) -> dict[str, Any] | None:
+    if run is None:
+        return None
+    risk = risk_projection(run)
+    return {
+        "id": run.id,
+        "status": run.status,
+        "band": risk["band"],
+        "class": risk["class"],
+        "score": risk["score"],
+        "verification_status": verification_status,
+        "completed_at": run.completed_at,
+        "policy_version": risk["policy_version"],
+    }
+
+
+def _transaction_summary(
+    transaction: Transaction,
+    latest_run: AnalysisRun | None,
+    verification_status: str | None,
+) -> dict[str, Any]:
+    return {
+        "id": transaction.id,
+        "status": transaction.status,
+        "provider_code": transaction.provider_code,
+        "display_reference_masked": transaction.display_reference_masked,
+        "created_at": transaction.created_at,
+        "updated_at": transaction.updated_at,
+        "thumbnail_url": (
+            f"/api/v1/transactions/{transaction.id}/receipt?variant=thumbnail"
+            if transaction.receipt is not None
+            else None
+        ),
+        "owner_visible": True,
+        "latest_analysis": _analysis_summary(latest_run, verification_status),
+    }
+
+
+def _apply_history_filters(
+    statement: Any,
+    query: dict[str, Any],
+    latest_run: Any,
+    verification: Any,
+) -> Any:
+    if query.get("provider"):
+        statement = statement.where(Transaction.provider_code == query["provider"])
+    if query.get("status"):
+        statement = statement.where(Transaction.status == query["status"])
+    if query.get("verification"):
+        statement = statement.where(verification.status == query["verification"])
+    band = query.get("band")
+    if band == "inconclusive":
+        statement = statement.where(latest_run.risk_class.is_(None), latest_run.status == "PARTIAL")
+    elif band in _BAND_TO_LEGACY:
+        statement = statement.where(latest_run.risk_class == _BAND_TO_LEGACY[band])
+    return statement
+
+
 @transactions_blueprint.route("")
 class TransactionsResource(MethodView):
+    @require_roles("USER")
+    @transactions_blueprint.arguments(TransactionHistoryQuerySchema, location="query")
+    @transactions_blueprint.response(200, TransactionHistoryEnvelopeSchema)
+    def get(self, query: dict[str, Any]) -> dict[str, Any]:
+        """List only the caller's transactions using persisted latest-run summaries."""
+        latest_run = aliased(AnalysisRun)
+        verification = aliased(VerificationResult)
+        statement = (
+            select(Transaction, latest_run, verification.status)
+            .outerjoin(latest_run, latest_run.id == Transaction.latest_analysis_run_id)
+            .outerjoin(
+                verification,
+                verification.analysis_run_id == Transaction.latest_analysis_run_id,
+            )
+            .where(Transaction.user_id == g.current_user.id)
+        )
+        count_statement = (
+            select(func.count(Transaction.id))
+            .outerjoin(latest_run, latest_run.id == Transaction.latest_analysis_run_id)
+            .outerjoin(
+                verification,
+                verification.analysis_run_id == Transaction.latest_analysis_run_id,
+            )
+            .where(Transaction.user_id == g.current_user.id)
+        )
+        statement = _apply_history_filters(statement, query, latest_run, verification)
+        count_statement = _apply_history_filters(count_statement, query, latest_run, verification)
+        page = query["page"]
+        page_size = query["page_size"]
+        rows = db.session.execute(
+            statement.order_by(Transaction.created_at.desc(), Transaction.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).all()
+        total = db.session.scalar(count_statement) or 0
+        return {
+            "data": {
+                "items": [
+                    _transaction_summary(transaction, run, verification_status)
+                    for transaction, run, verification_status in rows
+                ],
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size,
+            },
+            "meta": _meta(),
+        }
+
     @require_roles("USER")
     @limiter.limit(
         lambda: current_app.config["RATE_LIMIT_UPLOAD"],
@@ -190,6 +319,77 @@ class TransactionsResource(MethodView):
             db.session.rollback()
             _audit_rejection(failure)
             return error_response(failure.code, failure.message, failure.status)
+
+
+@transactions_blueprint.route("/<uuid:transaction_id>")
+class TransactionResource(MethodView):
+    @require_roles("USER")
+    @transactions_blueprint.doc(
+        responses={
+            401: {"description": "Authentication is required."},
+            403: {"description": "The USER role is required."},
+            404: {"description": "Transaction not found."},
+        }
+    )
+    @transactions_blueprint.response(200, TransactionDetailEnvelopeSchema)
+    def get(self, transaction_id: uuid.UUID) -> Any:
+        """Return a bounded owner-safe transaction and immutable run history."""
+        transaction = db.session.scalar(
+            select(Transaction).where(
+                Transaction.id == transaction_id,
+                Transaction.user_id == g.current_user.id,
+            )
+        )
+        if transaction is None:
+            return error_response("TRANSACTION_NOT_FOUND", "Transaction not found.", 404)
+        runs = list(
+            db.session.scalars(
+                select(AnalysisRun)
+                .where(AnalysisRun.transaction_id == transaction.id)
+                .order_by(
+                    AnalysisRun.completed_at.desc().nullslast(),
+                    AnalysisRun.created_at.desc(),
+                )
+                .limit(20)
+            ).all()
+        )
+        run_ids = [run.id for run in runs]
+        verification_by_run = {
+            result.analysis_run_id: result.status
+            for result in db.session.scalars(
+                select(VerificationResult).where(VerificationResult.analysis_run_id.in_(run_ids))
+            ).all()
+        }
+        latest = next((run for run in runs if run.id == transaction.latest_analysis_run_id), None)
+        confirmation = (
+            db.session.get(OCRConfirmation, latest.ocr_confirmation_id)
+            if latest is not None
+            else None
+        )
+        data = _transaction_summary(
+            transaction,
+            latest,
+            verification_by_run.get(latest.id) if latest is not None else None,
+        )
+        data.update(
+            {
+                "confirmed_field_coverage": {
+                    "field_count": len(confirmation.confirmed_fields)
+                    if confirmation is not None
+                    else 0,
+                    "correction_count": len(confirmation.corrections)
+                    if confirmation is not None
+                    else 0,
+                    "schema_version": confirmation.schema_version
+                    if confirmation is not None
+                    else None,
+                },
+                "analysis_runs": [
+                    _analysis_summary(run, verification_by_run.get(run.id)) for run in runs
+                ],
+            }
+        )
+        return {"data": data, "meta": _meta()}
 
 
 @transactions_blueprint.route("/<uuid:transaction_id>/receipt")

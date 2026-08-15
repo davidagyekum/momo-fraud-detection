@@ -83,7 +83,7 @@ def _analysis_rows(
     return verification, image_analysis, stages
 
 
-def _risk_projection(run: AnalysisRun) -> dict[str, Any]:
+def risk_projection(run: AnalysisRun) -> dict[str, Any]:
     policy = _as_dict(run.component_scores.get("policy"))
     reasons = policy.get("reasons", run.top_reasons)
     if not isinstance(reasons, list):
@@ -163,7 +163,7 @@ def _analysis_projection(
         "id": run.id,
         "transaction_id": transaction.id,
         "status": run.status,
-        "risk": _risk_projection(run),
+        "risk": risk_projection(run),
         "verification": (
             verification_projection(verification) if verification is not None else None
         ),
@@ -280,7 +280,7 @@ class AnalysisEvidenceResource(MethodView):
                 "status": run.status,
                 "current_stage": run.current_stage,
                 "automated_evidence_immutable": True,
-                "risk": _risk_projection(run),
+                "risk": risk_projection(run),
                 "verification": (
                     verification_projection(verification) if verification is not None else None
                 ),
@@ -304,4 +304,4 @@ class AnalysisEvidenceResource(MethodView):
         }
 
 
-__all__ = ["analyses_blueprint"]
+__all__ = ["analyses_blueprint", "risk_projection"]

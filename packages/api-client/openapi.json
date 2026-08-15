@@ -719,6 +719,27 @@
         ],
         "type": "object"
       },
+      "ConfirmedFieldCoverage": {
+        "additionalProperties": false,
+        "properties": {
+          "correction_count": {
+            "type": "integer"
+          },
+          "field_count": {
+            "type": "integer"
+          },
+          "schema_version": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "correction_count",
+          "field_count",
+          "schema_version"
+        ],
+        "type": "object"
+      },
       "DuplicateWarning": {
         "additionalProperties": false,
         "properties": {
@@ -1737,6 +1758,242 @@
         "required": [
           "data",
           "meta"
+        ],
+        "type": "object"
+      },
+      "TransactionAnalysisSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "band": {
+            "type": "string"
+          },
+          "class": {
+            "nullable": true,
+            "type": "string"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "policy_version": {
+            "type": "string"
+          },
+          "score": {
+            "nullable": true,
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "verification_status": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "band",
+          "class",
+          "completed_at",
+          "id",
+          "policy_version",
+          "score",
+          "status",
+          "verification_status"
+        ],
+        "type": "object"
+      },
+      "TransactionDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_runs": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionAnalysisSummary"
+            },
+            "type": "array"
+          },
+          "confirmed_field_coverage": {
+            "$ref": "#/components/schemas/ConfirmedFieldCoverage"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "display_reference_masked": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latest_analysis": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/TransactionAnalysisSummary"
+              }
+            ]
+          },
+          "owner_visible": {
+            "type": "boolean"
+          },
+          "provider_code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "nullable": true,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis_runs",
+          "confirmed_field_coverage",
+          "created_at",
+          "display_reference_masked",
+          "id",
+          "latest_analysis",
+          "owner_visible",
+          "provider_code",
+          "status",
+          "thumbnail_url",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "TransactionDetailEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransactionDetail"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "TransactionHistoryData": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionSummary"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "TransactionHistoryEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransactionHistoryData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "TransactionSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "display_reference_masked": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latest_analysis": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/TransactionAnalysisSummary"
+              }
+            ]
+          },
+          "owner_visible": {
+            "type": "boolean"
+          },
+          "provider_code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "nullable": true,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "display_reference_masked",
+          "id",
+          "latest_analysis",
+          "owner_visible",
+          "provider_code",
+          "status",
+          "thumbnail_url",
+          "updated_at"
         ],
         "type": "object"
       },
@@ -3074,6 +3331,108 @@
       }
     },
     "/api/v1/transactions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "DRAFT",
+                "UPLOADED",
+                "OCR_PENDING",
+                "OCR_REVIEW",
+                "READY",
+                "ANALYSIS_QUEUED",
+                "ANALYSING",
+                "COMPLETED",
+                "PARTIAL",
+                "FAILED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "verification",
+            "required": false,
+            "schema": {
+              "enum": [
+                "VERIFIED",
+                "UNVERIFIED",
+                "MISMATCH"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "band",
+            "required": false,
+            "schema": {
+              "enum": [
+                "low_risk",
+                "medium_risk",
+                "high_risk",
+                "inconclusive"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionHistoryEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "List only the caller's transactions using persisted latest-run summaries.",
+        "tags": [
+          "transactions-v1"
+        ]
+      },
       "post": {
         "parameters": [
           {
@@ -3176,6 +3535,49 @@
           "transactions-v1"
         ]
       }
+    },
+    "/api/v1/transactions/{transaction_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionDetailEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "The USER role is required."
+          },
+          "404": {
+            "description": "Transaction not found."
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return a bounded owner-safe transaction and immutable run history.",
+        "tags": [
+          "transactions-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
     },
     "/api/v1/transactions/{transaction_id}/analyses": {
       "parameters": [
