@@ -25,8 +25,8 @@
 - Last updated: `2026-08-15`
 - CI status: `Logical PR18 passes locally: 172 backend tests at 85.40% branch-aware coverage; 58 mobile tests at 89.60% statement coverage; 714 ML tests at 90.15% branch-aware coverage; mobile web export, formatting, lint, strict typing, OpenAPI/ER drift, both PostgreSQL upgrade paths and the 588-file secret scan pass. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue. The host remains Node.js 22.23.2/npm 10.9.8 rather than the pinned 24.14.0/10.9.0 runtime.`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR18 evidence-aware screenshot analysis product complete locally; publication/review in progress`
-- Next exact task: `Review and merge stacked PR18, then begin logical PR19 reporting/case workflow without activating the rejected P12 image artifact or claiming live provider verification.`
+- Current phase: `Logical PR18 evidence-aware screenshot analysis product complete and in review as stacked PR #16`
+- Next exact task: `Review/merge PR17 #15, then review/merge stacked PR18 #16; begin logical PR19 only from the merged analysis contracts and without activating the rejected P12 image artifact or claiming live provider verification.`
 
 ## PR10-PR13 reconciliation status
 

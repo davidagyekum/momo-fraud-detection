@@ -9,10 +9,10 @@
 - Base SHA: `d9b096af46232530bc47eff96856260d083885e4`
 - Work branch: `codex/pr18-analysis-product`
 - Implementation head SHA: `756b30fb3371469ea4ff7ad41097ab2dc10cb1ef`
-- Final publication head SHA: pending documentation commit
-- Pull request: pending publication
-- Push status: pending publication
-- Worktree status: documentation changes pending final verification
+- Publication head at PR creation: `a5ca75f910c8db48318acbc0d79c33d8c5a75ae4`
+- Pull request: [#16](https://github.com/davidagyekum/momo-fraud-detection/pull/16), open, ready, stacked on `codex/p17-ocr-benchmark`
+- Push status: verified local and `origin/codex/pr18-analysis-product` equal at PR creation; final closeout marker is recorded in the PR body after this handoff commit
+- Worktree status: clean at PR creation; closeout metadata is the final intended follow-up
 
 ## Scope completed
 
@@ -80,7 +80,7 @@
 | Alembic empty and previous revision upgrades | PASS | both end at `20260815_0003 (head)` |
 | `python scripts/verify.py --backend` | HOST BOUNDARY | Secret scan and nested backend gate pass; wrapper exits 1 only because Node/npm do not match the pin and host Tesseract is absent |
 
-Skipped/blocked checks and reason: hosted GitHub Actions cannot allocate runners because of the repository-owner billing lock. The local host is Node 22.23.2/npm 10.9.8 instead of pinned Node 24.14.0/npm 10.9.0; the existing dependency tree was reused without downloads, and all mobile tests/type/lint/export commands passed.
+Skipped/blocked checks and reason: hosted run `31896938068` created all nine PR checks, but every job was prevented from starting because the repository-owner account is locked for billing; no hosted test step executed. The local host is Node 22.23.2/npm 10.9.8 instead of pinned Node 24.14.0/npm 10.9.0; the existing dependency tree was reused without downloads, and all mobile tests/type/lint/export commands passed.
 
 ## Known defects/blockers
 
@@ -100,4 +100,4 @@ Skipped/blocked checks and reason: hosted GitHub Actions cannot allocate runners
 
 ## Next exact task
 
-Review and merge the stacked PR18 branch, then implement logical PR19 reporting/case workflow from the merged analysis contracts. Do not activate the rejected P12 artifact, open locked-test partitions before PR20, or represent stored-reference verification as live MNO confirmation.
+Review and merge PR17 #15 first, then stacked PR18 #16. Implement logical PR19 reporting/case workflow only from the merged analysis contracts. Do not activate the rejected P12 artifact, open locked-test partitions before PR20, or represent stored-reference verification as live MNO confirmation.
