@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/p17-ocr-benchmark`
-- Base SHA: `b1284e37f8b4e6a38587fee68a44ed8a74203323`
+- Current work branch: `codex/pr18-analysis-product`
+- Base SHA: `d9b096af46232530bc47eff96856260d083885e4`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -23,10 +23,10 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-15`
-- CI status: `Logical PR17 validation/diagnostic ML gate passes locally with 714 tests at 90.15% branch-aware coverage; formatting, Ruff, strict mypy, governance, lock, notebook and controlled-data checks pass. The final secret/prohibited-artifact scan passes 561 candidate files. The repository wrapper remains non-zero only at the host doctor boundary: Node.js 22.23.2 and npm 10.9.8 do not match the pinned frontend runtime, host Tesseract is absent and the optional PostgreSQL CLI is absent. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue.`
+- CI status: `Logical PR18 passes locally: 172 backend tests at 85.40% branch-aware coverage; 58 mobile tests at 89.60% statement coverage; 714 ML tests at 90.15% branch-aware coverage; mobile web export, formatting, lint, strict typing, OpenAPI/ER drift, both PostgreSQL upgrade paths and the 588-file secret scan pass. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue. The host remains Node.js 22.23.2/npm 10.9.8 rather than the pinned 24.14.0/10.9.0 runtime.`
 - Deployment status: `Not deployed`
-- Current phase: `Logical PR17 OCR benchmark/parser — owner-operated parser-ceiling v4 mismatch attribution complete and verified; parser v1 frozen experimental`
-- Next exact task: `Close PR17 evidence on the current branch, then begin logical PR18 analysis-product design from the final PR17 head. Preserve parser v1 unchanged: 24/32 amount truths are absent from every valid candidate pool, while the selected value contains truth for 15/32 recipient and 10/20 reference records; the aggregate does not identify one safe bounded parser repair without inspecting private values.`
+- Current phase: `Logical PR18 evidence-aware screenshot analysis product complete locally; publication/review in progress`
+- Next exact task: `Review and merge stacked PR18, then begin logical PR19 reporting/case workflow without activating the rejected P12 image artifact or claiming live provider verification.`
 
 ## PR10-PR13 reconciliation status
 
@@ -106,6 +106,18 @@
 - Mismatch-attribution v4 implementation: immutable hardened runtime commit `bf042c3a…` preserves raw labelled-source activation independently from valid pool presence, emits valid suppressed-pool attribution when the active pool is empty, redacts private JSON/hash/write failures without chained path-bearing causes, writes atomically, terminates anchored references before prose and removes only surrounding recipient punctuation. Output-free notebook commit `8afac88b…` pins that runtime commit and passes `TARGET_COMMIT` explicitly. Owner instruction: first four code cells, ending with parser-ceiling; stop before adapter code cell. At implementation closeout the private v4 result was pending, while `parser_behavior_changed=false`, `locked_test_accessed=false` and `training_executed=false`; the following evidence entry supersedes only that pending-execution status.
 - Mismatch-attribution v4 result: the owner-operated run at immutable runtime `bf042c3a…` processed all 33 validation transcripts and wrote self-hash-verified report `2405ea0e…`. Amount attribution is 6 exact, 2 no-valid-currency and 24 truth-absent-from-all-candidate-pools over 32; both active-pool selection-error categories are zero. Recipient attribution is led by selected-contains-truth at 15/32, followed by truth-present-not-selected at 8/32 and truth-present-parser-unavailable at 7/32. Reference attribution is led by selected-contains-truth at 10/20, with five truth-absent-parser-unavailable and three truth-absent-transcript records. Timestamp remains deferred at one scored record. All category and candidate-bucket totals conserve their denominators; the canonical self-hash and immutable manifest/split identities verify; all five privacy/training/locked-test flags are false. The aggregate supplies no private values needed to define one safe bounded parser repair, so parser v1 remains unchanged and experimental and PR17 transitions to PR18.
 - Verification: the registered ML gate passes formatting, Ruff, strict mypy, 714 tests at 90.15% branch-aware coverage, governance, lock, notebook and controlled-data checks. The final secret/prohibited-artifact scan passes 561 candidate files. The repository `--ml` wrapper remains non-zero solely because the shared host doctor sees Node.js 22.23.2/npm 10.9.8 instead of the pinned frontend runtime and no host Tesseract; the optional PostgreSQL CLI is also absent. Its secret and ML sections pass independently.
+
+## Logical PR18 evidence-aware screenshot analysis product
+
+- Product journey: the Expo app now captures a receipt with the camera or gallery, uploads it privately, runs OCR, requires user review/correction, starts one idempotent analysis, polls the persisted result and exposes owner-scoped history and transaction detail.
+- Evidence orchestration: eight persisted stages combine immutable OCR confirmation, stored/imported reference verification, deterministic image forensics and explicit model availability. Successful evidence survives subsystem failure; terminal results are `COMPLETED` or honest `PARTIAL` rather than fabricated success.
+- Risk policy: `analysis-risk-policy-demo-v1` is hash-bound and categorical while accepted image and structured models are unavailable. Scores remain null, critical amount/reference mismatches can produce a high-risk review band, and a stored-reference match alone never implies low risk or authenticity.
+- API/history: start/poll/evidence/history/detail endpoints use explicit schemas, idempotency, owner-or-assigned-investigator policy, masked projections and immutable version snapshots. Unassigned investigators and administrators receive a non-enumerating 404. Prior runs are retained; automated output is never rewritten by the mobile client.
+- Mobile boundary: risk and verification render in separate accessible cards with plain-language statuses, confirmed OCR coverage/correction counts, model availability, missing signals, limitations and the automated-risk disclaimer. Null scores are not displayed. Loading, empty, offline, error, retry and permission-denied/session states remain explicit.
+- Controlled vertical slice: a repeatable fictitious PostgreSQL test covers register/login, private upload, controlled OCR, immutable confirmation, reference match, analysis, result, history, detail and evidence. The same analysis ID persists across projections and private filenames/storage keys are absent.
+- Database boundary: migration `20260815_0003` makes stage rows immutable and prevents updates/deletes after an analysis reaches `COMPLETED`, `PARTIAL`, `FAILED` or `CANCELLED`; reanalysis appends a new run.
+- Verification: 172 backend tests pass at 85.40% branch-aware coverage; 58 mobile tests pass at 89.60% statement/71.34% branch coverage; 714 ML tests pass at 90.15% branch-aware coverage; the mobile web export, both Alembic paths, OpenAPI/ER drift and 588-file secret scan pass.
+- Unavailable by design: no accepted CNN image classifier/localizer, screenshot-derived structured classifier, live MNO integration, locked-test/final metric, hosted CI result or deployment exists. The rejected P12 image artifact remains inactive at macro F1 `0.333333`; deterministic image checks are supporting evidence only.
 
 ## Logical PR10 evidence/execution foundation
 
@@ -197,16 +209,16 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-15-PR17-mismatch-attribution-v4-evidence.md`
-- Summary: `Verified and attached the owner-operated aggregate-only v4 report 2405ea0e… from hardened runtime bf042c3a…. Candidate precedence has zero measured support as an amount failure, 24/32 amount truths are absent from all valid pools, and recipient/reference over-selection cannot be safely repaired without private-value inspection. Parser v1 remains unchanged and experimental; training and locked-test access remain false.`
+- Handoff file: `docs/handoffs/2026-08-15-PR18-analysis-product.md`
+- Summary: `Completed the evidence-aware screenshot journey from private upload and OCR review through immutable analysis, stored-reference verification, deterministic image evidence, owner history and mobile result/detail UI. Model-unavailable states remain explicit; no training, locked-test access, live MNO claim or deployment occurred.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read the PR17 section of `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`, ADR-035/ADR-036 and `docs/evidence/PR17_OCR_BENCHMARK_PREPARATION.json` before changing the parser or diagnostics.
-4. Confirm the pushed PR17 head and clean worktree. Preserve the completed engine report `55dc15e6…`, bundle `ca38ece8…`, parser-ceiling v1 report `a7cb9a30…`, v2 report `68bfd786…` and v3 report `194dead2…`; do not repeat the engine benchmark.
+3. Read the PR18 design/plan, ADR-038 and `docs/evidence/PR18_ANALYSIS_PRODUCT.json` before changing orchestration or result semantics.
+4. Confirm the pushed PR18 head and clean worktree. Preserve immutable policy and evidence snapshots; reanalysis must create a new run.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve the three exact PR14 Drive bundles and the completed PaySim/MoMTSim v1 PR15 bundles. Keep all locked-test partitions sealed and unavailable for decisions before PR20; keep the v2 run explicitly incomplete.
-8. Read `docs/handoffs/2026-08-15-PR17-mismatch-attribution-v4-evidence.md`. Preserve report `2405ea0e…`, runtime `bf042c3a…`, notebook `8afac88b…`, the five false privacy/training/locked-test flags and parser v1 unchanged/experimental. Start logical PR18 analysis-product design from the final PR17 head; do not inspect private values to invent a parser repair.
+8. Read `docs/handoffs/2026-08-15-PR18-analysis-product.md`. Keep the P12 image model inactive, treat deterministic image checks as supporting evidence, keep verification separate from risk, and begin only the next prerequisite-complete phase.
