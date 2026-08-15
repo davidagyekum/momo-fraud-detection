@@ -1,5 +1,7 @@
 # 01 — Codex Master Implementation Plan
 
+> **Roadmap reconciliation (2026-08-10):** P00-P12 below preserve the actual historical phase record. For new logical PR10-PR20 work, use `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md` together with `docs/audits/pr10-pr12-gap.md`. Do not duplicate completed GitHub PRs or silently apply breaking taxonomy/API changes.
+
 ## 1. Purpose
 
 This is the execution plan Codex must follow from an empty or partially existing repository through final deployment and inspection. It is intentionally organised into bounded phases so that each session produces a pushed, testable increment and a precise handoff. It is not permission to skip detailed specifications in the other files.

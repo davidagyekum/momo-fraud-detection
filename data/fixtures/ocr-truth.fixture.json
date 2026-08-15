@@ -1,0 +1,10 @@
+{
+  "image_id": "FIXTURE_SCREENSHOT_0001",
+  "amount": {"raw": "GHS 42.50", "normalized": 42.5, "bbox": [40, 140, 200, 42]},
+  "recipient_name": {"raw": "DEMO RECIPIENT", "normalized": "demo recipient", "bbox": [40, 210, 260, 38]},
+  "recipient_wallet": {"raw": "024XXXX123", "normalized": "024xxxx123", "bbox": [40, 260, 220, 38]},
+  "reference": {"raw": "DEMO-REF-0001", "normalized": "DEMO-REF-0001", "bbox": [40, 320, 260, 38]},
+  "timestamp": {"raw": "2026-08-10 14:31", "normalized": "2026-08-10T14:31:00Z", "bbox": [40, 380, 320, 38]},
+  "status": {"raw": "successful", "normalized": "successful", "bbox": [40, 440, 180, 38]},
+  "full_transcript": "SYNTHETIC FIXTURE: GHS 42.50 sent to DEMO RECIPIENT. Reference DEMO-REF-0001."
+}

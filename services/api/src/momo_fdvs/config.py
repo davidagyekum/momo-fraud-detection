@@ -112,6 +112,12 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
             str(repository_root / ".local" / "model-artifacts" / "structured"),
         )
     ).resolve()
+    image_model_root = Path(
+        os.getenv(
+            "IMAGE_MODEL_ROOT",
+            str(repository_root / ".local" / "model-artifacts" / "image"),
+        )
+    ).resolve()
     storage_adapter = os.getenv("STORAGE_ADAPTER", "local").strip().lower()
     if storage_adapter not in {"local", "s3"}:
         raise ConfigurationError("STORAGE_ADAPTER must be local or s3")
@@ -196,6 +202,8 @@ def load_config(config_name: str | None = None) -> dict[str, Any]:
         "LOCAL_PRIVATE_STORAGE_ROOT": storage_root,
         "STRUCTURED_MODEL_ROOT": structured_model_root,
         "STRUCTURED_MODEL_MAX_BYTES": _integer("STRUCTURED_MODEL_MAX_BYTES", 268_435_456),
+        "IMAGE_MODEL_ROOT": image_model_root,
+        "IMAGE_MODEL_MAX_BYTES": _integer("IMAGE_MODEL_MAX_BYTES", 1_073_741_824),
         "STORAGE_ADAPTER": storage_adapter,
         "S3_ENDPOINT_URL": os.getenv("S3_ENDPOINT_URL") or None,
         "S3_REGION": os.getenv("S3_REGION") or None,

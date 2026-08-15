@@ -1,0 +1,14 @@
+{
+  "step": 1,
+  "transaction_type": "TRANSFER",
+  "amount": 42.5,
+  "initiator_id": "ENTITY_DEMO_INITIATOR",
+  "recipient_id": "ENTITY_DEMO_RECIPIENT",
+  "old_balance_initiator": null,
+  "new_balance_initiator": null,
+  "old_balance_recipient": null,
+  "new_balance_recipient": null,
+  "label_is_fraud": 0,
+  "dataset_source": "controlled_synthetic",
+  "source_row_id": "SYNTHETIC_ROW_0001"
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": "transaction-core-search-v1",
+  "candidates": [
+    {"family": "dummy", "parameters": {"strategy": "prior"}},
+    {"family": "logistic", "parameters": {"C": 0.1, "max_iter": 300}},
+    {"family": "logistic", "parameters": {"C": 1.0, "max_iter": 300}},
+    {"family": "logistic", "parameters": {"C": 10.0, "max_iter": 400}},
+    {"family": "histogram", "parameters": {"learning_rate": 0.05, "max_iter": 160, "max_leaf_nodes": 31}},
+    {"family": "histogram", "parameters": {"learning_rate": 0.1, "max_iter": 120, "max_leaf_nodes": 31}},
+    {"family": "histogram", "parameters": {"learning_rate": 0.05, "max_iter": 200, "max_leaf_nodes": 63}},
+    {"family": "xgboost", "parameters": {"learning_rate": 0.05, "n_estimators": 300, "max_depth": 6}},
+    {"family": "xgboost", "parameters": {"learning_rate": 0.1, "n_estimators": 220, "max_depth": 6}},
+    {"family": "xgboost", "parameters": {"learning_rate": 0.05, "n_estimators": 350, "max_depth": 8}},
+    {"family": "forest", "parameters": {"n_estimators": 240, "max_depth": 18, "min_samples_leaf": 2}},
+    {"family": "forest", "parameters": {"n_estimators": 320, "max_depth": 24, "min_samples_leaf": 1}}
+  ],
+  "seeds": [42, 123, 2026],
+  "tuning_fpr_cap": 0.05,
+  "medium_fpr_cap": 0.05,
+  "high_precision_target": 0.9,
+  "minimum_isotonic_positives": 200,
+  "forest_max_rows": 500000,
+  "parity_rows": 128
+}

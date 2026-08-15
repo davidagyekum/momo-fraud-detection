@@ -1,0 +1,32 @@
+{
+  "install_order": [
+    "ml/requirements-runtime.lock",
+    "ml/requirements-ocr.lock",
+    "ml/requirements-training.lock",
+    "ml/requirements-dev.lock"
+  ],
+  "locks": [
+    {
+      "path": "ml/requirements-runtime.lock",
+      "requirement_count": 14,
+      "sha256": "074ab7b414333046081b5892cffafec0fa79a0953472ca219473e82727bdc0dc"
+    },
+    {
+      "path": "ml/requirements-ocr.lock",
+      "requirement_count": 4,
+      "sha256": "4e01f2c3d5e15469c5223e9a75d29428d667006dd0533e7d1752b5f1bb7e3515"
+    },
+    {
+      "path": "ml/requirements-training.lock",
+      "requirement_count": 2,
+      "sha256": "06debd67f5f1fc30966661e49c407784184db56ab88f9147f6d9f0ff0f552b45"
+    },
+    {
+      "path": "ml/requirements-dev.lock",
+      "requirement_count": 11,
+      "sha256": "ced1685ea3330bd0afa6ad61faafbb98b50519beb6b25e45765f5e1b4cb39c6b"
+    }
+  ],
+  "python": ">=3.12,<3.13",
+  "schema_version": "colab-lock-contract-v1"
+}

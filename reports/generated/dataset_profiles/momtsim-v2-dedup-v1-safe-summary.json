@@ -1,0 +1,34 @@
+{
+  "contains_member_names": false,
+  "contains_source_paths": false,
+  "data_classification": "licensed_synthetic_restricted_storage",
+  "dataset_id": "momtsim-v2",
+  "dataset_version": "2-derived-exact-dedup-v1",
+  "file_count": 1,
+  "inventory_sha256": "4831802a6e60b57f6512f99f65c4fe19c96f6f6ede044ddf3b13b07232a8afa0",
+  "network_acquisition_executed": false,
+  "promotable_for_training": false,
+  "quarantine_reasons": [],
+  "redistribution": "blocked",
+  "schema_version": "dataset-safe-profile-v1",
+  "source_sha256": "642fcb2ba7c9cbfffb933729d118f426fefddcbaabbf002793807be169fe80cd",
+  "source_size_bytes": 366396355,
+  "status": "registered",
+  "training_executed": false,
+  "validation_summary": {
+    "dataset_kind": "transaction_csv",
+    "duplicate_row_count": 0,
+    "forbidden_primary_benchmark_columns": [
+      "oldBalInitiator",
+      "newBalInitiator",
+      "oldBalRecipient",
+      "newBalRecipient"
+    ],
+    "invalid_amount_count": 0,
+    "invalid_label_count": 0,
+    "null_cell_count": 0,
+    "positive_count": 2233118,
+    "row_count": 4225938,
+    "step_count": 193
+  }
+}

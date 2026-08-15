@@ -1,9 +1,12 @@
 # Governed data and structured-model runtime, pinned for Python 3.12 / Google Colab.
 joblib==1.5.3
 narwhals==2.24.0
-numpy==2.5.2
+numpy==2.3.5
+opencv-python-headless==4.14.0.94
 pandas==3.0.3
 Pillow==12.3.0
+pyarrow==25.0.1
+pytesseract==0.3.13
 python-dateutil==2.9.0.post0
 scikit-learn==1.9.0
 scipy==1.18.0

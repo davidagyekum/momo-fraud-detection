@@ -1,0 +1,36 @@
+{
+  "schema_version": "dataset-validation-spec-v1",
+  "dataset_id": "stfd",
+  "status": "ready",
+  "dataset_kind": "image_collection",
+  "approved_source_metadata": {
+    "canonical_locator": "huggingface:Zegkim/STFD",
+    "repository_revision": "9edebed2109052a77e9a5581c2ea7ce33d685da0",
+    "repository_last_modified": "2026-03-18T03:15:17Z",
+    "archive_filename": "STFD_ICASSP2023.zip",
+    "archive_size_bytes": 2941753426,
+    "archive_lfs_sha256": "6159a6611caaf71f40acf181b404af5a5dd0547f3d2d8d819bb640e3fb5de18c",
+    "repository_private": false,
+    "repository_gated": false
+  },
+  "tampering_directories": ["1_Copy-move", "2_Splicing", "3_Removal", "4_Insertion", "5_Replacement"],
+  "image_directory_name": "tamper",
+  "mask_directory_name": "masks",
+  "pairing_rule": "same_filename_within_tampering_directory",
+  "pairing_strategy": "parallel_category_directories",
+  "expected_pair_counts": {
+    "1_Copy-move": 758,
+    "2_Splicing": 830,
+    "3_Removal": 1016,
+    "4_Insertion": 701,
+    "5_Replacement": 627
+  },
+  "mask_values": [0, 255],
+  "expected_soft_mask_count": 3,
+  "expected_soft_mask_pixel_count": 12860,
+  "soft_mask_threshold": 128,
+  "grouping_strategy": "single_external_pretraining_corpus_group",
+  "allowed_image_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+  "requires_masks": true,
+  "limitations": ["The exact public repository revision and encrypted archive identity are frozen under approved academic access and no redistribution.", "The public structure documents same-name image/mask pairing across five tampering types but does not publish a source-lineage grouping key, so the whole corpus is one external-pretraining train-only group with no internal STFD validation or test metrics.", "Three source masks contain 12,860 antialiased rendered pixels; source masks remain immutable and only derived training tensors may threshold rendered luminance at 128.", "No archive, password, sample, member name, screenshot or mask may enter Git or a public report."]
+}

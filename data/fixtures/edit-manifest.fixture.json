@@ -1,0 +1,15 @@
+{
+  "edit_id": "EDIT_SYNTHETIC_0001",
+  "source_image_id": "FIXTURE_SCREENSHOT_0001",
+  "derived_image_id": "FIXTURE_SCREENSHOT_TAMPER_0001",
+  "seed": 20260810,
+  "operations": [
+    {
+      "target": "amount",
+      "method": "replacement",
+      "bbox": [40, 140, 200, 42],
+      "old_value": "GHS 42.50",
+      "new_value": "GHS 92.50"
+    }
+  ]
+}

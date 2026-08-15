@@ -14,6 +14,11 @@ from sqlalchemy.exc import IntegrityError
 from momo_fdvs.extensions import db
 from momo_fdvs.models import ModelVersion, User
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.image_model import (
+    ImageModelFailure,
+    load_verified_image_model,
+    predict_image_tampering,
+)
 from momo_fdvs.services.structured_model import (
     StructuredModelFailure,
     load_verified_bundle,
@@ -189,6 +194,156 @@ def activate_structured_model(
     model.activated_at = now
     audit_event(
         "model.structured_rollback" if rollback else "model.structured_activated",
+        "SUCCESS",
+        actor_id=actor.id,
+        roles=roles,
+        target_type="model_version",
+        target_id=model.id,
+        metadata={
+            "name": model.name,
+            "version": model.version,
+            "replaced_model_id": str(current.id) if current is not None else None,
+        },
+    )
+    db.session.commit()
+    return model
+
+
+def register_image_model(payload: dict[str, Any], actor: User, roles: set[str]) -> ModelVersion:
+    """Register one private Keras artifact as READY/FAILED after integrity verification."""
+
+    _require_admin(actor, roles)
+    if payload.get("model_type") != "IMAGE":
+        raise ModelRegistryFailure("MODEL_REGISTRY_PAYLOAD_INVALID", "model_type must be IMAGE.")
+    artifact_sha = _required_text(payload, "artifact_sha256", 64)
+    schema_hash = _required_text(payload, "input_schema_hash", 64)
+    commit_sha = _required_text(payload, "training_commit_sha", 40)
+    if (
+        not SHA256_PATTERN.fullmatch(artifact_sha)
+        or not SHA256_PATTERN.fullmatch(schema_hash)
+        or not COMMIT_PATTERN.fullmatch(commit_sha)
+    ):
+        raise ModelRegistryFailure(
+            "MODEL_REGISTRY_PAYLOAD_INVALID", "A registry hash or commit SHA is invalid."
+        )
+    metrics = payload.get("metrics")
+    frameworks = payload.get("framework_versions")
+    if not isinstance(metrics, dict) or not isinstance(frameworks, dict):
+        raise ModelRegistryFailure(
+            "MODEL_REGISTRY_PAYLOAD_INVALID", "Metrics and framework versions are required."
+        )
+    status = "READY" if metrics.get("acceptance_passed") is True else "FAILED"
+    model = ModelVersion(
+        model_type="IMAGE",
+        name=_required_text(payload, "name", 150),
+        version=_required_text(payload, "version", 100),
+        status=status,
+        artifact_uri=_required_text(payload, "artifact_uri", 1000),
+        artifact_sha256=artifact_sha,
+        input_schema_hash=schema_hash,
+        preprocessing_version=_required_text(payload, "preprocessing_version", 100),
+        framework_versions=frameworks,
+        metrics=metrics,
+        dataset_manifest_hash=payload.get("dataset_manifest_hash"),
+        split_hash=payload.get("split_hash"),
+        training_commit_sha=commit_sha,
+        model_card_key=payload.get("model_card_key"),
+        created_by=actor.id,
+    )
+    db.session.add(model)
+    db.session.flush()
+    try:
+        load_verified_image_model(model)
+    except ImageModelFailure as exc:
+        db.session.rollback()
+        raise ModelRegistryFailure(exc.code, str(exc)) from exc
+    audit_event(
+        "model.image_registered",
+        "SUCCESS",
+        actor_id=actor.id,
+        roles=roles,
+        target_type="model_version",
+        target_id=model.id,
+        metadata={"name": model.name, "version": model.version, "status": model.status},
+    )
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        raise ModelRegistryFailure(
+            "MODEL_VERSION_CONFLICT", "That image model version is already registered."
+        ) from exc
+    return model
+
+
+def active_image_model(name: str) -> ModelVersion | None:
+    return db.session.scalar(
+        select(ModelVersion).where(
+            ModelVersion.model_type == "IMAGE",
+            ModelVersion.name == name,
+            ModelVersion.status == "ACTIVE",
+        )
+    )
+
+
+def predict_with_active_image_model(name: str, payload: bytes) -> dict[str, object]:
+    """Return explicit unavailable/error states without fabricating a tamper probability."""
+
+    model = active_image_model(name)
+    if model is None:
+        return {
+            "status": "UNAVAILABLE",
+            "error_code": "IMAGE_MODEL_NOT_ACTIVE",
+            "tamper_probability": None,
+            "predicted_class": None,
+        }
+    try:
+        return predict_image_tampering(model, payload)
+    except ImageModelFailure as exc:
+        return {
+            "status": "ERROR",
+            "error_code": exc.code,
+            "tamper_probability": None,
+            "predicted_class": None,
+            "model_version_id": str(model.id),
+        }
+
+
+def activate_image_model(
+    model_id: uuid.UUID,
+    actor: User,
+    roles: set[str],
+    *,
+    confirmed: bool,
+    rollback: bool = False,
+) -> ModelVersion:
+    """Explicitly activate READY or roll back to RETIRED after Keras re-verification."""
+
+    _require_admin(actor, roles)
+    if not confirmed:
+        raise ModelRegistryFailure(
+            "MODEL_ACTIVATION_CONFIRMATION_REQUIRED",
+            "Explicit model activation confirmation is required.",
+        )
+    model = db.session.get(ModelVersion, model_id)
+    allowed = {"RETIRED"} if rollback else {"READY"}
+    if model is None or model.model_type != "IMAGE":
+        raise ModelRegistryFailure("MODEL_VERSION_NOT_FOUND", "The model version was not found.")
+    if model.status not in allowed:
+        raise ModelRegistryFailure(
+            "MODEL_STATUS_INVALID", "The model version is not eligible for this activation."
+        )
+    load_verified_image_model(model)
+    current = active_image_model(model.name)
+    now = datetime.now(UTC)
+    if current is not None:
+        current.status = "RETIRED"
+        db.session.flush()
+    model.status = "ACTIVE"
+    model.activated_by = actor.id
+    model.activated_at = now
+    audit_event(
+        "model.image_rollback" if rollback else "model.image_activated",
         "SUCCESS",
         actor_id=actor.id,
         roles=roles,

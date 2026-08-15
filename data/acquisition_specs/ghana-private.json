@@ -1,0 +1,9 @@
+{
+  "schema_version": "dataset-validation-spec-v1",
+  "dataset_id": "ghana-private",
+  "status": "pending_consent_and_private_index",
+  "dataset_kind": "private_image_collection",
+  "allowed_image_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+  "requires_masks": false,
+  "limitations": ["Registration requires approved consent references, a private withdrawal-aware index and restricted storage; no participant bytes or direct identifiers may enter Git."]
+}

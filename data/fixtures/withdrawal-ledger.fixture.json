@@ -1,0 +1,12 @@
+{
+  "schema_version": "withdrawal-ledger-v1",
+  "entries": [
+    {
+      "participant_id_hash": "6666666666666666666666666666666666666666666666666666666666666666",
+      "withdrawn_at": "2026-08-10T12:00:00Z",
+      "scope": "all_research_data_and_derivatives",
+      "status": "pending_rebuild",
+      "request_reference": "SYNTHETIC_WITHDRAWAL_REQUEST_0001"
+    }
+  ]
+}

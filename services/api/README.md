@@ -27,5 +27,19 @@ The artifact and payload paths above are examples. Model binaries remain private
 and ignored by Git. If no version is active, inference returns
 `STRUCTURED_MODEL_NOT_ACTIVE`; it never fabricates a successful prediction.
 
+## Image model registry
+
+P12 uses a separate `IMAGE_MODEL_ROOT` and `private://image/...` URI namespace.
+Before any trusted Keras load, the service verifies root containment, size,
+SHA-256, the canonical 224×224 RGB preprocessing hash, and input/output shapes.
+Registration, activation and rollback use the corresponding
+`model-register-image`, `model-activate-image` and `model-rollback-image` commands
+and require the same active ADMIN plus explicit confirmation policy.
+
+Until the owner-approved Colab run returns a real `.keras` artifact and the
+deployment runtime includes the pinned TensorFlow dependency, image inference
+returns an explicit `IMAGE_MODEL_NOT_ACTIVE` or `IMAGE_MODEL_RUNTIME_UNAVAILABLE`
+state with a null tamper probability.
+
 Direct dependencies are declared in `pyproject.toml`. Runtime and development
 lock files pin the complete tested environment used by Docker and verification.

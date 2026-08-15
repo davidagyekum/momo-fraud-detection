@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/contracts/evidence-result-v1.schema.json",
+  "title": "MoMo-FDVS evidence result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "mode",
+    "image",
+    "ocr",
+    "semantic",
+    "transaction",
+    "risk_band",
+    "risk_score",
+    "reason_codes",
+    "summary"
+  ],
+  "properties": {
+    "contract_version": {"const": "evidence-result-v1"},
+    "mode": {
+      "enum": ["screenshot_only", "transaction_only", "combined", "inconclusive"]
+    },
+    "image": {"$ref": "#/$defs/signal"},
+    "ocr": {"$ref": "#/$defs/signal"},
+    "semantic": {"$ref": "#/$defs/signal"},
+    "transaction": {"$ref": "#/$defs/signal"},
+    "risk_band": {
+      "enum": ["low_risk", "medium_risk", "high_risk", "inconclusive"]
+    },
+    "risk_score": {
+      "oneOf": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "null"}]
+    },
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,63}$"},
+      "uniqueItems": true
+    },
+    "summary": {"type": "string", "minLength": 1}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"mode": {"const": "screenshot_only"}}},
+      "then": {
+        "properties": {
+          "transaction": {
+            "properties": {
+              "state": {"const": "unavailable"},
+              "score": {"type": "null"},
+              "label": {"type": "null"}
+            }
+          }
+        },
+        "not": {
+          "properties": {
+            "image": {"properties": {"state": {"const": "unavailable"}}},
+            "ocr": {"properties": {"state": {"const": "unavailable"}}},
+            "semantic": {"properties": {"state": {"const": "unavailable"}}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"mode": {"const": "transaction_only"}}},
+      "then": {
+        "properties": {
+          "image": {"properties": {"state": {"const": "unavailable"}}},
+          "ocr": {"properties": {"state": {"const": "unavailable"}}},
+          "semantic": {"properties": {"state": {"const": "unavailable"}}},
+          "transaction": {
+            "properties": {"state": {"enum": ["available", "degraded"]}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"mode": {"const": "inconclusive"}}},
+      "then": {
+        "properties": {
+          "risk_band": {"const": "inconclusive"},
+          "risk_score": {"type": "null"}
+        }
+      },
+      "else": {"properties": {"risk_score": {"type": "number"}}}
+    },
+    {
+      "properties": {
+        "ocr": {"properties": {"label": {"type": "null"}}},
+        "semantic": {"properties": {"label": {"type": "null"}}},
+        "transaction": {"properties": {"label": {"type": "null"}}}
+      }
+    }
+  ],
+  "$defs": {
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "score", "label", "reason_codes"],
+      "properties": {
+        "state": {"enum": ["available", "degraded", "unavailable"]},
+        "score": {
+          "oneOf": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "null"}]
+        },
+        "label": {
+          "oneOf": [{"enum": ["unaltered", "tampered"]}, {"type": "null"}]
+        },
+        "reason_codes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,63}$"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "unavailable"}}},
+          "then": {
+            "properties": {
+              "score": {"type": "null"},
+              "label": {"type": "null"}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "blocked_source_count": 2,
+  "eligible_source_count": 4,
+  "foundation_version": "dataset-acquisition-foundation-v1",
+  "network_acquisition_executed": false,
+  "schema_version": "dataset-acquisition-readiness-v1",
+  "source_bytes_opened": false,
+  "source_count": 6,
+  "sources": [
+    {
+      "acquisition_status": "not_acquired",
+      "blockers": [
+        "licence_status:unverified",
+        "permission_status:unverified",
+        "validation_spec_status:optional_pending_terms_and_layout"
+      ],
+      "dataset_id": "fsts",
+      "eligible_for_local_registration": false,
+      "enabled": false,
+      "required": false,
+      "validation_spec_status": "optional_pending_terms_and_layout"
+    },
+    {
+      "acquisition_status": "not_acquired",
+      "blockers": [
+        "participant_consent_evidence_missing",
+        "permission_status:consent_required",
+        "validation_spec_status:pending_consent_and_private_index"
+      ],
+      "dataset_id": "ghana-private",
+      "eligible_for_local_registration": false,
+      "enabled": false,
+      "required": true,
+      "validation_spec_status": "pending_consent_and_private_index"
+    },
+    {
+      "acquisition_status": "registered",
+      "blockers": [],
+      "dataset_id": "momtsim-v1",
+      "eligible_for_local_registration": true,
+      "enabled": false,
+      "required": true,
+      "validation_spec_status": "ready"
+    },
+    {
+      "acquisition_status": "registered",
+      "blockers": [],
+      "dataset_id": "momtsim-v2",
+      "eligible_for_local_registration": true,
+      "enabled": false,
+      "required": true,
+      "validation_spec_status": "ready"
+    },
+    {
+      "acquisition_status": "registered",
+      "blockers": [],
+      "dataset_id": "paysim",
+      "eligible_for_local_registration": true,
+      "enabled": false,
+      "required": true,
+      "validation_spec_status": "ready"
+    },
+    {
+      "acquisition_status": "registered",
+      "blockers": [],
+      "dataset_id": "stfd",
+      "eligible_for_local_registration": true,
+      "enabled": false,
+      "required": true,
+      "validation_spec_status": "ready"
+    }
+  ],
+  "training_executed": false
+}

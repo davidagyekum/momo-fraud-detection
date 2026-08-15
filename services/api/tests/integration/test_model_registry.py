@@ -17,11 +17,21 @@ from sqlalchemy import select
 
 from momo_fdvs.extensions import db
 from momo_fdvs.models import AuditLog, Role, User, UserRole
+from momo_fdvs.services import model_registry
+from momo_fdvs.services.image_model import (
+    IMAGE_PREPROCESSING_SCHEMA_HASH,
+    IMAGE_PREPROCESSING_VERSION,
+    ImageModelFailure,
+)
 from momo_fdvs.services.model_registry import (
     ModelRegistryFailure,
+    activate_image_model,
     activate_structured_model,
+    active_image_model,
     active_structured_model,
+    predict_with_active_image_model,
     predict_with_active_structured_model,
+    register_image_model,
     register_structured_model,
 )
 
@@ -188,3 +198,103 @@ def test_missing_active_model_returns_explicit_unavailable(app: Flask) -> None:
         "predicted_class": None,
         "probabilities": {},
     }
+
+
+def _image_payload(version: str, *, accepted: bool = True) -> dict[str, object]:
+    return {
+        "model_type": "IMAGE",
+        "name": "registry-controlled-image",
+        "version": version,
+        "artifact_uri": f"private://image/{version}.keras",
+        "artifact_sha256": "a" * 64,
+        "input_schema_hash": IMAGE_PREPROCESSING_SCHEMA_HASH,
+        "preprocessing_version": IMAGE_PREPROCESSING_VERSION,
+        "framework_versions": {"tensorflow": "2.21.0-test"},
+        "metrics": {
+            "acceptance_passed": accepted,
+            "scope": "controlled_test",
+            "threshold": 0.5,
+        },
+        "dataset_manifest_hash": "1" * 64,
+        "split_hash": "2" * 64,
+        "training_commit_sha": "3" * 40,
+        "model_card_key": "docs/models/image-test.md",
+    }
+
+
+def test_image_registration_activation_rollback_and_unavailable_state(
+    app: Flask, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(model_registry, "load_verified_image_model", lambda model: object())
+    with app.app_context():
+        actor = _admin()
+        first = register_image_model(_image_payload(f"v1-{uuid.uuid4()}"), actor, {"ADMIN"})
+        assert first.status == "READY"
+        with pytest.raises(ModelRegistryFailure) as confirmation:
+            activate_image_model(first.id, actor, {"ADMIN"}, confirmed=False)
+        assert confirmation.value.code == "MODEL_ACTIVATION_CONFIRMATION_REQUIRED"
+        activate_image_model(first.id, actor, {"ADMIN"}, confirmed=True)
+
+        second = register_image_model(_image_payload(f"v2-{uuid.uuid4()}"), actor, {"ADMIN"})
+        activate_image_model(second.id, actor, {"ADMIN"}, confirmed=True)
+        db.session.refresh(first)
+        assert first.status == "RETIRED"
+        assert active_image_model(first.name).id == second.id  # type: ignore[union-attr]
+
+        activate_image_model(first.id, actor, {"ADMIN"}, confirmed=True, rollback=True)
+        db.session.refresh(second)
+        assert second.status == "RETIRED"
+        assert active_image_model(first.name).id == first.id  # type: ignore[union-attr]
+        monkeypatch.setattr(
+            model_registry,
+            "predict_image_tampering",
+            lambda model, payload: {"status": "SUCCESS", "tamper_probability": 0.25},
+        )
+        assert predict_with_active_image_model(first.name, b"image")["status"] == "SUCCESS"
+        actions = set(
+            db.session.scalars(
+                select(AuditLog.action).where(AuditLog.target_type == "model_version")
+            ).all()
+        )
+        assert {
+            "model.image_registered",
+            "model.image_activated",
+            "model.image_rollback",
+        } <= actions
+
+        failed = register_image_model(
+            _image_payload(f"failed-{uuid.uuid4()}", accepted=False), actor, {"ADMIN"}
+        )
+        assert failed.status == "FAILED"
+        with pytest.raises(ModelRegistryFailure) as status:
+            activate_image_model(failed.id, actor, {"ADMIN"}, confirmed=True)
+        assert status.value.code == "MODEL_STATUS_INVALID"
+        with pytest.raises(ModelRegistryFailure) as forbidden:
+            register_image_model(_image_payload(f"forbidden-{uuid.uuid4()}"), actor, {"USER"})
+        assert forbidden.value.code == "MODEL_REGISTRY_FORBIDDEN"
+
+
+def test_image_prediction_explicit_unavailable_and_error(
+    app: Flask, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with app.app_context():
+        absent = predict_with_active_image_model(f"absent-{uuid.uuid4()}", b"image")
+        assert absent == {
+            "status": "UNAVAILABLE",
+            "error_code": "IMAGE_MODEL_NOT_ACTIVE",
+            "tamper_probability": None,
+            "predicted_class": None,
+        }
+        actor = _admin()
+        monkeypatch.setattr(model_registry, "load_verified_image_model", lambda model: object())
+        active = register_image_model(_image_payload(f"error-{uuid.uuid4()}"), actor, {"ADMIN"})
+        activate_image_model(active.id, actor, {"ADMIN"}, confirmed=True)
+
+        def fail(model: object, payload: bytes) -> dict[str, object]:
+            raise ImageModelFailure("IMAGE_MODEL_INFERENCE_FAILED", "controlled failure")
+
+        monkeypatch.setattr(model_registry, "predict_image_tampering", fail)
+        result = predict_with_active_image_model(active.name, b"image")
+        assert result["status"] == "ERROR"
+        assert result["error_code"] == "IMAGE_MODEL_INFERENCE_FAILED"
+        assert result["tamper_probability"] is None

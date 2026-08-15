@@ -1,0 +1,73 @@
+{
+  "schema_version": "pr13-momtsim-acquisition-registration-evidence-v1",
+  "recorded_at": "2026-08-11",
+  "code_commit": "ba1c8e42135ed1d5289f432a58299bd906aa0ea5",
+  "browser_network_acquisition_executed": true,
+  "registration_network_acquisition_executed": false,
+  "source_bytes_committed": false,
+  "training_executed": false,
+  "splits_created": false,
+  "locked_test_accessed": false,
+  "sources": [
+    {
+      "dataset_id": "momtsim-v1",
+      "doi_version": "10.17632/zhj366m53p.1",
+      "package_filename": "Synthetic Mobile Money Transaction Dataset.zip",
+      "package_size_bytes": 55998854,
+      "package_sha256": "55504e566f79b9513901a0d1269563df9f4840de15a77417d67bbafb2847550c",
+      "registration_filename": "synthetic_mobile_money_transaction_dataset.csv",
+      "mendeley_file_id": "57c2ed32-a9b6-4af8-9510-9b064625d5d7",
+      "source_size_bytes": 156564413,
+      "source_sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7",
+      "encoding": "UTF-8 without BOM",
+      "header": ["step", "transactionType", "amount", "initiator", "oldBalInitiator", "newBalInitiator", "recipient", "oldBalRecipient", "newBalRecipient", "isFraud"],
+      "status": "registered",
+      "quarantine_reasons": [],
+      "validation_summary": {
+        "row_count": 1720181,
+        "positive_count": 175518,
+        "step_count": 144,
+        "duplicate_row_count": 0,
+        "null_cell_count": 0,
+        "invalid_label_count": 0,
+        "invalid_amount_count": 0
+      },
+      "inventory_sha256": "fbd89dd3028b8591c1e49aa42b342cb53dc556c0c2172fb7df677c33bcb5b992",
+      "validation_spec_sha256": "ed04b3f9eb8cb35678c458a299b3fc33c5a1b968e47caba58aba9617c1d21a25",
+      "manifest_sha256": "9f063795907d90c58e0727f06f3abd8fb5144a1577343a3a93ceb2cc6c9ef2d0",
+      "safe_profile_sha256": "07af877523c1a04c283397c5c5aca4155f77f7dd5fc2d9d61e97c01475d759e0",
+      "promotable_for_training": false
+    },
+    {
+      "dataset_id": "momtsim-v2",
+      "doi_version": "10.17632/zhj366m53p.2",
+      "package_filename": "Synthetic Mobile Money Transaction Dataset (1).zip",
+      "package_size_bytes": 192448698,
+      "package_sha256": "e55969cef235cb7f313d4cda8579f453f494843915e880cac92c0b0d657f8cdc",
+      "registration_filename": "MoMTSim_20240722202413_1000_dataset.csv",
+      "mendeley_file_id": "8a68b93f-5121-4510-bb6d-7862cd0776df",
+      "source_size_bytes": 366397921,
+      "source_sha256": "99fd07c3a9d3c4bd6d3462240058ca19d0d9e9284683f78bf77542ff7fcc05e7",
+      "retained_v1_source_sha256": "da951eb95735da96271740a3e66b676b342d3831ce3111cd19dbfa020d3bd0a7",
+      "encoding": "UTF-8 without BOM",
+      "header": ["step", "transactionType", "amount", "initiator", "oldBalInitiator", "newBalInitiator", "recipient", "oldBalRecipient", "newBalRecipient", "isFraud"],
+      "status": "quarantined",
+      "quarantine_reasons": ["duplicate_rows_present"],
+      "validation_summary": {
+        "row_count": 4225958,
+        "positive_count": 2233118,
+        "step_count": 193,
+        "duplicate_row_count": 20,
+        "null_cell_count": 0,
+        "invalid_label_count": 0,
+        "invalid_amount_count": 0
+      },
+      "inventory_sha256": "35842a7f7c6b2bc320c698d5be1abb70193553351c546edf1870ee8fd37aaeba",
+      "validation_spec_sha256": "44a0b850773151133df51fe2adba3e118ca18f8b2f03ae6b0b9ca49614bfaf5c",
+      "manifest_sha256": "e65d92387627ef520acbecdd090e7103c361ce2c958e0943dbbe5a37ce070681",
+      "safe_profile_sha256": "127a6c3ba86f3c1483eb8ef3121710f095dba3f01bd1a547d549e9175194687a",
+      "promotable_for_training": false
+    }
+  ],
+  "decision": "Preserve v2 quarantine. Do not mutate official bytes, drop duplicates, create splits or train until a separately reviewed deterministic derived-dataset policy exists."
+}

@@ -1,0 +1,78 @@
+{
+  "benchmark_version": "ghana-ocr-benchmark-v1",
+  "confidence_policy": {
+    "critical_field_threshold": 0.65,
+    "missing_or_low_confidence_is_inconclusive": true,
+    "unknown_status_defaults_to_success": false
+  },
+  "data_policy": {
+    "locked_test_access_allowed": false,
+    "primary_partition": "controlled_real_validation",
+    "screen_source_group_limit": 3,
+    "synthetic_results_supplementary_only": true,
+    "tampered_derivative_slice_available": false
+  },
+  "engines": [
+    {
+      "engine": "tesseract",
+      "license": "Apache-2.0",
+      "options": {
+        "language": "eng",
+        "psm": 6
+      },
+      "python_adapter": "pytesseract==0.3.13",
+      "required_major_version": 5
+    },
+    {
+      "engine": "easyocr",
+      "license": "Apache-2.0",
+      "options": {
+        "gpu": false,
+        "languages": [
+          "en"
+        ]
+      },
+      "python_package": "easyocr==1.7.2"
+    },
+    {
+      "engine": "paddleocr",
+      "license": "Apache-2.0",
+      "options": {
+        "device": "cpu",
+        "enable_mkldnn": false,
+        "language": "en",
+        "ocr_version": "PP-OCRv6"
+      },
+      "python_package": "paddleocr==3.7.0",
+      "runtime_package": "paddlepaddle==3.3.1"
+    }
+  ],
+  "preprocessing_variants": [
+    "original_rgb",
+    "normalized_rgb",
+    "grayscale_contrast",
+    "adaptive_threshold",
+    "field_region"
+  ],
+  "release_gates": {
+    "amount_exact": 0.95,
+    "recipient_exact": 0.9,
+    "reference_exact": 0.9,
+    "required_field_parse_success": 0.9,
+    "timestamp_exact": 0.9
+  },
+  "schema_version": "ocr-benchmark-config-v2",
+  "selection_policy": {
+    "complete_record_coverage_required": true,
+    "required_engines_available": true
+  },
+  "selection_weights": {
+    "amount_exact": 0.3,
+    "cer_wer_composite": 0.1,
+    "median_latency": 0.05,
+    "recipient_exact": 0.15,
+    "reference_exact": 0.25,
+    "timestamp_exact": 0.15
+  },
+  "two_stage_selection": true
+}

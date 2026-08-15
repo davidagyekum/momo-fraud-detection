@@ -1,0 +1,56 @@
+{
+  "schema_version": "pr13-paysim-registration-evidence-v1",
+  "dataset_id": "paysim",
+  "dataset_version": "kaggle-version-2-pending-byte-verification",
+  "owner_operated_colab": true,
+  "observed_date": "2026-08-11",
+  "code_commit": "af248bd6b71e77bdf9ddaa4dc3457856f1cff87a",
+  "notebook_pin": "6b9945c6b03d394b9304045fa1ab02e928bb1951",
+  "result_directory": "MyDrive/momo-fraud/runs/paysim-registration-v2-f7eef9ff-step743",
+  "registration_manifest": {
+    "filename": "dataset-registration-manifest.json",
+    "sha256": "6ec6421c523ea2ec938b0ecd9678a85c2196c8c686fbc4e41e18c6125d74851b",
+    "size_bytes": 1230
+  },
+  "safe_profile": {
+    "filename": "safe-profile.json",
+    "sha256": "6aa3b23dcd3bea901b24ba7f0f5bc0ecb307435789553bf0c1470410aff6ea1d",
+    "size_bytes": 1132
+  },
+  "safe_summary": {
+    "status": "registered",
+    "source_sha256": "f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d",
+    "source_size_bytes": 186385561,
+    "file_count": 1,
+    "inventory_sha256": "ec13068c4e7d7a8c97184e1e4c4e2c95d459c1b2053c37f67d75239ddfc87c32",
+    "validation_summary": {
+      "dataset_kind": "transaction_csv",
+      "row_count": 6362620,
+      "positive_count": 8213,
+      "step_count": 743,
+      "duplicate_row_count": 0,
+      "null_cell_count": 0,
+      "invalid_label_count": 0,
+      "invalid_amount_count": 0,
+      "forbidden_primary_benchmark_columns": [
+        "isFlaggedFraud",
+        "oldbalanceOrg",
+        "newbalanceOrig",
+        "oldbalanceDest",
+        "newbalanceDest"
+      ]
+    },
+    "quarantine_reasons": [],
+    "network_acquisition_executed": false,
+    "source_bytes_committed": false,
+    "promotable_for_training": false
+  },
+  "training_executed": false,
+  "locked_test_accessed": false,
+  "promotion_executed": false,
+  "limitations": [
+    "Registration validates source identity and aggregate structural integrity; it does not establish Ghanaian fraud prevalence or provider generalisation.",
+    "The dataset remains disabled and non-promotable until a separately reviewed PR14 frozen-split gate succeeds.",
+    "The dataset_version string is the immutable registration-time registry value; exact Kaggle Version 2 byte identity is established separately by the source hash and approved-source metadata."
+  ]
+}

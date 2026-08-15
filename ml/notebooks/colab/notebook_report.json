@@ -1,0 +1,19 @@
+{
+  "execution_counts_stripped": true,
+  "full_mode_selected": false,
+  "issue_count": 0,
+  "issues": [],
+  "notebook_count": 8,
+  "notebook_hashes": {
+    "00_environment_preflight.ipynb": "ba342fd10400c0acb983fe8b2b99404c82289849a26d317ca7fc46e69394cd6c",
+    "01_tiny_restart_safe_smoke.ipynb": "5040f5a4cb28c32e4f6e2845d27ceb57db8159334152a44eeb8bae8e89af4039",
+    "02_dataset_acquisition_validation.ipynb": "62f23b3dafcad9ffe4e2b419812049384cde05221e7bc6b77e1b17d7bef4fb59",
+    "03_build_transaction_features.ipynb": "b1072eac789bc411818c226f137035c5b19bfd13fa2c88a4bb9b530f697c514f",
+    "04_train_transaction_models.ipynb": "69459559ea7eeb7425a9bda07924942d440de60398ff18a7b463486688ec9924",
+    "05_build_ghana_screenshot_dataset.ipynb": "d78091cb0ad539005fcf1defa5a6f3ef86906287c58ab5077509238548f5072a",
+    "06_benchmark_ocr.ipynb": "6e18482277846a9790014594ee285529813aa4580a4db8f6f86f9545bdbf2ae7",
+    "NOTEBOOK_TEMPLATE.ipynb": "7ef13c424fbd382e22384229fa3123236ddc55924aad4b465e0aa96d44e3bbc5"
+  },
+  "outputs_stripped": true,
+  "policy_version": "colab-notebook-policy-v2"
+}

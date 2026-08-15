@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/contracts/ghana-private-intake-request-v1.json",
+  "title": "Ghana private screenshot intake request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "records"],
+  "properties": {
+    "schema_version": {"const": "ghana-private-intake-request-v1"},
+    "dataset_id": {"const": "ghana-private"},
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["image_id", "source_group_id", "participant_id_hash", "consent_scope", "permission_reference", "source_path", "redaction_regions", "deidentification_status", "provider_family", "template_family", "capture_channel", "device_family", "theme"],
+        "properties": {
+          "image_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{11,79}$"},
+          "source_group_id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{11,79}$"},
+          "participant_id_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "consent_scope": {"enum": ["internal_only", "release_approved"]},
+          "permission_reference": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{11,79}$"},
+          "source_path": {"type": "string", "minLength": 1},
+          "redaction_regions": {"type": "array", "items": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 0}, {"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}], "minItems": 4, "maxItems": 4}},
+          "deidentification_status": {"enum": ["pending", "complete"]},
+          "provider_family": {"type": "string", "minLength": 1},
+          "template_family": {"type": "string", "minLength": 1},
+          "capture_channel": {"enum": ["sms", "notification", "app_receipt", "history", "other"]},
+          "device_family": {"type": "string", "minLength": 1},
+          "theme": {"enum": ["light", "dark", "unknown"]}
+        }
+      }
+    }
+  }
+}

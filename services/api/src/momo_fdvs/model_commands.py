@@ -16,7 +16,9 @@ from momo_fdvs.models import User
 from momo_fdvs.policies.auth import user_roles
 from momo_fdvs.services.model_registry import (
     ModelRegistryFailure,
+    activate_image_model,
     activate_structured_model,
+    register_image_model,
     register_structured_model,
 )
 
@@ -82,6 +84,47 @@ def register_model_commands(app: Flask) -> None:
             model = activate_structured_model(
                 model_id, actor, roles, confirmed=confirm, rollback=True
             )
+        except ModelRegistryFailure as exc:
+            raise click.ClickException(f"{exc.code}: {exc}") from exc
+        click.echo(f"rolled back {model.id} version={model.version}")
+
+    @app.cli.command("model-register-image")
+    @click.option("--payload", "payload_path", type=click.Path(path_type=Path), required=True)
+    @click.option("--actor-email", required=True)
+    def register_image_command(payload_path: Path, actor_email: str) -> None:
+        """Register a locally present, hash-verified Keras image artifact."""
+
+        actor, roles = _actor(actor_email)
+        try:
+            model = register_image_model(_payload(payload_path), actor, roles)
+        except ModelRegistryFailure as exc:
+            raise click.ClickException(f"{exc.code}: {exc}") from exc
+        click.echo(f"registered {model.id} status={model.status}")
+
+    @app.cli.command("model-activate-image")
+    @click.option("--model-id", type=click.UUID, required=True)
+    @click.option("--actor-email", required=True)
+    @click.option("--confirm", is_flag=True, help="Confirm the evidential activation.")
+    def activate_image_command(model_id: uuid.UUID, actor_email: str, confirm: bool) -> None:
+        """Activate one READY image model after artifact re-verification."""
+
+        actor, roles = _actor(actor_email)
+        try:
+            model = activate_image_model(model_id, actor, roles, confirmed=confirm)
+        except ModelRegistryFailure as exc:
+            raise click.ClickException(f"{exc.code}: {exc}") from exc
+        click.echo(f"activated {model.id} version={model.version}")
+
+    @app.cli.command("model-rollback-image")
+    @click.option("--model-id", type=click.UUID, required=True)
+    @click.option("--actor-email", required=True)
+    @click.option("--confirm", is_flag=True, help="Confirm the evidential rollback.")
+    def rollback_image_command(model_id: uuid.UUID, actor_email: str, confirm: bool) -> None:
+        """Rollback to one RETIRED image model after artifact re-verification."""
+
+        actor, roles = _actor(actor_email)
+        try:
+            model = activate_image_model(model_id, actor, roles, confirmed=confirm, rollback=True)
         except ModelRegistryFailure as exc:
             raise click.ClickException(f"{exc.code}: {exc}") from exc
         click.echo(f"rolled back {model.id} version={model.version}")

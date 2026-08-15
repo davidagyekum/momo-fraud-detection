@@ -1,0 +1,5 @@
+# Pretrained OCR benchmark engines for Python 3.12 / Google Colab.
+-r requirements-runtime.lock
+easyocr==1.7.2
+paddleocr==3.7.0
+paddlepaddle==3.3.1

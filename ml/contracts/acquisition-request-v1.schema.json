@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/contracts/acquisition-request-v1.schema.json",
+  "title": "MoMo-FDVS governed local dataset registration request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "purpose", "reviewer_id", "permission_reference", "licence_reference", "source_kind", "source_path", "entrypoint", "expected_sha256", "expected_size_bytes", "expected_version", "created_at", "acknowledgements"],
+  "properties": {
+    "schema_version": {"const": "acquisition-request-v1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string", "minLength": 1},
+    "reviewer_id": {"type": "string", "pattern": "^REVIEWER_[A-F0-9]{12}$"},
+    "permission_reference": {"type": "string", "pattern": "^PERMISSION_[A-F0-9]{12,64}$"},
+    "licence_reference": {"type": "string", "pattern": "^(LICENCE|CONSENT)_[A-F0-9]{12,64}$"},
+    "source_kind": {"enum": ["file", "directory"]},
+    "source_path": {"type": "string", "minLength": 1},
+    "entrypoint": {"type": ["string", "null"]},
+    "expected_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "expected_size_bytes": {"type": "integer", "minimum": 1},
+    "expected_version": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "acknowledgements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terms_reviewed", "no_redistribution", "private_storage", "version_verified"],
+      "properties": {
+        "terms_reviewed": {"const": true},
+        "no_redistribution": {"const": true},
+        "private_storage": {"const": true},
+        "version_verified": {"const": true}
+      }
+    }
+  }
+}

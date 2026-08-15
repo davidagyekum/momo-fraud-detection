@@ -212,3 +212,15 @@ The implementation is complete only when:
 8. CI passes and the documented local verification command succeeds;
 9. staging can be deployed without committing secrets;
 10. the final handoff contains reproducible evidence rather than unsupported claims.
+
+## 9. PR10-PR20 roadmap reconciliation
+
+The implementation roadmap from the current analytical foundation through final evaluation is `docs/plans/MoMo_Fraud_Detection_PR10_PR20_Colab_Blueprint.md`. Its logical PR numbers are milestones, not a request to rewrite or duplicate existing GitHub pull-request history.
+
+The blueprint governs future data acquisition, Colab execution, split/calibration discipline, locked-test handling and transparent evidence-policy integration. The fixed product scope and current public contracts in this file and the higher-precedence specifications remain controlling until a documented, backward-compatible migration is implemented. In particular:
+
+- stored/imported reference matching remains a separate verification record and must be labelled as non-live provider evidence;
+- the current `GENUINE`/`SUSPICIOUS`/`FRAUDULENT` and `VERIFIED`/`UNVERIFIED`/`MISMATCH` contracts are not silently renamed;
+- proposed `low_risk`/`medium_risk`/`high_risk`/`inconclusive` presentation terms require an API/database/UI compatibility decision;
+- canonical tamper-task labels may migrate to `unaltered`/`tampered` only through a versioned schema and compatibility shim;
+- TensorFlow/Keras and scikit-learn remain the required primary model stack unless explicitly approved otherwise.

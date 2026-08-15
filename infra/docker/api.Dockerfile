@@ -27,7 +27,7 @@ COPY --from=builder /wheels /wheels
 RUN python -m pip install --no-cache-dir /wheels/* \
     && rm -rf /wheels
 COPY services/api/migrations ./migrations
-RUN mkdir -p /app/.local/private-storage /app/.local/model-artifacts/structured \
+RUN mkdir -p /app/.local/private-storage /app/.local/model-artifacts/structured /app/.local/model-artifacts/image \
     && chown -R momo:momo /app
 
 USER momo

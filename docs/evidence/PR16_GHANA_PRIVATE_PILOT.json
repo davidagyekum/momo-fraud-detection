@@ -1,0 +1,321 @@
+{
+  "dataset_id": "ghana-private",
+  "deidentification_pending_count": 0,
+  "deidentification_plan_sha256": "9089c61c8b7ec14c5fadea9788a6dd11eabcf0d48f6b3c50f8c33a04fe0a336b",
+  "direct_contributor_consent_artifacts_supplied": false,
+  "direct_identifiers_written": false,
+  "excluded_from_training_count": 6,
+  "exact_duplicate_count": 1,
+  "final_label_counts": {
+    "FRAUDULENT": 38,
+    "GENUINE": 24,
+    "SUSPICIOUS": 1
+  },
+  "second_review_label_approved_count": 63,
+  "private_qa": {
+    "deidentified_transcription_count": 13,
+    "field_annotation_count": 13,
+    "independent_mask_review_count": 13,
+    "metadata_stripped_failure_count": 0,
+    "qa_approved_count": 12,
+    "qa_approved_source_group_count": 10,
+    "qa_approved_label_counts": {
+      "FRAUDULENT": 9,
+      "GENUINE": 2,
+      "SUSPICIOUS": 1
+    },
+    "qa_rejected_low_utility_count": 1
+  },
+  "network_acquisition_executed": false,
+  "owner_message_text_corpus": {
+    "deduplicated_category_counts": {
+      "official_service_message": 62,
+      "transaction_confirmation": 44
+    },
+    "deduplicated_csv_sha256": "54e84f5ef16baf0dca28d5d133b77a5467186281c6dc843f18824f9bb537c3da",
+    "deduplicated_record_count": 106,
+    "exact_duplicate_occurrence_count": 2522,
+    "message_index_sha256": "a851b9a200957fce07784fe12ffb5dbbaf88c06f39f5469578b17b0fd7487c34",
+    "message_report_sha256": "227a256f95e24f241669bbf06aa6b83da3970febbb272652a36bafbd8607c41b",
+    "pending_second_review_count": 0,
+    "raw_category_counts": {
+      "official_service_message": 178,
+      "transaction_confirmation": 2450
+    },
+    "raw_csv_sha256": "8837d966163a65f9389ca7c9c3f2f0075399c8f70f9518da69311a306377efaa",
+    "raw_record_count": 2628,
+    "residual_direct_identifier_pattern_hits": 0,
+    "second_review_approved_count": 106,
+    "secret_bearing_message_excluded_count": 26,
+    "source_group_policy": "template_family_plus_single_owner_train_only_reviewed",
+    "template_group_count": 90,
+    "training_eligible_count": 0
+  },
+  "android_owner_message_text_corpus": {
+    "approved_sender_counts": {
+      "MobileMoney": 342,
+      "T Cash": 59,
+      "T-CASH": 72,
+      "Telecel": 217
+    },
+    "deduplicated_category_counts": {
+      "official_service_message": 125,
+      "transaction_confirmation": 34
+    },
+    "deduplicated_csv_sha256": "cdc3cebbb45a5a910fa883a93141a506919d70f4e148c52c4812c275ab8e6201",
+    "deduplicated_provider_counts": {
+      "MTN_MOMO": 29,
+      "TELECEL_CASH": 130
+    },
+    "deduplicated_record_count": 159,
+    "exact_duplicate_occurrence_count": 527,
+    "message_index_sha256": "5c679d269c8c7239244e4d9dd0c1685951e539bf1446a3a24ffa580191f5a18e",
+    "message_report_sha256": "86584cb1d1c97cd75e525016018dcd82a89d06f10847c4c21b0722373453f34a",
+    "normalization_report_sha256": "a6566992008eeb7f542994373694843d026914e695b0ed49f60ef5f053478fba",
+    "normalized_csv_sha256": "28b5247ba6f81688eaaa63d044ea10743b0e5c8ef6739e682055c6cd2c1d362c",
+    "parsed_xml_message_count": 1224,
+    "raw_category_counts": {
+      "official_service_message": 287,
+      "transaction_confirmation": 399
+    },
+    "raw_csv_sha256": "83c3d1a347516937619fd5a9c3affe18aefe261790c9d9b19aa5a6f2b523405c",
+    "raw_provider_counts": {
+      "MTN_MOMO": 338,
+      "TELECEL_CASH": 348
+    },
+    "raw_record_count": 686,
+    "residual_direct_identifier_pattern_hits": 0,
+    "second_review_approved_count": 159,
+    "secret_bearing_message_excluded_count": 4,
+    "selected_unique_message_count": 690,
+    "source_document_count": 2,
+    "source_overlap_duplicate_count": 342,
+    "template_group_count": 150,
+    "training_eligible_count": 0,
+    "unapproved_conversation_message_count": 192,
+    "unapproved_conversation_content_written": false
+  },
+  "ocr_text_corpus": {
+    "deidentified_csv_sha256": "1a9901631eafba5b7cc4bfaffe9b6c77082ce77c94713317d8c9c12fbaaa4b1d",
+    "deidentified_row_count": 63,
+    "image_derivatives_excluded_from_training": true,
+    "coarse_full_image_localization_count": 43,
+    "malformed_placeholder_count": 0,
+    "pending_second_review_count": 0,
+    "raw_csv_sha256": "5ebeb1d677ff6dba912745ab6ab5d7c64c1498c752e45dc15319975bf60e83d1",
+    "raw_row_count": 63,
+    "second_review_approved_count": 63,
+    "sensitive_exact_value_leak_count": 0,
+    "text_substitution_policy": "exact_sensitive_values_to_typed_placeholders",
+    "training_eligible_count": 0
+  },
+  "reviewed_text_corpus": {
+    "approved_label_counts": {
+      "FRAUDULENT": 68,
+      "GENUINE": 319,
+      "SUSPICIOUS": 31
+    },
+    "approved_record_count": 418,
+    "approved_source_counts": {
+      "owner_android_messages": 159,
+      "owner_iphone_messages": 106,
+      "screenshot_ocr": 63,
+      "synthetic_clean": 90
+    },
+    "excluded_record_count": 0,
+    "manifest_sha256": "d5c446294d70c76017d135577ebacf466983527f2a2ba9fc9f27ad3a6ed8bb44",
+    "reviewed_csv_sha256": "d7581471f55a475793976fed66a9f89c7b8107bfa744f6c92e700a3907f8fd0a",
+    "splits_frozen": true,
+    "training_eligible_count": 0
+  },
+  "synthetic_clean_text_pilot": {
+    "corpus_sha256": "25a77abe73f1cd008560331f738186ca3cd9388a20296a5bec315730dabec668",
+    "fictitious_values_only": true,
+    "label_counts": {
+      "FRAUDULENT": 30,
+      "GENUINE": 30,
+      "SUSPICIOUS": 30
+    },
+    "manifest_sha256": "1a70b79ad1698ec38900f4394e0d914eb641c4948210876e0b114359c83fdb9b",
+    "pending_second_review_count": 0,
+    "record_count": 90,
+    "review_manifest_sha256": "00052ea2f0ac0da4f04160fbe4780805e9410643450d97af5c009d222d48b743",
+    "reviewed_csv_sha256": "f104922e5480bb6308a7eece6413009b90ca2036bef7796693130f8e727052dd",
+    "second_review_approved_count": 90,
+    "source_group_count": 30,
+    "splits_frozen": false,
+    "training_eligible_count": 0,
+    "unique_text_count": 90
+  },
+  "online_candidate_pilot": {
+    "ambiguous_requires_adjudication_count": 1,
+    "candidate_count": 6,
+    "controlled_crop_count": 2,
+    "controlled_crop_sha256": {
+      "genuine": "2451642409fd63bd0d06c19effce768564a38aeb31332785c9e5796e84aa1e65",
+      "suspicious": "17fc25403f5b8cf2cf9af7b3b16f85279d2cc65c97e252eae361dd774499285f"
+    },
+    "exact_duplicate_count": 0,
+    "mixed_authenticity_thread_count": 2,
+    "owner_attested_permission_count": 5,
+    "final_label_counts": {
+      "FRAUDULENT": 3,
+      "GENUINE": 1,
+      "SUSPICIOUS": 1
+    },
+    "indexed_record_count_including_controlled_crops": 11,
+    "provisional_label_counts": {
+      "ambiguous": 1,
+      "fraud_candidate": 3,
+      "genuine_candidate": 1,
+      "suspicious_candidate": 1,
+      "mixed": 1
+    },
+    "perceptual_duplicate_count": 0,
+    "primary_ghana_momo_fraud_count": 3,
+    "private_index_sha256": "75992b37a44c01be1063aab1f32e5ec05fa5a93ff006b764e3a7c72a35443dfa",
+    "safe_report_sha256": "22580b1b2b2fb48363eda88e417376dc093cdee8f2839bbf1ce168c8971d6fc0",
+    "second_review_excluded_count": 1,
+    "second_review_label_approved_count": 5,
+    "superseded_mixed_source_count": 1,
+    "training_eligible_count": 0,
+    "unpermitted_count": 1,
+    "working_copy_count": 7
+  },
+  "latest_suspicious_candidate_batch": {
+    "batch_candidate_count": 11,
+    "combined_private_index_record_count": 22,
+    "combined_private_index_sha256": "71c148fd2a43f4e08ce7a86d477c4f9c173dd763472d8faf2ea0df857f5aa6ec",
+    "combined_safe_report_sha256": "35bd944e377ac3c9bcac3bb5cd51438b2a9f61a5db3fcc964ebfc118c8bb1625",
+    "content_triage_counts": {
+      "adjacent_financial_phishing": 2,
+      "ambiguous_requires_adjudication": 2,
+      "primary_ghana_momo_fraud": 7
+    },
+    "controlled_source_group_count": 1,
+    "direct_identifier_present_count": 11,
+    "exact_duplicate_count": 0,
+    "perceptual_duplicate_count_at_distance_6": 0,
+    "label_approved_count": 7,
+    "label_excluded_count": 4,
+    "ocr_text_approved_count": 7,
+    "rights_confirmed_count": 11,
+    "source_page_missing_count": 11,
+    "splits_frozen": false,
+    "training_eligible_count": 0
+  },
+  "latest_consented_friend_batch": {
+    "consented_friend_count": 19,
+    "submitted_file_count": 24,
+    "previously_registered_exact_duplicate_count": 2,
+    "new_unique_file_count": 22,
+    "participant_to_file_mapping_available": false,
+    "partitionable_source_group_count": 1,
+    "conservative_source_group_id": "GHGROUP_FRIEND_UNMAPPED_20260814",
+    "permission_reference": "PERMISSION_FRIEND_BATCH_20260814",
+    "private_attestation_sha256": "d7c148a6f4296a69ac07e6322d5b3b749dce9f834d019e9b14819102ed5983e5",
+    "private_inventory_sha256": "0b1e9a3c503768f0d7ef4bd9b4b2b5859660f75897ecc799bc3427b98062a1b2",
+    "private_index_sha256": "4b7812d3a85f8bc004127c4f22dc0af619b825b6ac2fb4673e20b9effb4c43d5",
+    "safe_report_sha256": "fe32d17adc654220f3cebcaa38d51d2a2f3f8b7dd3f365939d5d00746b00461f",
+    "near_duplicate_image_quarantine_count": 3,
+    "label_approved_genuine_count": 22,
+    "ocr_text_approved_count": 22,
+    "ocr_localization_quality": "coarse_full_image_not_field_localization_ground_truth",
+    "splits_frozen": false,
+    "training_eligible_count": 0
+  },
+  "latest_mapped_friend_batch": {
+    "consented_friend_count": 21,
+    "submitted_file_count": 21,
+    "participant_to_file_mapping_available": true,
+    "partitionable_source_group_count": 21,
+    "exact_duplicate_count": 0,
+    "cross_batch_near_duplicate_image_count": 1,
+    "cross_batch_near_duplicate_policy": "image_use_excluded_text_retained_after_distinct_content_review",
+    "label_approved_fraudulent_count": 21,
+    "ocr_text_approved_count": 21,
+    "ocr_localization_quality": "coarse_full_image_not_field_localization_ground_truth",
+    "private_request_sha256": "ffe53019b70210d69fed0e2f0206d3e96d664f0de66d91b22f9998a9e6c83b87",
+    "private_attestation_sha256": "5fb14101e885eea6b44547ab3dc528edf5a9f5318903fa9158862c4f211ed739",
+    "private_index_sha256": "a8fc08f1b462353b93f50ab4c8640eecd8fc297ecc2508bcc91a0f84832271b2",
+    "safe_report_sha256": "864ae4220bdc5443fbf49f3e554b088ef2e5c35df56341138d76e0bf658e7f65",
+    "image_training_eligible_count": 0,
+    "text_split_group_count": 21,
+    "training_executed": false
+  },
+  "text_split_readiness": {
+    "blockers": [],
+    "controlled_real_group_count": 34,
+    "minimum_controlled_real_group_count": 30,
+    "minimum_synthetic_clean_group_count": 20,
+    "owner_participant_lineage_count": 1,
+    "ready_to_freeze": true,
+    "report_sha256": "046c715fc5d851f145f11cb6c39aa7a66c616b0109ebeab3f4238011255a831e",
+    "synthetic_clean_group_count": 30,
+    "training_eligible_count": 0
+  },
+  "frozen_text_split": {
+    "schema_version": "ghana-private-text-frozen-split-v1",
+    "assignment_policy": "label_stratified_source_group_hash_v2",
+    "seed": 20260814,
+    "authoritative_private_version": 3,
+    "manifest_sha256": "3c2bd2e3727b62f0a61f01a7eebcbe49da7ed0ac124a8f765d471533d867d941",
+    "manifest_file_sha256": "d16b0f7e3568597a613eb8202ab1287e5aa24bbeb03636f38aaf34d418ebd5f6",
+    "report_sha256": "b0aae3b9191f9d136bbe23c256fd8a3857797b165641b1f031bea2b503720727",
+    "record_counts": {
+      "train": 362,
+      "validation": 51,
+      "test": 5
+    },
+    "controlled_real_group_counts": {
+      "train": 23,
+      "validation": 6,
+      "test": 5
+    },
+    "synthetic_clean_group_counts": {
+      "train": 24,
+      "validation": 6,
+      "test": 0
+    },
+    "owner_train_only_template_group_count": 222,
+    "controlled_test_only": true,
+    "locked_test": true,
+    "controlled_split_class_coverage": {
+      "train": ["FRAUDULENT", "GENUINE", "SUSPICIOUS"],
+      "validation": ["FRAUDULENT", "GENUINE"],
+      "test": ["FRAUDULENT", "GENUINE"]
+    },
+    "controlled_class_coverage_limitations": ["SUSPICIOUS"],
+    "development_assignment_count": 413,
+    "training_executed": false
+  },
+  "permission_evidence": "project_owner_attestation_of_friend_permission",
+  "private_attestation_sha256": "3a1770b8dfdfa3801848b044fe3a07ce1ca6d65f3d40c3f3076b5b0220d8d8fb",
+  "private_index_sha256": "8086578821d93618141ff9c79c46459dbdb9efc6e42a945a2f934a3e8bca8641",
+  "private_request_sha256": "1ef52b6ef65966b72d5b284e44bf65e354c970ac404c26220578c5e4f502687f",
+  "provisional_label_counts": {
+    "ambiguous": 1,
+    "fraud_candidate": 7,
+    "genuine_candidate": 1
+  },
+  "public_release_consent": false,
+  "raw_images_copied": false,
+  "record_count": 10,
+  "remaining_training_gates": [
+    "owner_confirmation_before_colab",
+    "pr17_training_validation_only_loader_binding",
+    "controlled_real_suspicious_validation_and_test_coverage_shortfall"
+  ],
+  "safe_report_sha256": "632587ee9b104d6a89087277612c0bb0d621c584130fa4063e3e0bc45658e039",
+  "schema_version": "pr16-ghana-private-pilot-evidence-v1",
+  "source_group_count": 8,
+  "splits_frozen": true,
+  "training_eligible_count": 0,
+  "training_executed": false,
+  "working_copy_count": 9,
+  "workflow_state_counts": {
+    "approved_internal": 7,
+    "needs_transcription": 2,
+    "quarantined": 1
+  }
+}

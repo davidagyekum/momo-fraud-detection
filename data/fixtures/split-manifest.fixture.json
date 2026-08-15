@@ -1,0 +1,12 @@
+{
+  "schema_version": "split-manifest-v1",
+  "dataset_id": "controlled-synthetic-fixtures",
+  "seed": 20260810,
+  "frozen": true,
+  "manifest_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "groups": {
+    "train": ["SYNTHETIC_GROUP_0001"],
+    "validation": ["SYNTHETIC_GROUP_0002"],
+    "test": ["SYNTHETIC_GROUP_0003"]
+  }
+}

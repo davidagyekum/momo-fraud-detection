@@ -65,3 +65,39 @@ def test_private_ml_dataset_paths_remain_prohibited(tmp_path, monkeypatch) -> No
     assert [finding.reason for finding in findings] == [
         "path is reserved for private research data"
     ]
+
+
+def test_pii_filenames_are_rejected_but_fictitious_markers_are_allowed(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(check_secrets, "REPO_ROOT", tmp_path)
+    unsafe_phone = tmp_path / "receipt-0241234567.png"
+    unsafe_email = tmp_path / "receipt-owner@example.test.png"
+    unsafe_name = tmp_path / "participant-kwame-mensah.pdf"
+    safe_fixture = tmp_path / "participant-demo-fixture.pdf"
+    for path in (unsafe_phone, unsafe_email, unsafe_name, safe_fixture):
+        path.write_text("fixture", encoding="utf-8")
+
+    assert [finding.reason for finding in check_secrets.inspect_file(unsafe_phone)] == [
+        "possible phone number in filename"
+    ]
+    assert [finding.reason for finding in check_secrets.inspect_file(unsafe_email)] == [
+        "possible email address in filename"
+    ]
+    assert [finding.reason for finding in check_secrets.inspect_file(unsafe_name)] == [
+        "possible personal name in filename"
+    ]
+    assert check_secrets.inspect_file(safe_fixture) == []
+
+
+def test_large_file_limit_is_enforced_without_committing_a_large_fixture(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(check_secrets, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(check_secrets, "MAX_REPOSITORY_FILE_BYTES", 16)
+    oversized = tmp_path / "oversized.txt"
+    oversized.write_text("x" * 17, encoding="utf-8")
+
+    assert [finding.reason for finding in check_secrets.inspect_file(oversized)] == [
+        "file is larger than 16 bytes"
+    ]

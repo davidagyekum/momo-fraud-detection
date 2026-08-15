@@ -1,0 +1,237 @@
+{
+  "acceptance_passed": false,
+  "acceptance_thresholds": {
+    "macro_f1_minimum": 0.85
+  },
+  "architecture_version": "mobilenetv3small-controlled-head-v1",
+  "artifact": {
+    "committed_to_git": false,
+    "filename": "image-mobilenetv3-controlled-v1.keras",
+    "format": "keras-v3",
+    "sha256": "3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046"
+  },
+  "class_weights": {
+    "0": 1.0,
+    "1": 1.0
+  },
+  "cpu_inference": {
+    "device": "CPU",
+    "iterations": 30,
+    "median_ms": 110.137,
+    "p95_ms": 171.081
+  },
+  "dataset_manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "dataset_scope": "controlled_synthetic_only",
+  "framework_versions": {
+    "implementation": "CPython",
+    "numpy": "2.5.2",
+    "pillow": "12.3.0",
+    "python": "3.12.13",
+    "scikit_learn": "1.9.0",
+    "tensorflow": "2.21.0"
+  },
+  "held_out_test": {
+    "calibration": {
+      "bins": [
+        {
+          "count": 2,
+          "lower": 0.2,
+          "mean_probability": 0.325878,
+          "observed_tampered_rate": 0.5,
+          "upper": 0.4
+        }
+      ],
+      "brier": 0.276873,
+      "calibration_applied": false,
+      "calibration_reason": "No calibrator is fit for the six-group controlled corpus; the diagnostic is descriptive.",
+      "expected_calibration_error": 0.174122
+    },
+    "confusion_matrix": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "ORIGINAL",
+      "CONTROLLED_TAMPERED"
+    ],
+    "labels": [
+      "ORIGINAL",
+      "CONTROLLED_TAMPERED"
+    ],
+    "macro_f1": 0.333333,
+    "per_class": {
+      "CONTROLLED_TAMPERED": {
+        "f1-score": 0.666667,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 1.0
+      },
+      "ORIGINAL": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 1.0
+      }
+    },
+    "pr_auc": 1.0,
+    "predicted": [
+      "CONTROLLED_TAMPERED",
+      "CONTROLLED_TAMPERED"
+    ],
+    "roc_auc": 1.0,
+    "sample_count": 2,
+    "sample_ids": [
+      "controlled-original-0003",
+      "controlled-tamper-0003"
+    ],
+    "source_group_count": 1,
+    "source_groups": [
+      "controlled-group-0003"
+    ],
+    "tamper_probabilities": [
+      0.32242027,
+      0.32933486
+    ],
+    "threshold": 0.05
+  },
+  "history": {
+    "fine_tune_epochs": 5,
+    "head_epochs": 6
+  },
+  "limitations": [
+    "Controlled/synthetic data only; no provider-wide or production claim is allowed.",
+    "The held-out test partition has one source group and two images.",
+    "Controlled edits do not represent the diversity or prevalence of natural fraud.",
+    "Heatmaps are supporting attention diagnostics, not proof or edit localisation."
+  ],
+  "model_name": "momo-fdvs-controlled-tamper",
+  "model_version": "image-mobilenetv3-controlled-v1",
+  "partition_groups": {
+    "test": [
+      "controlled-group-0003"
+    ],
+    "train": [
+      "controlled-group-0002",
+      "controlled-group-0004",
+      "controlled-group-0005",
+      "controlled-group-0006"
+    ],
+    "validation": [
+      "controlled-group-0001"
+    ]
+  },
+  "preprocessing_schema_hash": "8510a396d3115887f8ebff88414f75f9ea5b353f375d93cfdf65f488d55df616",
+  "preprocessing_version": "image-rgb224-minus1-to1-v1",
+  "random_seed": 20260812,
+  "report_version": "image-model-evaluation-v1",
+  "split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "threshold": {
+    "validation_macro_f1": 0.333333,
+    "validation_tampered_recall": 1.0,
+    "value": 0.05
+  },
+  "training_commit_sha": "02d8967136853c5c46eaa0babe44a7327c843a32",
+  "training_policy": {
+    "architecture": "MobileNetV3Small",
+    "architecture_version": "mobilenetv3small-controlled-head-v1",
+    "backbone_weights": "imagenet",
+    "checkpoint_mode": "max",
+    "checkpoint_monitor": "val_pr_auc",
+    "class_weight_source": "training_partition_only",
+    "early_stopping_patience": 5,
+    "fine_tune_stage": {
+      "epochs": 10,
+      "learning_rate": 1e-05,
+      "unfreeze_last_backbone_layers": 20
+    },
+    "head": [
+      "GlobalAveragePooling2D",
+      "Dropout(0.2)",
+      "Dense(1,sigmoid)"
+    ],
+    "head_stage": {
+      "backbone_frozen": true,
+      "epochs": 20,
+      "learning_rate": 0.001
+    },
+    "loss": "binary_crossentropy",
+    "test_policy": "evaluate_once_after_checkpoint_selection",
+    "threshold_partition": "validation"
+  },
+  "validation": {
+    "calibration": {
+      "bins": [
+        {
+          "count": 2,
+          "lower": 0.2,
+          "mean_probability": 0.319601,
+          "observed_tampered_rate": 0.5,
+          "upper": 0.4
+        }
+      ],
+      "brier": 0.282643,
+      "calibration_applied": false,
+      "calibration_reason": "No calibrator is fit for the six-group controlled corpus; the diagnostic is descriptive.",
+      "expected_calibration_error": 0.180399
+    },
+    "confusion_matrix": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "confusion_matrix_labels": [
+      "ORIGINAL",
+      "CONTROLLED_TAMPERED"
+    ],
+    "labels": [
+      "ORIGINAL",
+      "CONTROLLED_TAMPERED"
+    ],
+    "macro_f1": 0.333333,
+    "per_class": {
+      "CONTROLLED_TAMPERED": {
+        "f1-score": 0.666667,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 1.0
+      },
+      "ORIGINAL": {
+        "f1-score": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 1.0
+      }
+    },
+    "pr_auc": 0.25,
+    "predicted": [
+      "CONTROLLED_TAMPERED",
+      "CONTROLLED_TAMPERED"
+    ],
+    "roc_auc": 0.0,
+    "sample_count": 2,
+    "sample_ids": [
+      "controlled-original-0001",
+      "controlled-tamper-0001"
+    ],
+    "source_group_count": 1,
+    "source_groups": [
+      "controlled-group-0001"
+    ],
+    "tamper_probabilities": [
+      0.31969956,
+      0.31950209
+    ],
+    "threshold": 0.05
+  }
+}

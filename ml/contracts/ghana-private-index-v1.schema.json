@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://momo-fdvs.local/contracts/ghana-private-index-v1.json",
+  "title": "Restricted Ghana private screenshot index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pipeline_version", "dataset_id", "records"],
+  "properties": {
+    "schema_version": {"const": "ghana-private-index-v1"},
+    "pipeline_version": {"const": "ghana-private-pipeline-v1"},
+    "dataset_id": {"const": "ghana-private"},
+    "records": {"type": "array", "items": {"type": "object"}}
+  }
+}

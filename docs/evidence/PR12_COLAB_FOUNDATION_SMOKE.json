@@ -1,0 +1,49 @@
+{
+  "schema_version": "pr12-colab-foundation-smoke-evidence-v1",
+  "evidence_date": "2026-08-10",
+  "collection_method": "Owner-operated signed-in Google Colab; safe preflight/smoke output was pasted to Codex and the manifest SHA-256 was computed in the same runtime.",
+  "foundation": {
+    "foundation_version": "colab-foundation-v1",
+    "code_commit": "b2e6b24a337c3cc1777c162cf64861d7e55d29f8",
+    "git_dirty": false,
+    "notebook": "ml/notebooks/colab/00_environment_preflight.ipynb",
+    "profile": "smoke",
+    "is_colab": true,
+    "is_ci": false,
+    "python_version": "3.12.13",
+    "accelerator": "unknown",
+    "cpu_count": 2,
+    "ram_bytes": 13605830656,
+    "package_versions": {
+      "Pillow": "12.3.0",
+      "numpy": "2.5.2",
+      "pandas": "3.0.3",
+      "scikit-learn": "1.9.0",
+      "tensorflow": "2.20.0"
+    },
+    "lock_hashes": {
+      "ml/requirements-runtime.lock": "f3ff040e4b76998631672a02c138d0fc680163b9e9c2545e039f9b9d0cc7db44",
+      "ml/requirements-training.lock": "cd5bf3458be6e397c98bb38f5a37292fd6825c4030af4429879c0835482fa39c",
+      "ml/requirements-dev.lock": "ced1685ea3330bd0afa6ad61faafbb98b50519beb6b25e45765f5e1b4cb39c6b"
+    }
+  },
+  "smoke": {
+    "run_id": "20260810T161011Z_smoke-foundation_b2e6b24a_seed20260810",
+    "seed": 20260810,
+    "resumed": false,
+    "manifest_filename": "run_manifest.json",
+    "manifest_sha256": "bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279",
+    "manifest_sha256_source": "owner_reported_from_colab_drive_artifact",
+    "report_filename": "smoke_report.json",
+    "prediction_digest": "43833f498906e8063c7d1cfe592004f17f3d5570bb00076061263f737de77624",
+    "acquisition_executed": false,
+    "full_training_executed": false,
+    "promotable": false
+  },
+  "limitations": [
+    "This is infrastructure smoke evidence over committed fictitious train/validation fixtures, not reportable model training or evaluation.",
+    "No held-out metric, accuracy, calibration, provider-generalisation or production-readiness claim is made.",
+    "The TensorFlow version is runtime inventory only; the smoke did not execute the reportable TensorFlow training workflow.",
+    "The manifest hash is owner-reported from the private Drive artifact; the raw private manifest is not committed."
+  ]
+}

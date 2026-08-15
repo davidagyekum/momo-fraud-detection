@@ -1,0 +1,52 @@
+{
+  "augmentation_training_only": true,
+  "dataset_scope": "controlled_synthetic_only",
+  "group_intersections": {
+    "train_test": [],
+    "train_validation": [],
+    "validation_test": []
+  },
+  "label_counts": {
+    "CONTROLLED_TAMPERED": 6,
+    "ORIGINAL": 6
+  },
+  "limitations": [
+    "Only six controlled source groups and twelve generic images are available.",
+    "Labels represent declared controlled edits, not naturally occurring provider fraud.",
+    "External training-run metrics are recorded separately under docs/evidence and are not embedded in this deterministic dataset report."
+  ],
+  "manifest_hash": "51d12132904f461fb4bec6a5d0eda9cff5dd94961a48129b7dd75359b38ead1f",
+  "model_metrics_embedded": false,
+  "preprocessing_schema_hash": "8510a396d3115887f8ebff88414f75f9ea5b353f375d93cfdf65f488d55df616",
+  "preprocessing_version": "image-rgb224-minus1-to1-v1",
+  "random_seed": 20260812,
+  "report_scope": "dataset_preflight_only",
+  "record_count": 12,
+  "schema_version": "controlled-image-binary-v1",
+  "source_group_count": 6,
+  "source_type_counts": {
+    "controlled_tamper": 6,
+    "synthetic": 6
+  },
+  "split_counts": {
+    "test": 2,
+    "train": 8,
+    "validation": 2
+  },
+  "split_hash": "08008637eb661634eb93fee4d4ac74d82da598b2b0ff28f188f9641e47e933f9",
+  "split_label_counts": {
+    "test": {
+      "CONTROLLED_TAMPERED": 1,
+      "ORIGINAL": 1
+    },
+    "train": {
+      "CONTROLLED_TAMPERED": 4,
+      "ORIGINAL": 4
+    },
+    "validation": {
+      "CONTROLLED_TAMPERED": 1,
+      "ORIGINAL": 1
+    }
+  },
+  "training_executed_by_report": false
+}

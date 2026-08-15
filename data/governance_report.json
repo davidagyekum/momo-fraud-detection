@@ -1,0 +1,31 @@
+{
+  "acquisition_executed": false,
+  "enabled_dataset_count": 0,
+  "fixture_count": 6,
+  "fixture_hashes": {
+    "edit-manifest.fixture.json": "4536a7e51ceff54c430d3b0f2d28dabce28ba6a4bdfcb23a8c2b522144f62e62",
+    "ocr-truth.fixture.json": "514c7a08f530730c8b4008bae07a4c6d0de9566ce0f61628ec5a78e42bd1f30e",
+    "run-manifest.fixture.json": "557a5f2a1ee31d50939b130e69844bb4f47dd1ea17b45f290ecee98a7a4e7d11",
+    "screenshot.fixture.json": "0b73b8a83fbfa9ac260aad979c39843f0109776558486a88a01b7da994ca5a5a",
+    "split-manifest.fixture.json": "c8ebf74fa474237835fad0c6a64f3e0f469cccf2cd92387931d4a352d7b617c2",
+    "transaction.fixture.json": "753be9202532e240b71c436822fae49ddee61b691387cdb4471e0d9c99ac0503"
+  },
+  "governance_version": "data-governance-v1",
+  "registry_entry_count": 6,
+  "registry_hash": "5c0df60dcde83a38c92a2c5f3dde325d3b7dc7e2a58338b291317d92ce1bb208",
+  "registry_version": "dataset-registry-v1",
+  "schema_count": 6,
+  "schema_hashes": {
+    "edit-manifest": "2c21dfbadbf9ad4d328769f37f266546f684d575cc677b28eff62b1328e07ef3",
+    "ocr-truth": "2945f6ed1d020ad0f01111596b408b91635f9496f7fa58b287d7ae11389f3fc2",
+    "run-manifest": "e30f5c49db66b0274c5179be521b7f1c93927b8aa3a094d02fdbfb2865d7660c",
+    "screenshot": "5e53029182dcfc59019d4872b6d375fa6172865956fdaa49fd45d134e51ff087",
+    "split-manifest": "562f92a10c6380d7ef807515a3c47b8b85068c8030ef4b319fde319f5e3ba55c",
+    "transaction": "e53c53088f9e809cc61023d2f69e56a69cd286ce184766006bd16782131c7ba7"
+  },
+  "taxonomy_hash": "a4a2efb21911f29dbe22efd6315313ceadffee5745ade52f086ff18e26b1f326",
+  "taxonomy_total_percent": 100,
+  "training_executed": false,
+  "withdrawal_fixture_entry_count": 1,
+  "withdrawal_fixture_hash": "33ecc617080baa097225dbbee0102f4e8c2eb9b9c5b21978f7ed201bea6bd0ef"
+}
