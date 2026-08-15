@@ -108,9 +108,7 @@ def test_amount_parser_output_parity(
 
 
 def test_amount_candidate_snapshot_keeps_suppressed_currency_pool_private() -> None:
-    snapshot = ocr_parser._amount_candidate_snapshot(
-        "Amount GHS 20.00\nTransfer value GHS 10.00"
-    )
+    snapshot = ocr_parser._amount_candidate_snapshot("Amount GHS 20.00\nTransfer value GHS 10.00")
     assert snapshot.labelled_distinct_normalized == ("20.00",)
     assert snapshot.currency_distinct_normalized == ("20.00", "10.00")
     assert snapshot.active_source == "labelled"

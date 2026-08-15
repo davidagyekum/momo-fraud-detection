@@ -166,14 +166,10 @@ def _amount_candidate_snapshot(text: str) -> AmountCandidateSnapshot:
         _clean(match.group(1)) for match in re.finditer(_AMOUNT_TOKEN, text, re.IGNORECASE)
     )
     labelled_valid = tuple(
-        normalized
-        for raw in labelled_raw
-        if (normalized := _normalize_amount(raw)) is not None
+        normalized for raw in labelled_raw if (normalized := _normalize_amount(raw)) is not None
     )
     currency_valid = tuple(
-        normalized
-        for raw in currency_raw
-        if (normalized := _normalize_amount(raw)) is not None
+        normalized for raw in currency_raw if (normalized := _normalize_amount(raw)) is not None
     )
     active_source: Literal["labelled", "currency_fallback"] = (
         "labelled" if labelled_raw else "currency_fallback"
