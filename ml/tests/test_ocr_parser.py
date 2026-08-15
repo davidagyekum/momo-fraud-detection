@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+import momo_fdvs_ml.ocr_parser as ocr_parser
 from momo_fdvs_ml.ocr_parser import (
     FIELD_CONFIDENCE_THRESHOLD,
     detect_provider,
@@ -70,6 +71,40 @@ def test_amount_normalization_and_ambiguity(
     assert field.normalized == normalized
     if warning:
         assert warning in field.warnings
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Amount GHS 10.00", ("10.00", "10.00", True, ())),
+        ("Balance GHS 10.00", ("10.00", "10.00", True, ())),
+        (
+            "Amount GHS 10.00 and total GHS 20.00",
+            ("10.00 | 20.00", None, False, ("AMOUNT_AMBIGUOUS",)),
+        ),
+        ("Amount GHS 10.00 and fee GHS 10.00", ("10.00", "10.00", True, ())),
+        ("Amount: GHS 1,001.2", ("1,001.2", "1001.20", True, ())),
+        ("Amount GHS 10.123", (None, None, False, ("AMOUNT_NOT_FOUND",))),
+        ("No currency candidate", (None, None, False, ("AMOUNT_NOT_FOUND",))),
+        ("Paid GH¢ 5.00", ("5.00", "5.00", True, ())),
+    ],
+)
+def test_amount_parser_output_parity(
+    text: str,
+    expected: tuple[str | None, str | None, bool, tuple[str, ...]],
+) -> None:
+    field = parse_amount(text)
+    assert (field.raw, field.normalized, field.available, field.warnings) == expected
+
+
+def test_amount_candidate_snapshot_keeps_suppressed_currency_pool_private() -> None:
+    snapshot = ocr_parser._amount_candidate_snapshot(
+        "Amount GHS 20.00\nTransfer value GHS 10.00"
+    )
+    assert snapshot.labelled_distinct_normalized == ("20.00",)
+    assert snapshot.currency_distinct_normalized == ("20.00", "10.00")
+    assert snapshot.active_source == "labelled"
+    assert snapshot.active_distinct_normalized == ("20.00",)
 
 
 def test_reference_preserves_ocr_ambiguity_and_never_silently_corrects() -> None:

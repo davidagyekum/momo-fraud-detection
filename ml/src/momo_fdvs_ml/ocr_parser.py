@@ -7,7 +7,7 @@ import unicodedata
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from typing import Final
+from typing import Final, Literal
 from zoneinfo import ZoneInfo
 
 OCR_PARSER_VERSION: Final = "ghana-momo-parser-v1"
@@ -134,28 +134,81 @@ def _normalize_amount(raw: str) -> str | None:
     return f"{amount.quantize(Decimal('0.01')):.2f}"
 
 
-def parse_amount(text: str, engine_confidence: float | None = None) -> ParsedField:
-    """Prefer transaction-labelled GHS values and reject unresolved ambiguity."""
+@dataclass(frozen=True)
+class AmountCandidateSnapshot:
+    labelled_raw_candidates: tuple[str, ...]
+    labelled_valid_normalized: tuple[str, ...]
+    labelled_distinct_normalized: tuple[str, ...]
+    currency_raw_candidates: tuple[str, ...]
+    currency_valid_normalized: tuple[str, ...]
+    currency_distinct_normalized: tuple[str, ...]
+    active_source: Literal["labelled", "currency_fallback"]
+    active_valid_normalized: tuple[str, ...]
+    active_distinct_normalized: tuple[str, ...]
 
+
+def _ordered_distinct(values: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(values))
+
+
+def _amount_candidate_snapshot(text: str) -> AmountCandidateSnapshot:
     labelled_patterns = (
         rf"(?:amount|total|paid|payment|cash\s*in|cash\s*out|transferred|sent|received)"
         rf"[^\n]{{0,36}}?{_AMOUNT_TOKEN}",
         rf"{_AMOUNT_TOKEN}[^\n]{{0,24}}?(?:paid|sent|received|transferred)",
     )
-    labelled = [
+    labelled_raw = tuple(
         _clean(match.group(1))
         for pattern in labelled_patterns
         for match in re.finditer(pattern, text, re.IGNORECASE)
-    ]
-    candidates = labelled or [
+    )
+    currency_raw = tuple(
         _clean(match.group(1)) for match in re.finditer(_AMOUNT_TOKEN, text, re.IGNORECASE)
-    ]
-    normalized = [(raw, _normalize_amount(raw)) for raw in candidates]
-    valid = [(raw, value) for raw, value in normalized if value is not None]
-    distinct = {value for _, value in valid}
+    )
+    labelled_valid = tuple(
+        normalized
+        for raw in labelled_raw
+        if (normalized := _normalize_amount(raw)) is not None
+    )
+    currency_valid = tuple(
+        normalized
+        for raw in currency_raw
+        if (normalized := _normalize_amount(raw)) is not None
+    )
+    active_source: Literal["labelled", "currency_fallback"] = (
+        "labelled" if labelled_raw else "currency_fallback"
+    )
+    active_valid = labelled_valid if labelled_raw else currency_valid
+    return AmountCandidateSnapshot(
+        labelled_raw,
+        labelled_valid,
+        _ordered_distinct(labelled_valid),
+        currency_raw,
+        currency_valid,
+        _ordered_distinct(currency_valid),
+        active_source,
+        active_valid,
+        _ordered_distinct(active_valid),
+    )
+
+
+def parse_amount(text: str, engine_confidence: float | None = None) -> ParsedField:
+    """Prefer transaction-labelled GHS values and reject unresolved ambiguity."""
+
+    snapshot = _amount_candidate_snapshot(text)
+    active_raw = (
+        snapshot.labelled_raw_candidates
+        if snapshot.active_source == "labelled"
+        else snapshot.currency_raw_candidates
+    )
+    valid = tuple(
+        (raw, normalized)
+        for raw in active_raw
+        if (normalized := _normalize_amount(raw)) is not None
+    )
     if not valid:
         return _unavailable("AMOUNT_NOT_FOUND")
-    if len(distinct) > 1:
+    if len(snapshot.active_distinct_normalized) > 1:
         return ParsedField(
             " | ".join(raw for raw, _ in valid),
             None,
@@ -164,7 +217,12 @@ def parse_amount(text: str, engine_confidence: float | None = None) -> ParsedFie
             ("AMOUNT_AMBIGUOUS",),
         )
     raw, value = valid[0]
-    return ParsedField(raw, value, _confidence(0.92 if labelled else 0.72, engine_confidence), True)
+    return ParsedField(
+        raw,
+        value,
+        _confidence(0.92 if snapshot.active_source == "labelled" else 0.72, engine_confidence),
+        True,
+    )
 
 
 def parse_reference(text: str, engine_confidence: float | None = None) -> ParsedField:
