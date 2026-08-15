@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import json
 from pathlib import Path
@@ -72,8 +73,22 @@ def test_pr17_parser_ceiling_notebook_is_pinned_and_stops_before_adapters() -> N
     ]
     assert 'TARGET_COMMIT = "22a30a5adb713f7ddf6902ccc5387e203363c5f8"' in code_sources[0]
     assert "RUN_BENCHMARK = False" in code_sources[0]
-    assert "run_ocr_parser_ceiling_diagnostic(" in code_sources[3]
-    assert "implementation_commit_sha=TARGET_COMMIT" in code_sources[3]
+    diagnostic_calls = [
+        call
+        for call in ast.walk(ast.parse(code_sources[3]))
+        if isinstance(call, ast.Call)
+        and isinstance(call.func, ast.Name)
+        and call.func.id == "run_ocr_parser_ceiling_diagnostic"
+    ]
+    assert len(diagnostic_calls) == 1
+    implementation_commit_keywords = [
+        keyword
+        for keyword in diagnostic_calls[0].keywords
+        if keyword.arg == "implementation_commit_sha"
+    ]
+    assert len(implementation_commit_keywords) == 1
+    assert isinstance(implementation_commit_keywords[0].value, ast.Name)
+    assert implementation_commit_keywords[0].value.id == "TARGET_COMMIT"
     adapter_cell_index = next(
         index
         for index, source in enumerate(code_sources)
