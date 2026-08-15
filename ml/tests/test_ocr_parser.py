@@ -98,7 +98,13 @@ def test_amount_parser_output_parity(
     expected: tuple[str | None, str | None, float, bool, tuple[str, ...]],
 ) -> None:
     field = parse_amount(text, engine_confidence)
-    assert (field.raw, field.normalized, field.confidence, field.available, field.warnings) == expected
+    assert (
+        field.raw,
+        field.normalized,
+        field.confidence,
+        field.available,
+        field.warnings,
+    ) == expected
 
 
 def test_amount_candidate_snapshot_keeps_suppressed_currency_pool_private() -> None:
