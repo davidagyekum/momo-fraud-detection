@@ -1,0 +1,17 @@
+{
+  "schema_version": "analysis-risk-policy-schema-v1",
+  "policy_version": "analysis-risk-policy-demo-v1",
+  "critical_verification_fields": [
+    "amount",
+    "transaction_reference"
+  ],
+  "structured_class_bands": {
+    "GENUINE": "low_risk",
+    "SUSPICIOUS": "medium_risk",
+    "FRAUDULENT": "high_risk"
+  },
+  "image_high_threshold": 0.85,
+  "categorical_score_is_null": true,
+  "deterministic_image_supporting_only": true,
+  "stored_reference_match_is_not_low_risk": true
+}

@@ -31,6 +31,8 @@ function AppNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="receipt/[transactionId]" />
         <Stack.Screen name="ocr/[transactionId]" />
+        <Stack.Screen name="analysis/[analysisRunId]" />
+        <Stack.Screen name="transaction/[transactionId]" />
       </Stack>
     </>
   );

@@ -1,0 +1,111 @@
+{
+  "schema_version": "pr18-analysis-product-evidence-v1",
+  "branch": "codex/pr18-analysis-product",
+  "base_sha": "d9b096af46232530bc47eff96856260d083885e4",
+  "implementation_head_sha": "756b30fb3371469ea4ff7ad41097ab2dc10cb1ef",
+  "analysis_contract_version": "analysis-result-v1",
+  "policy": {
+    "path": "services/api/src/momo_fdvs/policies/risk_policy_demo_v1.json",
+    "version": "analysis-risk-policy-demo-v1",
+    "sha256": "ab45ca650148c13f67894c2867effb026e3c77a95d7448707400a8fd59760859",
+    "categorical_score_is_null": true,
+    "deterministic_image_supporting_only": true,
+    "stored_reference_match_is_not_low_risk": true
+  },
+  "openapi_sha256": "183d2f53fe3e5742880f46c44a93bd5274ed4d8df31de87bcf9e59f95b5dedb8",
+  "active_components": {
+    "private_camera_gallery_upload": true,
+    "ocr_review_and_correction": true,
+    "stored_imported_reference_verification": true,
+    "deterministic_image_evidence": true,
+    "categorical_risk_policy": true,
+    "persisted_mobile_result_history_detail": true
+  },
+  "unavailable_components": {
+    "accepted_cnn_image_classifier_or_localizer": true,
+    "screenshot_derived_structured_classifier": true,
+    "live_provider_verification": true,
+    "locked_test_final_metrics": true,
+    "deployment": true,
+    "hosted_ci_while_billing_blocked": true
+  },
+  "verification": {
+    "backend": {
+      "command": "python scripts/verify_backend.py",
+      "passed": true,
+      "test_count": 172,
+      "branch_aware_coverage_percent": 85.4,
+      "format_lint_strict_mypy_openapi_er_passed": true
+    },
+    "mobile": {
+      "commands": [
+        "npm.cmd run format:check",
+        "npm.cmd run lint",
+        "npm.cmd run typecheck",
+        "npm.cmd run test:ci",
+        "npm.cmd run build:web"
+      ],
+      "passed": true,
+      "test_count": 58,
+      "statement_coverage_percent": 89.6,
+      "branch_coverage_percent": 71.34,
+      "static_route_count": 25
+    },
+    "ml": {
+      "command": "python scripts/verify_ml.py",
+      "passed": true,
+      "test_count": 714,
+      "branch_aware_coverage_percent": 90.15,
+      "training_executed": false,
+      "locked_test_accessed_for_decisions": false
+    },
+    "secret_scan": {
+      "command": "python scripts/check_secrets.py",
+      "passed": true,
+      "candidate_file_count": 588
+    },
+    "migrations": {
+      "empty_database_upgrade_passed": true,
+      "previous_revision_upgrade_passed": true,
+      "head_revision": "20260815_0003"
+    },
+    "controlled_journey": {
+      "passed": true,
+      "scope": "fictitious Flask integration journey over disposable live PostgreSQL",
+      "steps": [
+        "register_login",
+        "private_upload",
+        "controlled_ocr",
+        "immutable_confirmation",
+        "start_analysis",
+        "get_result",
+        "get_history",
+        "get_transaction_detail",
+        "get_evidence"
+      ],
+      "same_analysis_id_across_projections": true
+    }
+  },
+  "privacy": {
+    "raw_receipt_persisted_publicly": false,
+    "private_storage_key_returned": false,
+    "private_filename_in_analysis_projections": false,
+    "record_owner_policy_enforced": true,
+    "automated_evidence_immutable": true,
+    "contains_sensitive_data": false,
+    "safe_for_submission": true
+  },
+  "host_boundary": {
+    "node_observed": "22.23.2",
+    "node_required": "24.14.0",
+    "npm_observed": "10.9.8",
+    "npm_required": "10.9.0",
+    "host_tesseract_available": false,
+    "container_tesseract_available": true
+  },
+  "image_model_active": false,
+  "structured_model_active": false,
+  "locked_test_accessed": false,
+  "training_executed": false,
+  "report_sha256": "76fba01ec02234a460bfa8d7cdc767cadf0b015d89c5600c0baa31e66f06a540"
+}

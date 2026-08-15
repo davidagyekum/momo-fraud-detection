@@ -13,7 +13,7 @@ from PIL import Image
 from sqlalchemy import select
 
 from momo_fdvs.extensions import db
-from momo_fdvs.models import AuditLog, Role, Transaction, User, UserRole
+from momo_fdvs.models import AuditLog, FraudCase, Role, Transaction, User, UserRole
 from momo_fdvs.security.passwords import hash_password
 from momo_fdvs.services.receipts import ReceiptFailure, inspect_receipt, store_receipt
 from momo_fdvs.storage.local import LocalPrivateStorage
@@ -190,7 +190,7 @@ def test_user_filename_never_controls_storage_path(app: Flask) -> None:
         assert "private/receipt.png" not in receipt.object_key
 
 
-def test_staff_can_read_without_receipt_identity_leak(app: Flask) -> None:
+def test_assigned_investigator_can_read_without_receipt_identity_leak(app: Flask) -> None:
     client = app.test_client()
     owner = _register(client)
     created = client.post(
@@ -217,6 +217,16 @@ def test_staff_can_read_without_receipt_identity_leak(app: Flask) -> None:
                 user_id=investigator.id,
                 role_code="INVESTIGATOR",
                 granted_at=datetime.now(UTC),
+            )
+        )
+        db.session.add(
+            FraudCase(
+                transaction_id=uuid.UUID(transaction_id),
+                source="ADMIN",
+                category="CONTROLLED_RECEIPT_REVIEW",
+                status="ASSIGNED",
+                assigned_to=investigator.id,
+                opened_at=datetime.now(UTC),
             )
         )
         db.session.commit()

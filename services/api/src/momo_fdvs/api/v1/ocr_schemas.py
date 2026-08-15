@@ -2,7 +2,6 @@
 
 from marshmallow import Schema, fields, validate
 
-from momo_fdvs.api.v1.reference_schemas import PartialAnalysisEnvelopeSchema
 from momo_fdvs.api.v1.schemas import MetaSchema
 
 
@@ -91,9 +90,23 @@ class AnalysisUnavailableEnvelopeSchema(Schema):
     meta = fields.Nested(MetaSchema, required=True)
 
 
+class AnalysisStartDataSchema(Schema):
+    analysis_run_id = fields.UUID(required=True)
+    transaction_id = fields.UUID(required=True)
+    status = fields.String(required=True)
+    current_stage = fields.String(allow_none=True, required=True)
+    poll_url = fields.String(required=True)
+    replayed = fields.Boolean(required=True)
+
+
+class AnalysisStartEnvelopeSchema(Schema):
+    data = fields.Nested(AnalysisStartDataSchema, required=True)
+    meta = fields.Nested(MetaSchema, required=True)
+
+
 __all__ = [
+    "AnalysisStartEnvelopeSchema",
     "OCRConfirmationEnvelopeSchema",
     "OCRConfirmationRequestSchema",
     "OCRReviewEnvelopeSchema",
-    "PartialAnalysisEnvelopeSchema",
 ]

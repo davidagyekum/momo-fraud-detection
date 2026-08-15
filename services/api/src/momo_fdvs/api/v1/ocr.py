@@ -10,31 +10,23 @@ from flask.views import MethodView
 from flask_smorest import Blueprint
 
 from momo_fdvs.api.v1.ocr_schemas import (
+    AnalysisStartEnvelopeSchema,
     OCRConfirmationEnvelopeSchema,
     OCRConfirmationRequestSchema,
     OCRReviewEnvelopeSchema,
-    PartialAnalysisEnvelopeSchema,
 )
 from momo_fdvs.errors import error_response
 from momo_fdvs.extensions import db, limiter
 from momo_fdvs.models import OCRResult
 from momo_fdvs.policies.auth import owned_transaction, require_roles
+from momo_fdvs.services.analysis_orchestrator import AnalysisFailure, run_analysis
 from momo_fdvs.services.audit import audit_event
-from momo_fdvs.services.image_forensics import (
-    image_evidence_projection,
-    unavailable_image_evidence,
-)
 from momo_fdvs.services.ocr import (
     OCRFailure,
     confirm_ocr,
     latest_confirmation,
     latest_ocr_result,
     run_and_store_ocr,
-)
-from momo_fdvs.services.verification import (
-    VerificationFailure,
-    run_partial_verification_analysis,
-    verification_projection,
 )
 from momo_fdvs.storage.base import ObjectStorage
 
@@ -302,14 +294,14 @@ class AnalysisReadinessResource(MethodView):
             503: {"description": "Stored verification configuration is unavailable."},
         },
     )
-    @ocr_blueprint.response(202, PartialAnalysisEnvelopeSchema)
+    @ocr_blueprint.response(202, AnalysisStartEnvelopeSchema)
     def post(self, transaction_id: uuid.UUID) -> Any:
-        """Run stored-record verification and expose unavailable risk stages honestly."""
+        """Run the bounded evidence pipeline for an OCR-confirmed transaction."""
         transaction = owned_transaction(transaction_id)
         if transaction is None:
             return error_response("TRANSACTION_NOT_FOUND", "Transaction not found.", 404)
         confirmation = latest_confirmation(transaction)
-        if transaction.status not in {"READY", "PARTIAL"} or confirmation is None:
+        if transaction.status not in {"READY", "PARTIAL", "COMPLETED"} or confirmation is None:
             return error_response(
                 "OCR_REVIEW_REQUIRED",
                 "Confirm the OCR fields before starting analysis.",
@@ -318,10 +310,10 @@ class AnalysisReadinessResource(MethodView):
         try:
             key = request.headers.get("Idempotency-Key", "").strip()
             if not key:
-                raise VerificationFailure(
+                raise AnalysisFailure(
                     "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key is required.", 400
                 )
-            result = run_partial_verification_analysis(
+            result = run_analysis(
                 transaction=transaction,
                 confirmation=confirmation,
                 user=g.current_user,
@@ -329,50 +321,21 @@ class AnalysisReadinessResource(MethodView):
                 idempotency_key=key,
                 storage=_storage(),
             )
-            image_evidence = (
-                image_evidence_projection(
-                    result.image_analysis,
-                    transaction_id=transaction.id,
-                    include_diagnostics=False,
-                )
-                if result.image_analysis is not None
-                else unavailable_image_evidence(
-                    result.image_error_code or "IMAGE_ANALYSIS_UNAVAILABLE"
-                )
-            )
-            unavailable_stages = [
-                "STRUCTURED_MODEL",
-                "IMAGE_MODEL",
-                "RISK_AGGREGATION",
-            ]
-            if result.image_analysis is None:
-                unavailable_stages.insert(0, "IMAGE_ANALYSIS")
             return {
                 "data": {
-                    "analysis_id": result.run.id,
                     "analysis_run_id": result.run.id,
                     "transaction_id": transaction.id,
-                    "status": "PARTIAL",
+                    "status": result.run.status,
                     "current_stage": result.run.current_stage,
-                    "risk": {
-                        "status": "UNAVAILABLE",
-                        "class": None,
-                        "score": None,
-                        "reason_code": "MODEL_AND_RISK_STAGES_NOT_AVAILABLE",
-                        "summary": "Fraud risk has not been calculated in this build.",
-                    },
-                    "verification": verification_projection(result.verification),
-                    "image_evidence": image_evidence,
-                    "evidence_url": f"/api/v1/analyses/{result.run.id}/evidence",
-                    "unavailable_stages": unavailable_stages,
+                    "poll_url": f"/api/v1/analyses/{result.run.id}",
                     "replayed": result.replayed,
                 },
                 "meta": _meta(),
             }
-        except VerificationFailure as failure:
+        except AnalysisFailure as failure:
             db.session.rollback()
             audit_event(
-                "verification.request_rejected",
+                "analysis.request_rejected",
                 "FAILURE",
                 actor_id=g.current_user.id,
                 roles=set(g.current_roles),
@@ -381,9 +344,7 @@ class AnalysisReadinessResource(MethodView):
                 metadata={"reason_code": failure.code, "http_status": failure.status},
             )
             db.session.commit()
-            return error_response(
-                failure.code, failure.message, failure.status, failure.field_errors
-            )
+            return error_response(failure.code, failure.message, failure.status)
 
 
 __all__ = ["ocr_blueprint"]

@@ -72,6 +72,7 @@ output/
 *.tsbuildinfo
 
 # Tooling and operating-system files
+.worktrees/
 .DS_Store
 Thumbs.db
 Desktop.ini

@@ -1,4 +1,4 @@
-import { ApiError } from "@/lib/api";
+import { ApiError, type JsonRequest } from "@/lib/api";
 import type { Envelope } from "@/types/api";
 
 export const OCR_FIELD_NAMES = [
@@ -60,8 +60,6 @@ export type OCRConfirmationData = {
   replayed: boolean;
   next_action: { type: "RUN_ANALYSIS"; endpoint: string };
 };
-
-type JsonRequest = <T>(path: string, init?: RequestInit) => Promise<T>;
 
 export function createOCRIdempotencyKey(prefix: "run" | "confirm"): string {
   const randomUuid = globalThis.crypto?.randomUUID?.();
