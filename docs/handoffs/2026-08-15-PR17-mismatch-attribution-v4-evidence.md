@@ -96,8 +96,8 @@ starting head: f1912cb74617f0690120467271de3c53b9fcfb08
 runtime: bf042c3a0f6e18a2777f85d7b9d3d5131ae31d93
 notebook: 8afac88b18b61641e82597f41e2a305edc55c534
 report: 2405ea0e774396840a9d586e7e9c403b139215e8833296c17923ffde51a20c73
-final evidence commit: pending
-push/PR body update: pending
+evidence payload commit: 5aa69528e5d23c67f82ae98363d9e237b4edfc91
+publication correction: the commit containing this line cannot self-embed its own SHA; the exact final branch head is authoritative in PR #15 metadata and its current_pr_head=<40-hex SHA> body marker
 ```
 
 ## Next exact task
