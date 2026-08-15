@@ -21,6 +21,7 @@ class AnalysisRiskSchema(Schema):
     missing_signals = fields.List(fields.String(), required=True)
     limitations = fields.List(fields.String(), required=True)
     policy_version = fields.String(required=True)
+    disclaimer = fields.String(required=True)
 
 
 class VerificationSummarySchema(Schema):
@@ -79,6 +80,12 @@ class AnalysisEvidenceSummarySchema(Schema):
     automated_evidence_immutable = fields.Boolean(required=True)
 
 
+class AnalysisOCRReviewSchema(Schema):
+    confirmed_field_count = fields.Integer(required=True)
+    correction_count = fields.Integer(required=True)
+    schema_version = fields.String(required=True)
+
+
 class AnalysisDataSchema(Schema):
     id = fields.UUID(required=True)
     transaction_id = fields.UUID(required=True)
@@ -86,6 +93,7 @@ class AnalysisDataSchema(Schema):
     risk = fields.Nested(AnalysisRiskSchema, required=True)
     verification = fields.Nested(VerificationSummarySchema, allow_none=True, required=True)
     evidence_summary = fields.Nested(AnalysisEvidenceSummarySchema, required=True)
+    ocr_review = fields.Nested(AnalysisOCRReviewSchema, required=True)
     versions = fields.Nested(AnalysisVersionsSchema, required=True)
     progress = fields.Nested(AnalysisProgressSchema, required=True)
     evidence_url = fields.String(required=True)

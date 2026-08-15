@@ -45,6 +45,7 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
             • {reason.title}
           </Text>
         ))}
+        <Text style={uiStyles.muted}>{result.risk.disclaimer}</Text>
       </AppCard>
 
       <AppCard>
@@ -67,6 +68,21 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
             No stored reference comparison is available.
           </Text>
         )}
+      </AppCard>
+
+      <AppCard>
+        <Text style={uiStyles.cardTitle}>Confirmed OCR review</Text>
+        <Text style={uiStyles.body}>
+          {result.ocr_review.confirmed_field_count} confirmed fields;{" "}
+          {result.ocr_review.correction_count}{" "}
+          {result.ocr_review.correction_count === 1
+            ? "correction"
+            : "corrections"}
+          .
+        </Text>
+        <Text style={uiStyles.muted}>
+          Confirmation schema: {result.ocr_review.schema_version}
+        </Text>
       </AppCard>
 
       <AppCard>

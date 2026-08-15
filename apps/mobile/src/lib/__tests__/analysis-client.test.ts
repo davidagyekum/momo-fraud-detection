@@ -15,6 +15,8 @@ const risk = {
   missing_signals: ["IMAGE_MODEL_NOT_ACTIVE"],
   limitations: ["No image model."],
   policy_version: "risk-policy-v1",
+  disclaimer:
+    "This is an automated risk assessment, not a final legal determination.",
 } as const;
 
 const verification = {
@@ -56,6 +58,11 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
           model_version: null,
         },
         automated_evidence_immutable: true,
+      },
+      ocr_review: {
+        confirmed_field_count: 10,
+        correction_count: 0,
+        schema_version: "ocr-fields-v1",
       },
       versions: {
         policy_version: "risk-policy-v1",

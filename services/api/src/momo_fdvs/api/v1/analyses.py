@@ -20,10 +20,12 @@ from momo_fdvs.models import (
     AnalysisRun,
     AnalysisStageRun,
     ImageAnalysis,
+    OCRConfirmation,
     Transaction,
     VerificationResult,
 )
 from momo_fdvs.policies.auth import require_auth
+from momo_fdvs.policies.evidence_access import transaction_evidence_access
 from momo_fdvs.services.audit import audit_event
 from momo_fdvs.services.image_forensics import (
     image_evidence_projection,
@@ -50,16 +52,20 @@ def _as_dict(value: object) -> dict[str, Any]:
 def _visible_analysis(
     analysis_run_id: uuid.UUID,
 ) -> tuple[AnalysisRun, Transaction, bool] | None:
-    staff_access = bool({"ADMIN", "INVESTIGATOR"} & set(g.current_roles))
     statement = (
         select(AnalysisRun, Transaction)
         .join(Transaction, Transaction.id == AnalysisRun.transaction_id)
         .where(AnalysisRun.id == analysis_run_id)
     )
-    if not staff_access:
-        statement = statement.where(Transaction.user_id == g.current_user.id)
     row = db.session.execute(statement).one_or_none()
     if row is None:
+        return None
+    visible, staff_access = transaction_evidence_access(
+        row.Transaction,
+        user_id=g.current_user.id,
+        roles=set(g.current_roles),
+    )
+    if not visible:
         return None
     return row.AnalysisRun, row.Transaction, staff_access
 
@@ -110,6 +116,7 @@ def risk_projection(run: AnalysisRun) -> dict[str, Any]:
                 run.configuration_snapshot.get("policy_version", "unavailable"),
             )
         ),
+        "disclaimer": ("This is an automated risk assessment, not a final legal determination."),
     }
 
 
@@ -159,6 +166,9 @@ def _analysis_projection(
     components = run.component_scores
     stage_items = [_stage_projection(stage) for stage in stages]
     completed = sum(stage.status in {"COMPLETED", "SKIPPED", "FAILED"} for stage in stages)
+    confirmation = db.session.get(OCRConfirmation, run.ocr_confirmation_id)
+    if confirmation is None:
+        raise RuntimeError("analysis run is missing its immutable OCR confirmation")
     return {
         "id": run.id,
         "transaction_id": transaction.id,
@@ -172,6 +182,11 @@ def _analysis_projection(
             "image_model": _component_projection(components.get("image_model")),
             "structured_model": _component_projection(components.get("structured_model")),
             "automated_evidence_immutable": True,
+        },
+        "ocr_review": {
+            "confirmed_field_count": len(confirmation.confirmed_fields),
+            "correction_count": len(confirmation.corrections),
+            "schema_version": confirmation.schema_version,
         },
         "versions": _versions_projection(run),
         "progress": {

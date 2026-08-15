@@ -28,6 +28,7 @@ from momo_fdvs.models import (
     VerificationResult,
 )
 from momo_fdvs.policies.auth import require_auth, require_roles
+from momo_fdvs.policies.evidence_access import transaction_evidence_access
 from momo_fdvs.services.audit import audit_event
 from momo_fdvs.services.receipts import (
     ReceiptFailure,
@@ -439,10 +440,14 @@ class TransactionReceiptResource(MethodView):
             )
 
         transaction = db.session.get(Transaction, transaction_id)
-        staff_access = bool({"ADMIN", "INVESTIGATOR"} & set(g.current_roles))
-        visible = transaction is not None and (
-            transaction.user_id == g.current_user.id or staff_access
-        )
+        visible = False
+        staff_access = False
+        if transaction is not None:
+            visible, staff_access = transaction_evidence_access(
+                transaction,
+                user_id=g.current_user.id,
+                roles=set(g.current_roles),
+            )
         if not visible or transaction is None or transaction.receipt is None:
             audit_event(
                 "receipt.access_denied",

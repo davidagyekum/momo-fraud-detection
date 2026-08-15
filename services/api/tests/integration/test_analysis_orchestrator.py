@@ -250,12 +250,12 @@ def verified_case(app: Flask, tmp_path: Path) -> ControlledAnalysisCase:
     return _controlled_case(app, tmp_path, observed_amount="125.00")
 
 
-def test_mismatch_completes_high_risk_and_persists_all_stages(
+def test_mismatch_is_partial_high_risk_when_models_are_unavailable(
     mismatch_case: ControlledAnalysisCase,
 ) -> None:
     result = mismatch_case.run(key="analysis-mismatch-key")
 
-    assert result.run.status == "COMPLETED"
+    assert result.run.status == "PARTIAL"
     assert result.run.risk_class == "FRAUDULENT"
     assert result.run.risk_score is None
     assert [stage.stage for stage in result.stages] == list(ANALYSIS_STAGES)

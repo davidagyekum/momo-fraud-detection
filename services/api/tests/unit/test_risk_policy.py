@@ -90,7 +90,7 @@ def test_reference_amount_mismatch_is_categorical_high_without_invented_score(
         ),
     )
 
-    assert result.status == "COMPLETED"
+    assert result.status == "PARTIAL"
     assert result.band is RiskBand.HIGH
     assert result.legacy_risk_class == "FRAUDULENT"
     assert result.score is None

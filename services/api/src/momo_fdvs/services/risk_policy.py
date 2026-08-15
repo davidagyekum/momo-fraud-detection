@@ -333,7 +333,11 @@ def _result(
         policy_version=policy.policy_version,
         policy_sha256=policy.policy_sha256,
         evidence_mode=value.mode,
-        status="COMPLETED",
+        status=(
+            "COMPLETED"
+            if value.image_model.available and value.structured_model.available
+            else "PARTIAL"
+        ),
         band=band,
         legacy_risk_class=legacy_risk_from_band(band),
         score=None,

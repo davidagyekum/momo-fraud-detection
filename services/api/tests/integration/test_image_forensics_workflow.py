@@ -18,6 +18,7 @@ from momo_fdvs.models import (
     AnalysisRun,
     AnalysisStageRun,
     AuditLog,
+    FraudCase,
     FraudRuleSet,
     ImageAnalysis,
     OCRConfirmation,
@@ -287,6 +288,18 @@ def test_image_evidence_persists_without_risk_and_diagnostics_are_private(app: F
     )
 
     investigator = _login(client, _staff(app, "INVESTIGATOR"))
+    with app.app_context():
+        db.session.add(
+            FraudCase(
+                transaction_id=transaction_id,
+                source="ADMIN",
+                category="CONTROLLED_FORENSIC_REVIEW",
+                status="ASSIGNED",
+                assigned_to=uuid.UUID(investigator["user"]["id"]),
+                opened_at=datetime.now(UTC),
+            )
+        )
+        db.session.commit()
     staff_evidence = client.get(evidence_url, headers=_headers(investigator))
     assert staff_evidence.status_code == 200
     media = staff_evidence.json["data"]["image_evidence"]["diagnostic_media"]

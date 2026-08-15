@@ -23,6 +23,8 @@ const partialResult = {
     missing_signals: ["image_model"],
     limitations: ["No promoted image classifier is available."],
     policy_version: "risk-policy-v1",
+    disclaimer:
+      "This is an automated risk assessment, not a final legal determination.",
   },
   verification: {
     status: "MISMATCH",
@@ -56,6 +58,11 @@ const partialResult = {
     },
     automated_evidence_immutable: true,
   },
+  ocr_review: {
+    confirmed_field_count: 10,
+    correction_count: 1,
+    schema_version: "ocr-fields-v1",
+  },
   versions: {
     policy_version: "risk-policy-v1",
     policy_sha256: null,
@@ -88,6 +95,13 @@ test("separates inconclusive risk from transaction verification", async () => {
   expect(view.getByLabelText("Status: Mismatch found")).toBeTruthy();
   expect(view.queryByText(/verified genuine|confirmed fraud|safe/i)).toBeNull();
   expect(view.queryByText(/risk score/i)).toBeNull();
+  expect(view.getByText("Confirmed OCR review")).toBeTruthy();
+  expect(view.getByText(/10 confirmed fields.*1 correction/i)).toBeTruthy();
+  expect(
+    view.getByText(
+      "This is an automated risk assessment, not a final legal determination.",
+    ),
+  ).toBeTruthy();
 });
 
 test("renders a categorical high-risk result without inventing a score", async () => {

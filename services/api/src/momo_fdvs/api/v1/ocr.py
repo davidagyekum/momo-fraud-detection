@@ -301,7 +301,7 @@ class AnalysisReadinessResource(MethodView):
         if transaction is None:
             return error_response("TRANSACTION_NOT_FOUND", "Transaction not found.", 404)
         confirmation = latest_confirmation(transaction)
-        if transaction.status not in {"READY", "PARTIAL"} or confirmation is None:
+        if transaction.status not in {"READY", "PARTIAL", "COMPLETED"} or confirmation is None:
             return error_response(
                 "OCR_REVIEW_REQUIRED",
                 "Confirm the OCR fields before starting analysis.",

@@ -15,6 +15,7 @@ from sqlalchemy import select
 
 from momo_fdvs.extensions import db
 from momo_fdvs.models import (
+    FraudCase,
     FraudRuleSet,
     OCRConfirmation,
     OCRResult,
@@ -23,7 +24,9 @@ from momo_fdvs.models import (
     Role,
     Transaction,
     User,
+    UserRole,
 )
+from momo_fdvs.security.passwords import hash_password
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("TEST_DATABASE_URL"),
@@ -67,6 +70,30 @@ def _headers(session: dict[str, Any], key: str | None = None) -> dict[str, str]:
     if key is not None:
         headers["Idempotency-Key"] = key
     return headers
+
+
+def _staff(app: Flask, client: Any, role: str) -> tuple[dict[str, Any], uuid.UUID]:
+    email = f"analysis-{role.lower()}-{uuid.uuid4()}@example.test"
+    with app.app_context():
+        user = User(
+            email=email,
+            password_hash=hash_password(TEST_CREDENTIAL),
+            full_name=f"Analysis {role.title()}",
+            status="ACTIVE",
+            password_changed_at=datetime.now(UTC),
+        )
+        db.session.add(user)
+        db.session.flush()
+        user_id = user.id
+        db.session.add(UserRole(user_id=user.id, role_code=role, granted_at=datetime.now(UTC)))
+        db.session.commit()
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": TEST_CREDENTIAL},
+        headers={"X-Client-Type": "mobile"},
+    )
+    assert response.status_code == 200
+    return response.json["data"], user_id
 
 
 def _upload(client: Any, session: dict[str, Any]) -> uuid.UUID:
@@ -222,6 +249,14 @@ def test_start_replay_poll_and_owner_visibility(app: Flask) -> None:
     }
     assert projection["risk"]["score"] is None
     assert projection["risk"]["band"] == "inconclusive"
+    assert projection["risk"]["disclaimer"] == (
+        "This is an automated risk assessment, not a final legal determination."
+    )
+    assert projection["ocr_review"] == {
+        "confirmed_field_count": 10,
+        "correction_count": 0,
+        "schema_version": "ocr-fields-v1",
+    }
     assert projection["verification"]["status"] == "VERIFIED"
     assert "storage" not in detail.get_data(as_text=True).lower()
 
@@ -231,6 +266,98 @@ def test_start_replay_poll_and_owner_visibility(app: Flask) -> None:
     evidence = client.get(f"/api/v1/analyses/{run_id}/evidence", headers=_headers(owner))
     assert evidence.status_code == 200
     assert evidence.json["data"]["risk"] == projection["risk"]
+
+
+def test_unassigned_staff_cannot_read_owner_analysis_or_evidence(app: Flask) -> None:
+    client = app.test_client()
+    owner = _register(client, "Scoped Analysis Owner")
+    transaction_id = _upload(client, owner)
+    _seed_confirmation(app, transaction_id, uuid.UUID(owner["user"]["id"]))
+    started = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
+    )
+    assert started.status_code == 202
+    run_id = started.json["data"]["analysis_run_id"]
+
+    for role in ("ADMIN", "INVESTIGATOR"):
+        staff, _staff_id = _staff(app, client, role)
+        assert client.get(f"/api/v1/analyses/{run_id}", headers=_headers(staff)).status_code == 404
+        assert (
+            client.get(f"/api/v1/analyses/{run_id}/evidence", headers=_headers(staff)).status_code
+            == 404
+        )
+
+
+def test_assigned_investigator_can_read_analysis_and_evidence(app: Flask) -> None:
+    client = app.test_client()
+    owner = _register(client, "Assigned Analysis Owner")
+    transaction_id = _upload(client, owner)
+    _seed_confirmation(app, transaction_id, uuid.UUID(owner["user"]["id"]))
+    started = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
+    )
+    assert started.status_code == 202
+    run_id = started.json["data"]["analysis_run_id"]
+    investigator, investigator_id = _staff(app, client, "INVESTIGATOR")
+    with app.app_context():
+        db.session.add(
+            FraudCase(
+                transaction_id=transaction_id,
+                source="ADMIN",
+                category="CONTROLLED_REVIEW",
+                status="ASSIGNED",
+                assigned_to=investigator_id,
+                opened_at=datetime.now(UTC),
+            )
+        )
+        db.session.commit()
+
+    assert (
+        client.get(f"/api/v1/analyses/{run_id}", headers=_headers(investigator)).status_code == 200
+    )
+    assert (
+        client.get(
+            f"/api/v1/analyses/{run_id}/evidence", headers=_headers(investigator)
+        ).status_code
+        == 200
+    )
+
+
+def test_completed_transaction_allows_replay_and_new_reanalysis(app: Flask) -> None:
+    client = app.test_client()
+    owner = _register(client, "Terminal Reanalysis Owner")
+    transaction_id = _upload(client, owner)
+    _seed_confirmation(app, transaction_id, uuid.UUID(owner["user"]["id"]))
+    first_key = f"analysis-{uuid.uuid4()}"
+    first = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        headers=_headers(owner, first_key),
+    )
+    assert first.status_code == 202
+    first_run_id = first.json["data"]["analysis_run_id"]
+    with app.app_context():
+        transaction = db.session.get(Transaction, transaction_id)
+        assert transaction is not None
+        transaction.status = "COMPLETED"
+        db.session.commit()
+
+    replay = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        headers=_headers(owner, first_key),
+    )
+    assert replay.status_code == 202
+    assert replay.json["data"]["analysis_run_id"] == first_run_id
+    assert replay.json["data"]["replayed"] is True
+
+    rerun = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
+    )
+    assert rerun.status_code == 202
+    assert rerun.json["data"]["analysis_run_id"] != first_run_id
+    assert rerun.json["data"]["replayed"] is False
 
 
 def test_start_requires_confirmed_ocr(app: Flask) -> None:

@@ -41,6 +41,7 @@ export const riskSchema = z
     missing_signals: z.array(z.string()),
     limitations: z.array(z.string()),
     policy_version: z.string(),
+    disclaimer: z.string(),
   })
   .strict();
 
@@ -112,6 +113,13 @@ export const analysisSchema = z
         image_model: componentStatusSchema,
         structured_model: componentStatusSchema,
         automated_evidence_immutable: z.literal(true),
+      })
+      .strict(),
+    ocr_review: z
+      .object({
+        confirmed_field_count: z.number().int().nonnegative(),
+        correction_count: z.number().int().nonnegative(),
+        schema_version: z.string(),
       })
       .strict(),
     versions: z
