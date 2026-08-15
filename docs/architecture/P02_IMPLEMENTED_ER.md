@@ -92,6 +92,7 @@ erDiagram
         VARCHAR_100 category
         TEXT description
         VARCHAR_20 status
+        INTEGER version
         CHAR_32 assigned_to FK
         DATETIME opened_at
         DATETIME closed_at
@@ -191,6 +192,7 @@ erDiagram
         VARCHAR_50 type
         VARCHAR_200 title
         TEXT message
+        VARCHAR_200 dedupe_key
         VARCHAR_50 target_type
         CHAR_32 target_id
         DATETIME read_at
@@ -325,6 +327,8 @@ erDiagram
         CHAR_32 owner_user_id FK
         CHAR_32 transaction_id FK
         CHAR_32 case_id FK
+        CHAR_32 analysis_run_id FK
+        INTEGER source_version
         VARCHAR_500 object_key
         VARCHAR_64 sha256
         VARCHAR_20 status
@@ -396,6 +400,7 @@ erDiagram
     ANALYSIS_RUNS ||--o{ ANALYSIS_STAGE_RUNS : "references"
     ANALYSIS_RUNS ||--o{ FRAUD_PREDICTIONS : "references"
     ANALYSIS_RUNS ||--o{ IMAGE_ANALYSES : "references"
+    ANALYSIS_RUNS ||--o{ REPORT_ARTIFACTS : "references"
     ANALYSIS_RUNS ||--o{ RULE_EVALUATIONS : "references"
     ANALYSIS_RUNS ||--o{ TRANSACTIONS : "references"
     ANALYSIS_RUNS ||--o{ VERIFICATION_RESULTS : "references"

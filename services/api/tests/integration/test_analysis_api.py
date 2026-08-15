@@ -170,7 +170,7 @@ def _seed_confirmation(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUI
         if rule_set is None:
             db.session.add(
                 FraudRuleSet(
-                    version=f"analysis-api-{token}",
+                    version="demo-1",
                     status="ACTIVE",
                     risk_weights={},
                     thresholds={},

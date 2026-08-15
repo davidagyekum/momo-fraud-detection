@@ -679,6 +679,294 @@
         ],
         "type": "object"
       },
+      "Case": {
+        "additionalProperties": false,
+        "properties": {
+          "assigned_to": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "automated_evidence": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "category": {
+            "type": "string"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/CaseDecision"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/CaseDecision"
+            },
+            "type": "array"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "linked_existing": {
+            "type": "boolean"
+          },
+          "opened_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/CaseEvent"
+            },
+            "type": "array"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category",
+          "id",
+          "opened_at",
+          "source",
+          "status",
+          "transaction_id",
+          "updated_at",
+          "version"
+        ],
+        "type": "object"
+      },
+      "CaseAssign": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "investigator_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_case_version",
+          "investigator_id"
+        ],
+        "type": "object"
+      },
+      "CaseDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decided_by": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "outcome",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "CaseDecisionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outcome": {
+            "enum": [
+              "CONFIRMED",
+              "DISMISSED",
+              "ESCALATED"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_case_version",
+          "outcome",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "CaseEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Case"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "CaseEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "from_status": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "nullable": true,
+            "type": "string"
+          },
+          "to_status": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "event_type",
+          "from_status",
+          "id",
+          "to_status"
+        ],
+        "type": "object"
+      },
+      "CaseListData": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Case"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "CaseListEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CaseListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "CaseNote": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_case_version",
+          "note"
+        ],
+        "type": "object"
+      },
+      "CaseVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_case_version"
+        ],
+        "type": "object"
+      },
       "ChangePassword": {
         "additionalProperties": false,
         "properties": {
@@ -1148,6 +1436,29 @@
         "required": [
           "data",
           "meta"
+        ],
+        "type": "object"
+      },
+      "OwnerFraudReportCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "PAYMENT_NOT_RECEIVED",
+              "UNKNOWN_TRANSACTION",
+              "ALTERED_RECEIPT",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 2000,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "category"
         ],
         "type": "object"
       },
@@ -2311,6 +2622,309 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/api/v1/admin/cases": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "OPEN",
+                "ASSIGNED",
+                "IN_REVIEW",
+                "DECIDED",
+                "CLOSED",
+                "REOPENED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "enum": [
+                "USER_REPORT",
+                "AUTO_HIGH_RISK",
+                "ADMIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_to",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseListEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/cases/{case_id}/assign": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseAssign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/decisions": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseDecisionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/notes": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/start-review": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseVersion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
     "/api/v1/admin/reference-imports": {
       "get": {
         "parameters": [
@@ -3212,6 +3826,39 @@
         ]
       }
     },
+    "/api/v1/fraud-reports/{case_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/health": {
       "get": {
         "responses": {
@@ -3659,6 +4306,62 @@
         ]
       }
     },
+    "/api/v1/transactions/{transaction_id}/fraud-reports": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerFraudReportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
     "/api/v1/transactions/{transaction_id}/ocr": {
       "parameters": [
         {
@@ -3936,6 +4639,10 @@
     {
       "description": "Current user identity",
       "name": "identity-v1"
+    },
+    {
+      "description": "Owner fraud reporting and append-only investigator casework",
+      "name": "casework-v1"
     },
     {
       "description": "Administrator user management",
