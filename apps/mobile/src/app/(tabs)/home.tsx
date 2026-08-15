@@ -39,6 +39,11 @@ export default function HomeScreen() {
           label="Start a receipt check"
           onPress={() => router.push("/(tabs)/upload")}
         />
+        <AppButton
+          label="View receipt history"
+          onPress={() => router.push("/(tabs)/history")}
+          variant="secondary"
+        />
       </AppCard>
       <AppCard>
         <Text style={uiStyles.cardTitle}>Private by design</Text>

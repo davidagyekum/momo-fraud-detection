@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { Redirect, router, useLocalSearchParams } from "expo-router";
+import { type Href, Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import {
   Modal,
@@ -171,7 +171,10 @@ export default function OCRReviewScreen() {
       return startAnalysis(request, transactionId ?? "", analysisKey.current);
     },
     onSuccess: (started) =>
-      router.replace(`/analysis/${started.analysis_run_id}`),
+      router.replace({
+        pathname: "/analysis/[analysisRunId]",
+        params: { analysisRunId: started.analysis_run_id },
+      } as unknown as Href),
   });
 
   const requestConfirmation = () => {
