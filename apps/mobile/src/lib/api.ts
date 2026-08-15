@@ -3,6 +3,8 @@ import { fetch } from "expo/fetch";
 import { API_BASE_URL } from "@/lib/config";
 import type { ErrorEnvelope } from "@/types/api";
 
+export type JsonRequest = <T>(path: string, init?: RequestInit) => Promise<T>;
+
 export class ApiError extends Error {
   constructor(
     message: string,

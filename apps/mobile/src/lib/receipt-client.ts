@@ -2,6 +2,7 @@ import type { ImagePickerAsset } from "expo-image-picker";
 import { Platform } from "react-native";
 
 import { ApiError } from "@/lib/api";
+import type { JsonRequest } from "@/lib/api";
 import type { Envelope } from "@/types/api";
 
 const MAX_RECEIPT_BYTES = 10_485_760;
@@ -39,7 +40,6 @@ export type ReceiptUploadData = {
   replayed: boolean;
 };
 
-type JsonRequest = <T>(path: string, init?: RequestInit) => Promise<T>;
 type ResponseRequest = (path: string, init?: RequestInit) => Promise<Response>;
 
 function randomIdempotencyKey(): string {

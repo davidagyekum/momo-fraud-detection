@@ -26,6 +26,10 @@ import {
 } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import {
+  createAnalysisIdempotencyKey,
+  startAnalysis,
+} from "@/lib/analysis-client";
+import {
   changedOCRFields,
   confidenceLabel,
   confirmOCR,
@@ -38,12 +42,6 @@ import {
   validateOCRConfirmation,
 } from "@/lib/ocr-client";
 import { fetchPrivateThumbnail } from "@/lib/receipt-client";
-import {
-  createAnalysisIdempotencyKey,
-  runStoredReferenceVerification,
-  verificationTone,
-  verificationWarning,
-} from "@/lib/verification-client";
 import { useAuth } from "@/state/auth-context";
 import { useIsOnline } from "@/state/network-context";
 import { palette, radius, spacing } from "@/theme/tokens";
@@ -170,12 +168,10 @@ export default function OCRReviewScreen() {
         throw new Error(
           "Confirm the receipt details before checking a reference.",
         );
-      return runStoredReferenceVerification(
-        request,
-        confirmation.data.next_action.endpoint,
-        analysisKey.current,
-      );
+      return startAnalysis(request, transactionId ?? "", analysisKey.current);
     },
+    onSuccess: (started) =>
+      router.replace(`/analysis/${started.analysis_run_id}`),
   });
 
   const requestConfirmation = () => {
@@ -411,90 +407,6 @@ export default function OCRReviewScreen() {
             disabled={!online}
           />
         </AppCard>
-      ) : null}
-      {analysis.data ? (
-        <>
-          <AppCard>
-            <View style={uiStyles.row}>
-              <Text style={uiStyles.cardTitle}>Transaction verification</Text>
-              <StatusBadge
-                label={analysis.data.verification.label}
-                tone={verificationTone(analysis.data.verification.status)}
-              />
-            </View>
-            <Text selectable style={uiStyles.body}>
-              {analysis.data.verification.summary}
-            </Text>
-            <Text style={uiStyles.muted}>
-              {analysis.data.verification.matched_field_count} matched ·{" "}
-              {analysis.data.verification.mismatched_field_count} mismatched
-            </Text>
-            {analysis.data.verification.warnings.map((warning) => (
-              <InlineAlert
-                key={warning}
-                tone="warning"
-                title="Verification note"
-                message={verificationWarning(warning)}
-              />
-            ))}
-            <InlineAlert
-              tone="info"
-              title="Evidence basis"
-              message={analysis.data.verification.disclaimer}
-            />
-          </AppCard>
-          <AppCard>
-            <View style={uiStyles.row}>
-              <Text style={uiStyles.cardTitle}>Image evidence</Text>
-              <StatusBadge
-                label={
-                  analysis.data.image_evidence.status === "COMPLETED"
-                    ? "Recorded"
-                    : "Unavailable"
-                }
-                tone={
-                  analysis.data.image_evidence.status === "COMPLETED"
-                    ? "success"
-                    : "info"
-                }
-              />
-            </View>
-            <Text selectable style={uiStyles.body}>
-              {analysis.data.image_evidence.summary}
-            </Text>
-            {analysis.data.image_evidence.triggered_signals?.map((signal) => (
-              <InlineAlert
-                key={signal.code}
-                tone="warning"
-                title={signal.code.replaceAll("_", " ").toLowerCase()}
-                message={signal.reason}
-              />
-            ))}
-            <InlineAlert
-              tone="info"
-              title="Supporting evidence only"
-              message="Metadata, duplicate, compression, residual and text-layout checks can highlight details for review. They do not prove fraud or assign a fraud-risk class."
-            />
-          </AppCard>
-          <AppCard>
-            <View style={uiStyles.row}>
-              <Text style={uiStyles.cardTitle}>Fraud risk</Text>
-              <StatusBadge label="Unavailable" tone="info" />
-            </View>
-            <Text selectable style={uiStyles.body}>
-              {analysis.data.risk.summary}
-            </Text>
-            <InlineAlert
-              tone="info"
-              title="Separate result"
-              message="Reference verification does not assign a fraud-risk class. Model and risk stages have not run."
-            />
-            <AppButton
-              label="Return to home"
-              onPress={() => router.replace("/(tabs)/home")}
-            />
-          </AppCard>
-        </>
       ) : null}
       <AppButton
         label="Back"
