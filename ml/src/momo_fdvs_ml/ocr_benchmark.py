@@ -12,6 +12,7 @@ import shutil
 import statistics
 import tempfile
 import time
+import unicodedata
 import zipfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -24,6 +25,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from momo_fdvs_ml.ghana_pipeline import load_private_text_development_records
 from momo_fdvs_ml.ocr_parser import (
+    _PHONE,
     CRITICAL_FIELDS,
     FIELD_CONFIDENCE_THRESHOLD,
     OCR_FIELD_SCHEMA_VERSION,
@@ -31,6 +33,7 @@ from momo_fdvs_ml.ocr_parser import (
     AmountCandidateSnapshot,
     ParserResult,
     _amount_candidate_snapshot,
+    _normalize_phone,
     parse_momo_text,
 )
 
@@ -74,6 +77,26 @@ _AMOUNT_ATTRIBUTION_CATEGORIES: Final = (
     "truth_in_active_pool_not_exact",
     "truth_in_suppressed_currency_pool",
     "truth_absent_all_candidate_pools",
+)
+_TEXT_ATTRIBUTION_CATEGORIES: Final = (
+    "exact_selected",
+    "truth_present_parser_unavailable",
+    "truth_absent_parser_unavailable",
+    "selected_contains_truth",
+    "truth_contains_selected",
+    "truth_present_not_selected",
+    "truth_absent_transcript",
+)
+_REFERENCE_ALLOWED: Final = re.compile(r"[A-Z0-9._/-]{5,50}")
+_REFERENCE_UNANCHORED: Final = re.compile(
+    r"(?<![A-Z0-9._/-])([A-Z0-9._/-]{5,50})(?![A-Z0-9._/-])",
+    re.IGNORECASE,
+)
+_REFERENCE_LINE_ANCHOR: Final = re.compile(
+    r"(?:transaction\s*(?:id|reference|ref)|reference|ref\b|receipt\s*id)"
+    r"\s*(?:is\s*)?(?:[:#=-]\s*|\s+)"
+    r"([A-Z0-9._/-][A-Z0-9._/\-\s]{4,100})",
+    re.IGNORECASE,
 )
 _PARSER_COMPARISON_FIELDS: Final = (
     "amount",
@@ -808,6 +831,81 @@ def _classify_amount_attribution(
     return "truth_absent_all_candidate_pools"
 
 
+def _valid_reference_span(value: str) -> str | None:
+    normalized = re.sub(r"\s+", "", unicodedata.normalize("NFKC", value)).upper()
+    if _REFERENCE_ALLOWED.fullmatch(normalized) is None or not any(
+        character.isdigit() for character in normalized
+    ):
+        return None
+    return normalized
+
+
+def _reference_like_spans(text: str) -> tuple[str, ...]:
+    spans: list[str] = []
+    for raw_line in text.splitlines():
+        line = unicodedata.normalize("NFKC", raw_line)
+        anchored = _REFERENCE_LINE_ANCHOR.search(line)
+        if anchored is not None:
+            tokens = anchored.group(1).split()
+            for end in range(1, len(tokens) + 1):
+                if (value := _valid_reference_span(" ".join(tokens[:end]))) is not None:
+                    spans.append(value)
+        else:
+            for match in _REFERENCE_UNANCHORED.finditer(line):
+                if (value := _valid_reference_span(match.group(1))) is not None:
+                    spans.append(value)
+    return tuple(dict.fromkeys(spans))
+
+
+def _classify_text_attribution(
+    comparison: FieldComparison,
+    *,
+    truth_present: bool,
+) -> str:
+    if comparison.matched:
+        return "exact_selected"
+    if not comparison.available:
+        return (
+            "truth_present_parser_unavailable"
+            if truth_present
+            else "truth_absent_parser_unavailable"
+        )
+    observed = comparison.observed_normalized
+    if observed is None:
+        raise OCRBenchmarkError("parser comparison availability state is invalid")
+    truth = comparison.expected_normalized
+    if truth != observed and truth in observed:
+        return "selected_contains_truth"
+    if truth != observed and observed in truth:
+        return "truth_contains_selected"
+    return "truth_present_not_selected" if truth_present else "truth_absent_transcript"
+
+
+def _recipient_truth_present(comparison: FieldComparison, transcript: str) -> bool:
+    if comparison.truth_subtype == "recipient_name_truth":
+        if comparison.observed_field != "recipient":
+            raise OCRBenchmarkError("OCR recipient observed field is invalid")
+        normalized_text = (
+            re.sub(r"\s+", " ", unicodedata.normalize("NFKC", transcript)).strip().upper()
+        )
+        normalized_truth = (
+            re.sub(r"\s+", " ", unicodedata.normalize("NFKC", comparison.expected_normalized))
+            .strip()
+            .upper()
+        )
+        return normalized_truth in normalized_text
+    if comparison.truth_subtype == "recipient_wallet_truth":
+        if comparison.observed_field != "recipient_wallet":
+            raise OCRBenchmarkError("OCR recipient observed field is invalid")
+        normalized_candidates = {
+            normalized
+            for raw in _PHONE.findall(unicodedata.normalize("NFKC", transcript))
+            if (normalized := _normalize_phone(raw)) is not None
+        }
+        return comparison.expected_normalized in normalized_candidates
+    raise OCRBenchmarkError("OCR recipient truth subtype is invalid")
+
+
 def _make_field_comparison(
     *,
     aggregate_field: str,
@@ -1089,6 +1187,11 @@ def run_ocr_parser_ceiling_diagnostic(
     amount_mismatch_attribution_counts = {
         category: 0 for category in _AMOUNT_ATTRIBUTION_CATEGORIES
     }
+    text_mismatch_attribution_counts = {
+        field: {category: 0 for category in _TEXT_ATTRIBUTION_CATEGORIES}
+        for field in ("recipient", "reference")
+    }
+    timestamp_mismatch_attribution_counts = {"deferred_insufficient_support": 0}
     required_matches: list[bool] = []
     inconclusive: list[bool] = []
     for record in records:
@@ -1140,6 +1243,23 @@ def run_ocr_parser_ceiling_diagnostic(
         for field, comparison in comparisons.items():
             if comparison is None:
                 continue
+            if field == "recipient":
+                truth_present = _recipient_truth_present(comparison, transcript)
+                attribution = _classify_text_attribution(
+                    comparison,
+                    truth_present=truth_present,
+                )
+                text_mismatch_attribution_counts["recipient"][attribution] += 1
+            elif field == "reference":
+                attribution = _classify_text_attribution(
+                    comparison,
+                    truth_present=(
+                        comparison.expected_normalized in _reference_like_spans(transcript)
+                    ),
+                )
+                text_mismatch_attribution_counts["reference"][attribution] += 1
+            elif field == "timestamp":
+                timestamp_mismatch_attribution_counts["deferred_insufficient_support"] += 1
             matches_by_field[field].append(comparison.matched)
             if comparison.matched:
                 outcomes_by_field[field]["exact"] += 1
@@ -1171,6 +1291,11 @@ def run_ocr_parser_ceiling_diagnostic(
     amount_scored_count = len(matches_by_field["amount"])
     if sum(amount_mismatch_attribution_counts.values()) != amount_scored_count:
         raise OCRBenchmarkError("OCR amount attribution total is invalid")
+    for field, counts in text_mismatch_attribution_counts.items():
+        if sum(counts.values()) != len(matches_by_field[field]):
+            raise OCRBenchmarkError(f"OCR text attribution total is invalid for {field}")
+    if sum(timestamp_mismatch_attribution_counts.values()) != len(matches_by_field["timestamp"]):
+        raise OCRBenchmarkError("OCR timestamp attribution total is invalid")
     if any(
         sum(buckets.values()) != amount_scored_count
         for buckets in amount_candidate_count_buckets.values()
@@ -1216,7 +1341,12 @@ def run_ocr_parser_ceiling_diagnostic(
         "recipient_secondary_truth_present_count": (recipient_secondary_truth_present_count),
         "amount_candidate_pool_presence": amount_candidate_pool_presence,
         "amount_candidate_count_buckets": amount_candidate_count_buckets,
-        "mismatch_attribution_counts": {"amount": amount_mismatch_attribution_counts},
+        "mismatch_attribution_counts": {
+            "amount": amount_mismatch_attribution_counts,
+            "recipient": text_mismatch_attribution_counts["recipient"],
+            "reference": text_mismatch_attribution_counts["reference"],
+            "timestamp": timestamp_mismatch_attribution_counts,
+        },
         "required_field_scored_record_count": len(required_matches),
         "required_field_parse_success": (
             statistics.fmean(required_matches) if required_matches else None

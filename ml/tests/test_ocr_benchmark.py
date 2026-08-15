@@ -568,6 +568,90 @@ def test_edit_distance_and_text_error_rates_cover_empty_and_word_changes() -> No
     assert wer == 0.5
 
 
+@pytest.mark.parametrize(
+    ("transcript", "expected"),
+    [
+        ("Reference: ABC 12345", ("ABC12345",)),
+        ("Reference: (ABC12345).", ("ABC12345",)),
+        ("Reference: AＢC12345", ("ABC12345",)),  # noqa: RUF001 - NFKC regression
+        ("ABC\n12345", ("12345",)),
+        ("unrelated ABC 12345 words", ("12345",)),
+    ],
+)
+def test_reference_like_spans_preserve_boundaries(
+    transcript: str, expected: tuple[str, ...]
+) -> None:
+    assert ocr_benchmark._reference_like_spans(transcript) == expected
+
+
+@pytest.mark.parametrize(
+    ("comparison", "truth_present", "expected"),
+    [
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345", "ABC12345", True, True, ()
+            ),
+            True,
+            "exact_selected",
+        ),
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345", None, False, False, ()
+            ),
+            True,
+            "truth_present_parser_unavailable",
+        ),
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345", None, False, False, ()
+            ),
+            False,
+            "truth_absent_parser_unavailable",
+        ),
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345", "XABC12345", False, True, ()
+            ),
+            True,
+            "selected_contains_truth",
+        ),
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345X", "ABC12345", False, True, ()
+            ),
+            True,
+            "truth_contains_selected",
+        ),
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345", "XYZ98765", False, True, ()
+            ),
+            True,
+            "truth_present_not_selected",
+        ),
+        (
+            ocr_benchmark.FieldComparison(
+                "reference", "reference", "reference", "ABC12345", "XYZ98765", False, True, ()
+            ),
+            False,
+            "truth_absent_transcript",
+        ),
+    ],
+)
+def test_text_attribution_containment_priority(
+    comparison: ocr_benchmark.FieldComparison,
+    truth_present: bool,
+    expected: str,
+) -> None:
+    assert (
+        ocr_benchmark._classify_text_attribution(
+            comparison,
+            truth_present=truth_present,
+        )
+        == expected
+    )
+
+
 def test_field_scoring_uses_normalized_truth_and_excludes_unavailable_fields() -> None:
     parser = parse_momo_text("Amount GHS 10.00 Reference: ABC12345")
     truth = {
@@ -850,6 +934,78 @@ def test_parser_ceiling_diagnostic_attributes_truth_in_suppressed_amount_pool(
     assert "10.00" not in json.dumps(report)
 
 
+def test_parser_ceiling_reference_fragments_do_not_create_truth_presence(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "ABC\n12345"
+    truth["fields"] = [{"name": "reference", "normalized": "ABC12345"}]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["mismatch_attribution_counts"]["reference"] == {
+        "exact_selected": 0,
+        "truth_present_parser_unavailable": 0,
+        "truth_absent_parser_unavailable": 1,
+        "selected_contains_truth": 0,
+        "truth_contains_selected": 0,
+        "truth_present_not_selected": 0,
+        "truth_absent_transcript": 0,
+    }
+
+
+def test_parser_ceiling_timestamp_attribution_is_deferred(
+    tmp_path: Path,
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "Date 14/08/2026 10:30"
+    truth["fields"] = [
+        {"name": "timestamp", "normalized": "2026-08-14T10:30:00Z"},
+    ]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["mismatch_attribution_counts"]["timestamp"] == {
+        "deferred_insufficient_support": report["field_scored_record_count"]["timestamp"]
+    }
+
+
 @pytest.mark.parametrize("implementation_commit_sha", ["f" * 39, "F" * 40, "not-a-commit-sha"])
 def test_parser_ceiling_diagnostic_rejects_malformed_implementation_identity(
     tmp_path: Path, implementation_commit_sha: str
@@ -964,7 +1120,7 @@ def test_parser_ceiling_diagnostic_uses_wallet_field_for_outcome_and_warning_agg
     repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
     truth_path = truth_root / f"{VALIDATION_ID}.json"
     truth = json.loads(truth_path.read_text(encoding="utf-8"))
-    truth["full_transcript"] = "Fictional wallet-only transaction"
+    truth["full_transcript"] = "Fictional wallet +233240000012 transaction"
     truth["fields"] = [
         {"name": "recipient_wallet", "normalized": "+233240000012"},
     ]
@@ -1028,6 +1184,15 @@ def test_parser_ceiling_diagnostic_uses_wallet_field_for_outcome_and_warning_agg
     assert report["parser_warning_counts_by_observed_field"] == {
         "recipient_wallet": {"WALLET_UNLABELLED": 1}
     }
+    assert report["mismatch_attribution_counts"]["recipient"] == {
+        "exact_selected": 0,
+        "truth_present_parser_unavailable": 0,
+        "truth_absent_parser_unavailable": 0,
+        "selected_contains_truth": 0,
+        "truth_contains_selected": 0,
+        "truth_present_not_selected": 1,
+        "truth_absent_transcript": 0,
+    }
     assert report["raw_text_persisted"] is False
     assert report["field_values_persisted"] is False
     assert report["record_identifiers_persisted"] is False
@@ -1036,6 +1201,75 @@ def test_parser_ceiling_diagnostic_uses_wallet_field_for_outcome_and_warning_agg
     assert "+233240000012" not in serialized
     assert "+233240000013" not in serialized
     assert VALIDATION_ID not in serialized
+
+
+def test_parser_ceiling_recipient_name_attribution_ignores_secondary_wallet_truth(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, private, split, bindings, truth_root = _private_fixture(tmp_path)
+    truth_path = truth_root / f"{VALIDATION_ID}.json"
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth["full_transcript"] = "Sent to Demo Person wallet +233240000012"
+    truth["fields"] = [
+        {"name": "recipient_name", "normalized": "DEMO PERSON"},
+        {"name": "recipient_wallet", "normalized": "+233240000012"},
+    ]
+    _write_json(truth_path, truth)
+    manifest_path = prepare_ocr_development_bundle(
+        split_manifest_path=split,
+        image_bindings=bindings,
+        truth_root=truth_root,
+        output_root=private / "bundle",
+        repository_root=repository,
+    )
+    output = private / "results" / "parser-ceiling.json"
+    parser = parse_momo_text("Reference ABC12345")
+    fields = dict(parser.fields)
+    fields["recipient"] = replace(
+        fields["recipient"],
+        raw="Other Person",
+        normalized="OTHER PERSON",
+        confidence=0.8,
+        available=True,
+        warnings=(),
+    )
+    fields["recipient_wallet"] = replace(
+        fields["recipient_wallet"],
+        raw="+233240000012",
+        normalized="+233240000012",
+        confidence=0.8,
+        available=True,
+        warnings=(),
+    )
+    monkeypatch.setattr(
+        ocr_benchmark,
+        "parse_momo_text",
+        lambda *args, **kwargs: replace(parser, fields=fields),
+    )
+
+    ocr_benchmark.run_ocr_parser_ceiling_diagnostic(
+        development_manifest_path=manifest_path,
+        output_path=output,
+        repository_root=repository,
+        implementation_commit_sha=IMPLEMENTATION_COMMIT_SHA,
+        now=datetime(2026, 8, 14, tzinfo=UTC),
+    )
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["recipient_truth_subtype_counts"] == {
+        "recipient_name_truth": 1,
+        "recipient_wallet_truth": 0,
+    }
+    assert report["recipient_secondary_truth_present_count"] == 1
+    assert report["mismatch_attribution_counts"]["recipient"] == {
+        "exact_selected": 0,
+        "truth_present_parser_unavailable": 0,
+        "truth_absent_parser_unavailable": 0,
+        "selected_contains_truth": 0,
+        "truth_contains_selected": 0,
+        "truth_present_not_selected": 1,
+        "truth_absent_transcript": 0,
+    }
 
 
 def test_parser_ceiling_diagnostic_rejects_noncanonical_warning_codes(
