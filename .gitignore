@@ -73,6 +73,7 @@ output/
 
 # Tooling and operating-system files
 .worktrees/
+.superpowers/
 .DS_Store
 Thumbs.db
 Desktop.ini
