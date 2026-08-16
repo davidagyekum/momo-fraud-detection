@@ -11,6 +11,7 @@ from momo_fdvs.api.v1.auth import auth_blueprint, identity_blueprint
 from momo_fdvs.api.v1.casework import casework_blueprint
 from momo_fdvs.api.v1.notifications import notifications_blueprint
 from momo_fdvs.api.v1.ocr import ocr_blueprint
+from momo_fdvs.api.v1.operations import operations_blueprint
 from momo_fdvs.api.v1.reference_imports import (
     reference_imports_blueprint,
     reference_transactions_blueprint,
@@ -44,6 +45,7 @@ def create_app(config_name: str | None = None) -> Flask:
     api.register_blueprint(identity_blueprint)
     api.register_blueprint(casework_blueprint)
     api.register_blueprint(notifications_blueprint)
+    api.register_blueprint(operations_blueprint)
     api.register_blueprint(reports_blueprint)
     api.register_blueprint(admin_users_blueprint)
     api.register_blueprint(analyses_blueprint)

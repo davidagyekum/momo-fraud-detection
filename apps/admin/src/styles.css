@@ -873,6 +873,33 @@ h2 {
   margin-inline: auto;
 }
 
+.workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.workspace-grid .surface {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 16px;
+  padding-left: 24px;
+}
+
+.timeline-list li {
+  padding: 12px 0 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.timeline-list .status-badge {
+  margin-right: 12px;
+}
+
 .page-heading {
   display: flex;
   align-items: flex-start;
@@ -1155,6 +1182,10 @@ h2 {
 }
 
 @media (max-width: 820px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
   .login-layout {
     grid-template-columns: 1fr;
   }

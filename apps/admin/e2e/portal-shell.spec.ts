@@ -42,6 +42,24 @@ async function installStaffSession(page: Page, role: StaffRole): Promise<void> {
       body: JSON.stringify(envelope(session)),
     });
   });
+  await page.route("**/api/v1/admin/dashboard", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        envelope({
+          risk_counts: { high: 1 },
+          verification_counts: { MISMATCH: 1 },
+          case_status_counts: { OPEN: 1 },
+          case_source_counts: { USER_REPORT: 1 },
+          analysis_status_counts: { COMPLETED: 1 },
+          processing_duration_ms: { average: 420, p95: 420 },
+          active_versions: { models: [], rule_set: null },
+          recent_activity: [],
+        }),
+      ),
+    });
+  });
 }
 
 test("staff login is semantic and does not advertise public registration", async ({

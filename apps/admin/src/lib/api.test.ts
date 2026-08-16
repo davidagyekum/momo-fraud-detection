@@ -23,6 +23,21 @@ describe("requestEnvelope", () => {
     );
   });
 
+  it("does not duplicate the API prefix on server-provided private URLs", async () => {
+    const fetcher = vi.fn(() =>
+      Promise.resolve(new Response("safe", { status: 200 })),
+    ) as Fetcher;
+    await requestPrivateFile(
+      fetcher,
+      "/api/v1/reports/report-id/download",
+      "token-test",
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/v1/reports/report-id/download",
+      expect.any(Object),
+    );
+  });
+
   it("maps safe API errors with the request id", async () => {
     const fetcher = vi.fn(() =>
       Promise.resolve(

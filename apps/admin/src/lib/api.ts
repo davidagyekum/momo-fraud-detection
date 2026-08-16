@@ -24,7 +24,11 @@ export class ApiError extends Error {
 }
 
 function buildUrl(path: string): string {
-  return `${appConfig.apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  const apiPath =
+    appConfig.apiBaseUrl.endsWith("/api/v1") && path.startsWith("/api/v1/")
+      ? path.slice("/api/v1".length)
+      : path;
+  return `${appConfig.apiBaseUrl}${apiPath.startsWith("/") ? apiPath : `/${apiPath}`}`;
 }
 
 async function parseBody(response: Response): Promise<unknown> {

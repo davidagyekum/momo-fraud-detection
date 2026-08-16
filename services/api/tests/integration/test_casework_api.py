@@ -332,7 +332,7 @@ def test_investigator_case_state_machine_and_immutable_analysis(app: Flask) -> N
         f"/api/v1/admin/cases/{case_id}/notes",
         headers=_headers(investigator),
         json={
-            "note": "Controlled note without private receipt values.",
+            "note": "Controlled <script>alert('review')</script> note.",
             "expected_case_version": 3,
         },
     )
@@ -360,6 +360,36 @@ def test_investigator_case_state_machine_and_immutable_analysis(app: Flask) -> N
     )
     assert invalid.status_code == 409
     assert invalid.json["error"]["code"] == "CASE_TRANSITION_INVALID"
+
+    report_key = f"case-report-{uuid.uuid4()}"
+    report = client.post(
+        f"/api/v1/admin/cases/{case_id}/reports",
+        headers=_headers(investigator, report_key),
+        json={"format": "HTML"},
+    )
+    assert report.status_code == 201, report.get_data(as_text=True)
+    report_id = report.json["data"]["id"]
+    assert report.json["data"]["report_type"] == "CASE"
+    assert report.json["data"]["download_url"] == (
+        f"/api/v1/admin/cases/{case_id}/reports/{report_id}/download"
+    )
+    replay_report = client.post(
+        f"/api/v1/admin/cases/{case_id}/reports",
+        headers=_headers(investigator, report_key),
+        json={"format": "HTML"},
+    )
+    assert replay_report.status_code == 200
+    assert replay_report.json["data"]["replayed"] is True
+    downloaded = client.get(
+        f"/api/v1/admin/cases/{case_id}/reports/{report_id}/download",
+        headers=_headers(investigator),
+    )
+    assert downloaded.status_code == 200
+    report_html = downloaded.get_data(as_text=True)
+    assert "&lt;script&gt;" in report_html
+    assert "<script>" not in report_html
+    assert "Human review did not rewrite" in report_html
+    assert downloaded.headers["Cache-Control"].startswith("private, no-store")
 
     with app.app_context():
         persisted_run = db.session.get(AnalysisRun, run_id)
