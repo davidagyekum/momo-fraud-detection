@@ -40,8 +40,21 @@ SECTIONS = {
     "ml": Section(
         "ml", Path("ml/pyproject.toml"), (sys.executable, "scripts/verify_ml.py")
     ),
-    "e2e": Section("e2e", Path("tests/e2e"), None),
-    "security": Section("security", Path("services/api/tests/security"), None),
+    "e2e": Section(
+        "e2e",
+        Path("services/api/tests/integration/test_analysis_journey.py"),
+        (sys.executable, "scripts/verify_e2e.py"),
+    ),
+    "security": Section(
+        "security",
+        Path("services/api/tests/security"),
+        (sys.executable, "scripts/verify_security.py"),
+    ),
+    "release": Section(
+        "release",
+        Path("docker-compose.yml"),
+        (sys.executable, "scripts/verify_release.py"),
+    ),
 }
 
 
