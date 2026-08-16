@@ -5,8 +5,8 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /build
-COPY services/api/pyproject.toml services/api/README.md services/api/requirements-runtime.lock ./
-COPY services/api/src ./src
+COPY pyproject.toml README.md requirements-runtime.lock ./
+COPY src ./src
 RUN python -m pip wheel --wheel-dir /wheels --requirement requirements-runtime.lock \
     && python -m pip wheel --wheel-dir /wheels --no-deps .
 
@@ -26,7 +26,7 @@ WORKDIR /app
 COPY --from=builder /wheels /wheels
 RUN python -m pip install --no-cache-dir /wheels/* \
     && rm -rf /wheels
-COPY services/api/migrations ./migrations
+COPY migrations ./migrations
 RUN mkdir -p /app/.local/private-storage /app/.local/model-artifacts/structured /app/.local/model-artifacts/image \
     && chown -R momo:momo /app
 

@@ -41,6 +41,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"momo_fdvs.policies" = ["*.json"]
+
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=momo_fdvs --cov-report=term-missing --cov-fail-under=85"
 testpaths = ["tests"]

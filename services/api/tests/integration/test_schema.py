@@ -9,7 +9,7 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 from tests.factories import create_complete_graph
 
 from momo_fdvs.extensions import db
-from momo_fdvs.models import AnalysisStageRun, AuditLog, User
+from momo_fdvs.models import AnalysisStageRun, AuditLog, Role, User
 
 pytestmark = pytest.mark.skipif(
     not (os.getenv("TEST_DATABASE_URL") or os.getenv("P02_TEST_DATABASE_URL")),
@@ -20,8 +20,10 @@ pytestmark = pytest.mark.skipif(
 def test_migration_exposes_complete_schema(app) -> None:
     with app.app_context():
         tables = set(inspect(db.engine).get_table_names())
+        roles = set(db.session.scalars(select(Role.code)).all())
     assert len(tables) == 31  # 30 domain tables plus alembic_version
     assert {"users", "receipts", "analysis_runs", "verification_results", "audit_logs"} <= tables
+    assert roles == {"ADMIN", "INVESTIGATOR", "USER"}
 
 
 def test_complete_factory_graph_and_case_insensitive_email_uniqueness(app) -> None:

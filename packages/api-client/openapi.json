@@ -491,6 +491,19 @@
         ],
         "type": "object"
       },
+      "AnalysisReportCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "default": "HTML",
+            "enum": [
+              "HTML"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AnalysisRisk": {
         "additionalProperties": false,
         "properties": {
@@ -676,6 +689,294 @@
           "policy_version",
           "rule_set_version",
           "structured_model_version"
+        ],
+        "type": "object"
+      },
+      "Case": {
+        "additionalProperties": false,
+        "properties": {
+          "assigned_to": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "automated_evidence": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "category": {
+            "type": "string"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/CaseDecision"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/CaseDecision"
+            },
+            "type": "array"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "linked_existing": {
+            "type": "boolean"
+          },
+          "opened_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/CaseEvent"
+            },
+            "type": "array"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category",
+          "id",
+          "opened_at",
+          "source",
+          "status",
+          "transaction_id",
+          "updated_at",
+          "version"
+        ],
+        "type": "object"
+      },
+      "CaseAssign": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "investigator_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_case_version",
+          "investigator_id"
+        ],
+        "type": "object"
+      },
+      "CaseDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decided_by": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "outcome",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "CaseDecisionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outcome": {
+            "enum": [
+              "CONFIRMED",
+              "DISMISSED",
+              "ESCALATED"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_case_version",
+          "outcome",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "CaseEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Case"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "CaseEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "from_status": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "nullable": true,
+            "type": "string"
+          },
+          "to_status": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "event_type",
+          "from_status",
+          "id",
+          "to_status"
+        ],
+        "type": "object"
+      },
+      "CaseListData": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Case"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "CaseListEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CaseListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "CaseNote": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_case_version",
+          "note"
+        ],
+        "type": "object"
+      },
+      "CaseVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_case_version": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_case_version"
         ],
         "type": "object"
       },
@@ -899,6 +1200,134 @@
         },
         "required": [
           "endpoint",
+          "type"
+        ],
+        "type": "object"
+      },
+      "Notification": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "read_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/NotificationTarget"
+              }
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "message",
+          "read_at",
+          "target",
+          "title",
+          "type"
+        ],
+        "type": "object"
+      },
+      "NotificationEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Notification"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "NotificationListData": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            },
+            "type": "array"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "NotificationListEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NotificationListData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "NotificationTarget": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
           "type"
         ],
         "type": "object"
@@ -1151,6 +1580,46 @@
         ],
         "type": "object"
       },
+      "OperationalDataEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
+      "OwnerFraudReportCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "PAYMENT_NOT_RECEIVED",
+              "UNKNOWN_TRANSACTION",
+              "ALTERED_RECEIPT",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 2000,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "category"
+        ],
+        "type": "object"
+      },
       "PaginationMetadata": {
         "additionalProperties": false,
         "properties": {
@@ -1220,6 +1689,38 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "ReadAllData": {
+        "additionalProperties": false,
+        "properties": {
+          "marked_read": {
+            "type": "integer"
+          },
+          "unread_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "marked_read",
+          "unread_count"
+        ],
+        "type": "object"
+      },
+      "ReadAllEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReadAllData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
         "type": "object"
       },
       "ReadinessComponents": {
@@ -1723,6 +2224,81 @@
         ],
         "type": "object"
       },
+      "ReportArtifact": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "download_url": {
+            "nullable": true,
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "report_type": {
+            "type": "string"
+          },
+          "sha256": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis_run_id",
+          "download_url",
+          "expires_at",
+          "generated_at",
+          "id",
+          "replayed",
+          "report_type",
+          "sha256",
+          "status",
+          "transaction_id"
+        ],
+        "type": "object"
+      },
+      "ReportEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReportArtifact"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "ResetPassword": {
         "additionalProperties": false,
         "properties": {
@@ -2065,6 +2641,34 @@
         ],
         "type": "object"
       },
+      "UnreadCountData": {
+        "additionalProperties": false,
+        "properties": {
+          "unread_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unread_count"
+        ],
+        "type": "object"
+      },
+      "UnreadCountEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UnreadCountData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "UploadedReceipt": {
         "additionalProperties": false,
         "properties": {
@@ -2311,6 +2915,573 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "outcome",
+            "required": false,
+            "schema": {
+              "enum": [
+                "SUCCESS",
+                "FAILURE",
+                "DENIED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "OPEN",
+                "ASSIGNED",
+                "IN_REVIEW",
+                "DECIDED",
+                "CLOSED",
+                "REOPENED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "enum": [
+                "USER_REPORT",
+                "AUTO_HIGH_RISK",
+                "ADMIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_to",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseListEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/cases/{case_id}/assign": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseAssign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/decisions": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseDecisionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/notes": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/reports": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisReportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Generate or replay a version-bound staff case report.",
+        "tags": [
+          "reports-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/cases/{case_id}/reports/{report_id}/download": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Download a ready case report without exposing its object key.",
+        "tags": [
+          "reports-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "report_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/cases/{case_id}/start-review": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseVersion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return independent bounded operational aggregates.",
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/models": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/models/{model_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "model_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/admin/reference-imports": {
       "get": {
         "parameters": [
@@ -2673,6 +3844,256 @@
         {
           "in": "path",
           "name": "reference_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/rule-sets": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/rule-sets/{rule_set_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "rule_set_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/api/v1/admin/system-status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/transactions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "maxLength": 30,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider",
+            "required": false,
+            "schema": {
+              "maxLength": 50,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      }
+    },
+    "/api/v1/admin/transactions/{transaction_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalDataEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "operations-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
           "required": true,
           "schema": {
             "format": "uuid",
@@ -3212,6 +4633,39 @@
         ]
       }
     },
+    "/api/v1/fraud-reports/{case_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "case_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/api/v1/health": {
       "get": {
         "responses": {
@@ -3325,6 +4779,144 @@
         ]
       }
     },
+    "/api/v1/notifications": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unread",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "List only the authenticated user's notifications.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadAllEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Idempotently mark all of the authenticated user's notifications read.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Return the authenticated user's unread count.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "notification_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Idempotently mark one owned notification as read.",
+        "tags": [
+          "notifications-v1"
+        ]
+      }
+    },
     "/api/v1/ready": {
       "get": {
         "responses": {
@@ -3357,6 +4949,30 @@
           "api-v1"
         ]
       }
+    },
+    "/api/v1/reports/{report_id}/download": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Download an owned ready report with integrity and privacy controls.",
+        "tags": [
+          "reports-v1"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "report_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ]
     },
     "/api/v1/transactions": {
       "get": {
@@ -3659,6 +5275,62 @@
         ]
       }
     },
+    "/api/v1/transactions/{transaction_id}/fraud-reports": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerFraudReportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "casework-v1"
+        ]
+      }
+    },
     "/api/v1/transactions/{transaction_id}/ocr": {
       "parameters": [
         {
@@ -3900,6 +5572,63 @@
         }
       ]
     },
+    "/api/v1/transactions/{transaction_id}/reports": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "transaction_id",
+          "required": true,
+          "schema": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisReportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEnvelope"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEnvelope"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Generate or replay an owner-scoped immutable analysis report.",
+        "tags": [
+          "reports-v1"
+        ]
+      }
+    },
     "/api/v1/version": {
       "get": {
         "responses": {
@@ -3936,6 +5665,22 @@
     {
       "description": "Current user identity",
       "name": "identity-v1"
+    },
+    {
+      "description": "Owner fraud reporting and append-only investigator casework",
+      "name": "casework-v1"
+    },
+    {
+      "description": "Owner-scoped in-app notifications",
+      "name": "notifications-v1"
+    },
+    {
+      "description": "Masked staff operational views",
+      "name": "operations-v1"
+    },
+    {
+      "description": "Private immutable analysis reports",
+      "name": "reports-v1"
     },
     {
       "description": "Administrator user management",

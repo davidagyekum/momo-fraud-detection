@@ -48,6 +48,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.pytest-*/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -73,6 +74,7 @@ output/
 
 # Tooling and operating-system files
 .worktrees/
+.superpowers/
 .DS_Store
 Thumbs.db
 Desktop.ini

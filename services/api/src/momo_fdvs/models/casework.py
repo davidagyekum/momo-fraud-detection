@@ -37,9 +37,8 @@ class FraudCase(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Index("ix_fraud_cases_transaction_id", "transaction_id"),
         Index("ix_fraud_cases_status_assigned_opened", "status", "assigned_to", "opened_at"),
         Index(
-            "uq_fraud_cases_active_transaction_source",
+            "uq_fraud_cases_active_transaction",
             "transaction_id",
-            "source",
             unique=True,
             postgresql_where=db.text("status IN ('OPEN', 'ASSIGNED', 'IN_REVIEW', 'REOPENED')"),
         ),
@@ -55,6 +54,7 @@ class FraudCase(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="OPEN")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="RESTRICT")
     )
@@ -129,13 +129,17 @@ class ReportArtifact(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         CheckConstraint(
             "status IN ('GENERATING', 'READY', 'FAILED', 'EXPIRED')", name="status_valid"
         ),
-        CheckConstraint("char_length(sha256) = 64", name="sha256_length"),
+        CheckConstraint("sha256 IS NULL OR char_length(sha256) = 64", name="sha256_length"),
         CheckConstraint(
             "(report_type = 'ANALYSIS' AND transaction_id IS NOT NULL AND case_id IS NULL) OR "
             "(report_type = 'CASE' AND case_id IS NOT NULL) OR "
             "(report_type = 'OPERATIONS' AND transaction_id IS NULL AND case_id IS NULL)",
             name="target_valid",
         ),
+        CheckConstraint(
+            "source_version IS NULL OR source_version >= 1", name="source_version_positive"
+        ),
+        Index("ix_report_artifacts_analysis_run_id", "analysis_run_id"),
     )
 
     report_type: Mapped[str] = mapped_column(String(30), nullable=False)
@@ -148,8 +152,12 @@ class ReportArtifact(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     case_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("fraud_cases.id", ondelete="RESTRICT")
     )
+    analysis_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("analysis_runs.id", ondelete="RESTRICT")
+    )
+    source_version: Mapped[int | None] = mapped_column(Integer)
     object_key: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
-    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    sha256: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="GENERATING")
     generated_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="RESTRICT")
@@ -166,6 +174,7 @@ class Notification(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
             "(target_type IS NOT NULL AND target_id IS NOT NULL)",
             name="target_pair_valid",
         ),
+        UniqueConstraint("user_id", "dedupe_key"),
         Index("ix_notifications_user_read_created", "user_id", "read_at", "created_at"),
     )
 
@@ -175,6 +184,7 @@ class Notification(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
+    dedupe_key: Mapped[str | None] = mapped_column(String(200))
     target_type: Mapped[str | None] = mapped_column(String(50))
     target_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

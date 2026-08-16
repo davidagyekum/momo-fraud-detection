@@ -1,6 +1,9 @@
 import { render } from "@testing-library/react-native";
 
-import { AnalysisResultView } from "@/components/analysis-result";
+import {
+  AnalysisDetailsView,
+  AnalysisResultView,
+} from "@/components/analysis-result";
 import type { AnalysisResult } from "@/types/analysis";
 
 const partialResult = {
@@ -84,24 +87,29 @@ const partialResult = {
   completed_at: "2026-08-15T12:00:01Z",
 } as AnalysisResult;
 
-test("separates inconclusive risk from transaction verification", async () => {
+test("keeps the owner result concise and separates risk from verification", async () => {
   const view = await render(<AnalysisResultView result={partialResult} />);
   expect(view.getByLabelText("Status: Inconclusive")).toBeTruthy();
   expect(view.getByText("Transaction verification")).toBeTruthy();
   expect(view.getByText("Fraud risk assessment")).toBeTruthy();
-  expect(view.getAllByText("Image model unavailable").length).toBeGreaterThan(
-    0,
-  );
   expect(view.getByLabelText("Status: Mismatch found")).toBeTruthy();
   expect(view.queryByText(/verified genuine|confirmed fraud|safe/i)).toBeNull();
   expect(view.queryByText(/risk score/i)).toBeNull();
+  expect(view.queryByText("Confirmed OCR review")).toBeNull();
+  expect(view.queryByText("Evidence availability")).toBeNull();
+  expect(view.queryByText("Limitations and missing signals")).toBeNull();
+});
+
+test("moves technical evidence and limitations into the details view", async () => {
+  const view = await render(<AnalysisDetailsView result={partialResult} />);
   expect(view.getByText("Confirmed OCR review")).toBeTruthy();
   expect(view.getByText(/10 confirmed fields.*1 correction/i)).toBeTruthy();
-  expect(
-    view.getByText(
-      "This is an automated risk assessment, not a final legal determination.",
-    ),
-  ).toBeTruthy();
+  expect(view.getByText("Evidence availability")).toBeTruthy();
+  expect(view.getAllByText(/Image model unavailable/i).length).toBeGreaterThan(
+    0,
+  );
+  expect(view.getByText("Limitations and missing signals")).toBeTruthy();
+  expect(view.getByText("Evidence versions")).toBeTruthy();
 });
 
 test("renders a categorical high-risk result without inventing a score", async () => {
@@ -126,6 +134,9 @@ test("renders a categorical high-risk result without inventing a score", async (
   } as AnalysisResult;
   const view = await render(<AnalysisResultView result={highRisk} />);
   expect(view.getByLabelText("Status: High risk")).toBeTruthy();
-  expect(view.getByText(/Reference mismatch/)).toBeTruthy();
+  expect(
+    view.getByText("Multiple recorded signals require review."),
+  ).toBeTruthy();
+  expect(view.queryByText(/Reference mismatch/)).toBeNull();
   expect(view.queryByText(/risk score/i)).toBeNull();
 });

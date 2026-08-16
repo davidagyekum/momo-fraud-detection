@@ -8,14 +8,15 @@
     "npm": "10.9.0"
   },
   "scripts": {
-    "infra:up": "docker compose up --build -d db api",
+    "infra:up": "npm --prefix apps/mobile run build:web && docker compose up --build -d db api admin mobile",
     "infra:down": "docker compose down",
-    "infra:logs": "docker compose logs --follow api db",
+    "infra:logs": "docker compose logs --follow api admin mobile db",
     "contract:export": "python scripts/export_openapi.py",
     "contract:check": "python scripts/export_openapi.py --check",
     "verify:backend": "python scripts/verify.py --backend",
     "verify:admin": "python scripts/verify.py --admin",
     "verify:mobile": "python scripts/verify.py --mobile",
+    "verify:release": "python scripts/verify.py --release",
     "verify": "python scripts/verify.py --all"
   }
 }
