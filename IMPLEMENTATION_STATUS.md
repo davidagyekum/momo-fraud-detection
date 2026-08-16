@@ -27,6 +27,7 @@
 - Deployment status: `Verified local four-service release only; no hosted or production deployment claim`
 - Current phase: `Logical PR19 release hardening and full local acceptance in review`
 - Next exact task: `Review and merge logical PR19, then execute PR20 final documentation/inspection while retaining all open model, dependency, native-browser, performance, HTTPS and backup-rehearsal boundaries.`
+- Post-acceptance local repair: the mobile web/API routing and fresh-database role seed remain healthy, and the API wheel now explicitly packages `momo_fdvs/policies/risk_policy_demo_v1.json`. A rebuilt release container verifies the installed policy at 483 bytes; API and mobile-proxy health return HTTP 200; the persisted local account, transaction and OCR confirmation remain present. Focused policy tests pass 15/15. A fresh host full-gate attempt was not claimed green: it first failed under transient Windows memory pressure and then stalled before database activity, so the previously recorded full PR19 acceptance gate remains the authoritative complete-suite evidence pending the next clean rerun.
 
 ## PR10-PR13 reconciliation status
 

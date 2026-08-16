@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,14 @@ from momo_fdvs.services.risk_policy import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 POLICY_PATH = REPOSITORY_ROOT / "services/api/src/momo_fdvs/policies/risk_policy_demo_v1.json"
+
+
+def test_risk_policy_is_declared_as_wheel_package_data() -> None:
+    pyproject = tomllib.loads(
+        (REPOSITORY_ROOT / "services/api/pyproject.toml").read_text(encoding="utf-8")
+    )
+
+    assert pyproject["tool"]["setuptools"]["package-data"]["momo_fdvs.policies"] == ["*.json"]
 
 
 @pytest.fixture

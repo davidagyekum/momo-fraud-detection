@@ -82,3 +82,12 @@ Skipped/blocked: hosted CI/public deployment, native Android and evergreen multi
 ## Next exact task
 
 Review/merge PR19, then run PR20 inspection and close only requirements with fresh evidence. Prioritise automatic high-risk case creation, complete audit/dashboard/history filters, full governance management UI, native/multi-browser and performance evidence, dependency remediation and a real hosted HTTPS/backup-restore acceptance environment.
+
+## Post-acceptance packaged-policy repair
+
+- User acceptance exposed HTTP 503 `RISK_POLICY_UNAVAILABLE` after a successful private upload, OCR run and immutable OCR confirmation.
+- Root cause: `risk_policy_demo_v1.json` existed under the source package but setuptools did not include JSON package data in the API wheel used by the release image.
+- Repair: `services/api/pyproject.toml` declares `momo_fdvs.policies/*.json` as package data, with a regression assertion in `test_risk_policy.py`.
+- Verification: 15 focused policy tests pass; Ruff lint and format checks pass; the rebuilt API image contains the installed 483-byte policy; API and mobile same-origin health return HTTP 200; all four release containers are healthy; one persisted user, transaction and OCR confirmation remain present.
+- Honest gate boundary: one host full-backend rerun failed after Docker image construction with transient Argon2/file-read memory-allocation errors (`124 passed`, `55 skipped`, `2 failed`), and the subsequent isolated-database attempts stalled before issuing database queries and were interrupted. The isolated test database was removed. No new complete-suite pass is claimed; the earlier recorded 180-test PR19 acceptance remains the latest complete backend gate.
+- User next action: reload the OCR-complete screen and press **Check stored/imported reference** again. Missing model artifacts must still produce the documented `PARTIAL`/inconclusive result rather than a fabricated probability.
