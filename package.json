@@ -8,7 +8,7 @@
     "npm": "10.9.0"
   },
   "scripts": {
-    "infra:up": "docker compose up --build -d db api admin mobile",
+    "infra:up": "npm --prefix apps/mobile run build:web && docker compose up --build -d db api admin mobile",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs --follow api admin mobile db",
     "contract:export": "python scripts/export_openapi.py",

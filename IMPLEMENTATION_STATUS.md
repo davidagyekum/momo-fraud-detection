@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/pr18-analysis-product`
-- Base SHA: `d9b096af46232530bc47eff96856260d083885e4`
+- Current work branch: `codex/pr19-release-hardening`
+- Base SHA: `5fe83763ebae19459bd49c8ddc5e0e35b67c2c03`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -22,11 +22,11 @@
 - PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
-- Last updated: `2026-08-15`
-- CI status: `Logical PR18 passes locally: 172 backend tests at 85.40% branch-aware coverage; 58 mobile tests at 89.60% statement coverage; 714 ML tests at 90.15% branch-aware coverage; mobile web export, formatting, lint, strict typing, OpenAPI/ER drift, both PostgreSQL upgrade paths and the 588-file secret scan pass. Hosted jobs remain unable to start because the repository owner's Actions account is locked by a billing issue. The host remains Node.js 22.23.2/npm 10.9.8 rather than the pinned 24.14.0/10.9.0 runtime.`
-- Deployment status: `Not deployed`
-- Current phase: `Logical PR18 evidence-aware screenshot analysis product complete and in review as stacked PR #16`
-- Next exact task: `Review/merge PR17 #15, then review/merge stacked PR18 #16; begin logical PR19 only from the merged analysis contracts and without activating the rejected P12 image artifact or claiming live provider verification.`
+- Last updated: `2026-08-16`
+- CI status: `Logical PR19 local gates pass: backend 180 tests at 85.17% branch-aware coverage; mobile 62 tests at 83.80% statement/69.07% branch coverage; administrator portal 40 tests at 92.94% statement coverage plus 3 Playwright flows; ML 714 tests at 90.15% branch-aware coverage; 31 backend security scenarios with zero skips; controlled API/mobile/admin end-to-end flows; formatting, lint, strict typing, OpenAPI/ER drift, migrations, exports/builds and secret scan. Hosted CI remains an unverified external boundary. The bundled host is Node.js 24.19.0/npm 10.9.8 rather than pinned 24.14.0/10.9.0.`
+- Deployment status: `Verified local four-service release only; no hosted or production deployment claim`
+- Current phase: `Logical PR19 release hardening and full local acceptance in review`
+- Next exact task: `Review and merge logical PR19, then execute PR20 final documentation/inspection while retaining all open model, dependency, native-browser, performance, HTTPS and backup-rehearsal boundaries.`
 
 ## PR10-PR13 reconciliation status
 
@@ -166,30 +166,30 @@
 | P10 | Dataset governance, controlled sample generation and reproducible splits | Complete | [PR #11](https://github.com/davidagyekum/momo-fraud-detection/pull/11) — merged | `2e2c1fd53863e09b03c52ae1d5f53c1111deec81` merge commit | Registered ML gate: 32 tests at 92.57% branch-aware coverage, Ruff, strict mypy, controlled-dataset validation and report-drift checks pass; 12 files across six isolated source groups reproduce manifest hash `51d12132…` and split hash `08008637…`; backend regression: 97 tests at 87.58% | Merged on 2026-08-10 using passing local evidence; all eight hosted jobs had zero steps and were prevented from starting by B-CI-001. No model was fit, evaluated or exported. |
 | P11 | Structured-feature fraud classifier | Complete | [PR #13](https://github.com/davidagyekum/momo-fraud-detection/pull/13) — merged | `42a0ec69430f9a412211ada85a03d7c3171e4136` merge commit | ML gate: 71 tests at 91.03%; backend gate: 110 tests at 86.17%; signed-in Colab held-out macro F1/balanced accuracy 1.0 over three controlled samples; private artifact hash, registry lifecycle and real API inference pass | Merged on 2026-08-10 using passing local/Colab evidence. All eight hosted jobs had zero steps under B-CI-001. Controlled-only pipeline evidence; no provider-wide/production claim. |
 | P12 | CNN receipt-tampering classifier | In Progress | historical `codex/p12-cnn-tampering`; foundation `codex/p12-colab-foundation` | historical training code `02d8967136853c5c46eaa0babe44a7327c843a32`; foundation code `b2e6b24a337c3cc1777c162cf64861d7e55d29f8` | Historical signed-in Colab held-out macro F1 `0.333333` failed acceptance; logical PR12 foundation smoke passed with manifest SHA-256 `bb0ebffb…`, prediction digest `43833f49…`, and acquisition/FULL/promotion false | Historical artifact remains inactive. The reproducibility foundation is complete, but the product classifier remains incomplete pending representative authorised data and a newly governed model version. |
-| P13 | End-to-end analysis orchestration, rules and risk aggregation | Not Started |  |  |  |  |
-| P14 | History, search, downloadable reports and notifications | Not Started |  |  |  |  |
-| P15 | Fraud reporting, investigation and governance administration | Not Started |  |  |  |  |
-| P16 | Operational dashboard, analytics, audit and system status | Not Started |  |  |  |  |
-| P17 | UI completion, accessibility, responsive and visual QA | Not Started |  |  |  |  |
-| P18 | Full hardening, security, performance and regression QA | Not Started |  |  |  |  |
-| P19 | Staging deployment, release engineering and rollback | Not Started |  |  |  |  |
+| P13 | End-to-end analysis orchestration, rules and risk aggregation | Complete | logical PR18 | `5fe83763ebae19459bd49c8ddc5e0e35b67c2c03` merge base | Evidence-aware screenshot journey and immutable analysis passed | Inactive required models remain explicit and scores remain null. |
+| P14 | History, search, downloadable reports and notifications | In Review | logical PR19 | pending PR head | Owner history, private reports and notifications pass | Explicit history date-range filter remains outstanding. |
+| P15 | Fraud reporting, investigation and governance administration | In Review | logical PR19 | pending PR head | Reporting, assignment, notes, decisions and reports pass | Full user/template/rule management UI and automatic high-risk case creation remain outstanding. |
+| P16 | Operational dashboard, analytics, audit and system status | In Review | logical PR19 | pending PR head | Real role-scoped operations screens and APIs pass | Date/actor/target/request filters and performance targets remain outstanding. |
+| P17 | UI completion, accessibility, responsive and visual QA | In Review | logical PR19 | pending PR head | Mobile and staff critical workflows have state/accessibility tests and browser flows | Native Android and evergreen multi-browser matrix remain outstanding. |
+| P18 | Full hardening, security, performance and regression QA | In Review | logical PR19 | pending PR head | Security, regression and end-to-end gates pass locally | B-SEC-002 and formal performance/load evidence remain open. |
+| P19 | Staging deployment, release engineering and rollback | In Review | logical PR19 | pending PR head | Four local containers, migration, restart, health/readiness and rollback runbook verified | No hosted HTTPS deployment; exact host toolchain and restore rehearsal remain open. |
 | P20 | Final documentation, evidence, cleanup and inspection handoff | Not Started |  |  |  |  |
 
 Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Complete`.
 
 ## Requirements summary
 
-- MUST requirements complete: `45 / 87`
-- SHOULD requirements complete: `5 / 11`
+- MUST requirements complete: `68 / 87`
+- SHOULD requirements complete: `6 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-11 — STFD exact private inventory registered with complete decoded validation and conservative train-only grouping; no split or training occurred`
+- Traceability file last verified: `2026-08-16 — PR19 casework, reports, notifications, operations, security and local release evidence reconciled; incomplete filters, administration, model and hosted-release gates remain explicit`
 
 ## Current blockers
 
 | ID | Phase | Blocker | Impact | Owner/input needed | Safe fallback | Next action |
 |---|---|---|---|---|---|---|
 | B-CI-001 | Cross-phase | GitHub Actions jobs fail before runner allocation because the repository owner's account is locked by a billing issue. | Hosted CI cannot independently reproduce local gates. | Repository owner resolves the GitHub Actions billing/account lock. | Keep pinned workflows and exact local evidence; do not misreport hosted checks as passing. | Resolve the account lock and rerun the latest workflow when available. |
-| B-SEC-002 | P04 | `npm audit --omit=dev` reports 8 moderate and 15 high findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The supported mobile dependency graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and Codex maintainer monitoring supported patch releases. | Keep exact supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Re-run Expo compatibility and npm audit when a supported SDK 57 patch is available; upgrade only through Expo's supported matrix. |
+| B-SEC-002 | P04/P18 | `npm audit --omit=dev` reports 9 moderate and 15 high transitive findings in the supported Expo SDK 57 / React Native 0.86 / Metro graph; npm's proposed automatic fixes downgrade to incompatible Expo 53 or React Native 0.72 lines. | The controlled mobile build graph retains upstream advisories; no critical finding is reported, but the high findings cannot be silently waived. | Expo/React Native upstream and maintainer monitoring of supported patch releases. | Keep supported SDK pins, avoid `npm audit fix --force`, validate hostile receipts on the API, and do not run untrusted build inputs. | Upgrade only through Expo's supported matrix and rerun mobile export/tests/audit. |
 | P12-ACCEPTANCE | P12 | The controlled-only Colab run completed but held-out macro F1 `0.333333` failed the configured `0.85` minimum. | The exported image model cannot be registered, activated or represented as usable product evidence. | Keep image inference explicitly unavailable with a null tamper probability and preserve the failed run for audit. | Project owner/data steward supplies representative, authorised grouped data after roadmap reconciliation. | Treat the run as experimental failure evidence; create a new model version only after the dataset and split gates pass. |
 | PR15-MOMTSIM-V2-RUNTIME | Logical PR15 optional stress run | Repeated free-Colab backend disconnections prevented the first full-data logistic fit from completing; only the dummy-prior checkpoint was atomically saved. | No MoMTSim v2 model bundle or completed-run comparison exists. | Preserve the incomplete checkpoint and explicit deferral; rely only on the completed PaySim and MoMTSim v1 synthetic evidence. | Project owner supplies a paid/long-running runtime if the optional retry is desired. | Retry unchanged on a durable runtime, or introduce and document a separately versioned bounded configuration; never relabel the partial run as complete. |
 | PR16-CONTROLLED-SUSPICIOUS | Logical PR16/PR20 | Only one independent controlled-real suspicious group exists. | A leakage-safe controlled-real suspicious validation/test slice is unavailable. | Report synthetic suspicious validation only as supplementary and make no representative three-class claim. | Project owner/data steward supplies at least two more independently mapped suspicious groups. | Expand the controlled-real corpus before any strong three-class final claim. |
@@ -202,23 +202,23 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - Real/supervisor-approved receipt dataset and production reference source are not yet supplied.
 - Brand/deployment credentials are not yet supplied.
 - Docker Desktop 29.6.2 with Compose v5.3.1 is installed per-user; the API container supplies Tesseract 5.3.0 and the PostgreSQL container supplies the database CLI.
-- The unqualified Windows `python` command resolves to 3.11.7; use `py -3.12` for the selected Python 3.12 runtime. The unqualified Node.js is an unpinned Node 22.x runtime (`22.23.2` measured this session); activate pinned Node.js 24.14.0 for Expo work.
+- The unqualified Windows `python` command resolves to 3.11.7; use Python 3.12 for the selected runtime. The bundled Node.js used for final frontend gates is 24.19.0 with npm 10.9.8, not the pinned 24.14.0/10.9.0; exact pinned Docker builds are retained where available.
 - Actual P11 training ran in signed-in Google Colab at immutable code SHA `a914f065070558b5b601e6f49cf1691ff7bf9d42`; P12 and future reportable training runs must also use Google Colab. Local execution remains limited to tests, packaging and inference verification.
 - P11's held-out result contains only one controlled source group and three rows. It is pipeline-correctness evidence, not provider-wide accuracy, calibration or production readiness.
 - P12 trained on only six controlled source groups/twelve images. The one-group/two-image held-out result failed acceptance and cannot estimate provider generalisation. The deterministic dataset report is now explicitly scoped to preflight; actual run evidence is stored separately under `docs/evidence`.
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-15-PR18-analysis-product.md`
-- Summary: `Completed the evidence-aware screenshot journey from private upload and OCR review through immutable analysis, stored-reference verification, deterministic image evidence, owner history and mobile result/detail UI. Model-unavailable states remain explicit; no training, locked-test access, live MNO claim or deployment occurred.`
+- Handoff file: `docs/handoffs/2026-08-16-PR19-full-acceptance.md`
+- Summary: `Implemented casework, private reports, notifications, operational staff views, local release orchestration and explicit security/end-to-end/release gates. Four services are healthy locally; no hosted deployment or unavailable-model success is claimed.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
 2. Fetch/prune and verify the current SHA/worktree.
-3. Read the PR18 design/plan, ADR-038 and `docs/evidence/PR18_ANALYSIS_PRODUCT.json` before changing orchestration or result semantics.
-4. Confirm the pushed PR18 head and clean worktree. Preserve immutable policy and evidence snapshots; reanalysis must create a new run.
+3. Read ADR-038, ADR-039, the PR18 evidence and PR19 acceptance/security/release runbooks before changing orchestration or release semantics.
+4. Confirm the pushed PR19 head and clean worktree. Preserve immutable policy/evidence, private storage and case object scope.
 5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
 6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
 7. Preserve the three exact PR14 Drive bundles and the completed PaySim/MoMTSim v1 PR15 bundles. Keep all locked-test partitions sealed and unavailable for decisions before PR20; keep the v2 run explicitly incomplete.
-8. Read `docs/handoffs/2026-08-15-PR18-analysis-product.md`. Keep the P12 image model inactive, treat deterministic image checks as supporting evidence, keep verification separate from risk, and begin only the next prerequisite-complete phase.
+8. Read `docs/handoffs/2026-08-16-PR19-full-acceptance.md`. Keep P12 inactive, verification separate from risk, and resolve only explicitly recorded PR20/product boundaries.
