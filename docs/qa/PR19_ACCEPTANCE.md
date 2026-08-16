@@ -12,7 +12,7 @@ Date: 2026-08-16. Base: `5fe83763ebae19459bd49c8ddc5e0e35b67c2c03`. Branch: `cod
 | ML | 714 tests passed; 90.15% branch-aware coverage; formatting, Ruff, strict mypy and governance gates passed |
 | Security | 31 backend security scenarios passed with zero skips; web/mobile policy gates and secret scan passed |
 | End-to-end | Controlled screenshot upload, OCR confirmation, analysis, private report, fraud report, assignment, review, note, decision, owner case/notification and staff views passed |
-| Local release | PostgreSQL, API, administrator and mobile containers healthy; migration `20260815_0004 (head)`; health/readiness and both login pages returned HTTP 200 before and after application-container restart |
+| Local release | PostgreSQL, API, administrator and mobile containers healthy; migration `20260816_0005 (head)`; required role reference data, health/readiness, registration and both login pages passed |
 
 The local release project used isolated ports `55435/8002/5176/8083`. Database, storage, and container Tesseract 5.3.0 were ready. Image and structured classifiers remained honestly not activated; complete-model analysis was unavailable. No hosted deployment, provider verification, final model evaluation, or production-readiness claim is made.
 

@@ -21,7 +21,7 @@
 
 ## Database/migrations
 
-- Migration revision: `20260815_0004_pr19_release_hardening.py`; live local head `20260815_0004 (head)`.
+- Migration revisions: `20260815_0004_pr19_release_hardening.py` and `20260816_0005_seed_identity_roles.py`; live local head `20260816_0005 (head)`.
 - Upgrade tested from clean and previous revision by the backend gate.
 - Rollback notes: preserve volumes and prefer application rollback; database downgrade requires verified backup and explicit impact review.
 - Schema/ERD update: drift gate passed.
