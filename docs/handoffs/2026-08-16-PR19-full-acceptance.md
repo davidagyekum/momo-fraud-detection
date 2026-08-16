@@ -57,7 +57,7 @@
 |---|---|---|
 | `python scripts/verify_backend.py` | PASS | 180 tests; 85.17% branch-aware coverage; Ruff/mypy/OpenAPI/ER/migrations pass |
 | `python scripts/verify_admin.py` | PASS | 40 tests; 92.94% statements; 3 Playwright; build pass |
-| `python scripts/verify_mobile.py` | PASS | 62 tests; 83.80% statements/69.07% branches; 28-route export pass |
+| `python scripts/verify_mobile.py` | PASS | 65 tests; 83.80% statements/69.07% branches; 28-route export and same-origin API routing pass |
 | `python scripts/verify_ml.py` | PASS | 714 tests; 90.15% branch-aware coverage |
 | `python scripts/verify_security.py` | PASS | 31 backend security scenarios; zero skips; client policies and secret scan pass |
 | `python scripts/verify_e2e.py` | PASS | screenshot-to-analysis/report/case/staff-decision/owner-notification journey plus mobile/admin flows |

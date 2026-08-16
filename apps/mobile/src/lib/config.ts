@@ -5,6 +5,19 @@ const developmentBaseUrl = Platform.select({
   default: "http://localhost:8000",
 });
 
-export const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL ?? developmentBaseUrl
-).replace(/\/$/, "");
+export function resolveApiBaseUrl(
+  configuredUrl: string | undefined,
+  developmentUrl: string,
+  isProductionWeb: boolean,
+): string {
+  return (configuredUrl ?? (isProductionWeb ? "" : developmentUrl)).replace(
+    /\/$/,
+    "",
+  );
+}
+
+export const API_BASE_URL = resolveApiBaseUrl(
+  process.env.EXPO_PUBLIC_API_URL,
+  developmentBaseUrl,
+  Platform.OS === "web" && process.env.NODE_ENV === "production",
+);

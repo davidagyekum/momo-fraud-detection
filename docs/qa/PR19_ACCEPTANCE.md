@@ -8,7 +8,7 @@ Date: 2026-08-16. Base: `5fe83763ebae19459bd49c8ddc5e0e35b67c2c03`. Branch: `cod
 |---|---|
 | Backend | 180 tests passed; 85.17% branch-aware coverage; Ruff, strict mypy, OpenAPI and ER drift passed |
 | Administrator portal | 40 tests passed; 92.94% statements, 83.22% branches, 97.26% functions, 95.51% lines; 3 Playwright flows and production build passed |
-| Mobile | 62 tests passed; 83.80% statements, 69.07% branches, 85.71% functions, 86.66% lines; 28-route web export passed |
+| Mobile | 65 tests passed; 83.80% statements, 69.07% branches, 85.71% functions, 86.66% lines; 28-route web export and production same-origin API routing passed |
 | ML | 714 tests passed; 90.15% branch-aware coverage; formatting, Ruff, strict mypy and governance gates passed |
 | Security | 31 backend security scenarios passed with zero skips; web/mobile policy gates and secret scan passed |
 | End-to-end | Controlled screenshot upload, OCR confirmation, analysis, private report, fraud report, assignment, review, note, decision, owner case/notification and staff views passed |
