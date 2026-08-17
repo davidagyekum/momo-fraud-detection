@@ -8,10 +8,11 @@
 - Base branch: `codex/pr19-release-hardening`
 - Base SHA: `447e7be6ed355716f007023503f1cfcf5ddd19ac`
 - Work branch: `codex/audit-fix-40-ocr-text-risk`
-- Final head SHA: reported after the handoff commit
+- Implementation head SHA: `11f8278d451ff22ca592b34d606832d81ae24e3a`
+- Final branch head SHA: this handoff-finalisation commit; exact SHA is reported in the session response
 - Pull request: not created in this session
-- Push status: pending final commit/push
-- Worktree status: pending final commit
+- Push status: implementation head pushed successfully; handoff finalisation is pushed before the session response
+- Worktree status: clean after handoff finalisation
 
 ## Scope completed
 
@@ -129,9 +130,10 @@ detects the pre-existing PR19 constraint-name mismatch described below.
 ## Git evidence
 
 ```text
-git status --short: tracked implementation/docs changes plus seven intended new files before commit
-git log --oneline 447e7be6..HEAD: populated after final commit
-push output: populated in final session report
+git status --short after implementation commit: clean
+git log --oneline 447e7be6..implementation-head:
+11f8278 feat(ocr): add obvious scam text risk
+push output: new upstream branch origin/codex/audit-fix-40-ocr-text-risk created successfully
 ```
 
 ## Next exact task
