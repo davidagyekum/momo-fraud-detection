@@ -263,6 +263,34 @@ Required-field accuracy evaluation:
 
 The target of 90% is a goal, not a value to report until measured on the declared set.
 
+### 8.1 Deterministic OCR-text fraud assessment
+
+After recognition and before user confirmation, run the versioned
+`ghana-momo-obvious-scam-rules-v1` assessment over immutable raw OCR text. The
+initial high-precision rules cover bounded combinations such as a request to
+disclose a PIN/OTP, a wrong-transfer return lure, a payment demanded to unlock
+funds, an account threat plus external action, an account-action link, an
+unverified contact redirect, a prize/action lure and urgency pressure. Negated
+official advisories such as “never share your PIN” must not trigger the secret
+request rule.
+
+The assessment must:
+
+- retain schema and ruleset versions;
+- use token confidence only as evidence-quality context, never as a fraud label;
+- return only `SUSPICIOUS`, `FRAUDULENT` or null for no decisive rule;
+- keep its integer rule score explicitly non-probabilistic;
+- persist fixed reason codes and fixed public summaries, never match spans or
+  extracted private values;
+- return `UNAVAILABLE` for missing/legacy evidence rather than silently
+  recomputing history; and
+- feed the existing semantic-rules analysis stage without changing the separate
+  reference-verification record.
+
+No-match text is inconclusive, not evidence of genuineness. Missing accepted
+image or structured models still produces a `PARTIAL` analysis even when the
+categorical text signal maps to a high review band.
+
 ## 9. User correction
 
 The confirmed field snapshot is authoritative input to verification and structured features, but correction itself is evidence:

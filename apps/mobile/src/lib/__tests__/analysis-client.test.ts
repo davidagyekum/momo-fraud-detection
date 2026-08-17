@@ -57,6 +57,16 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
           reason_codes: ["STRUCTURED_CONTEXT_UNAVAILABLE"],
           model_version: null,
         },
+        text_fraud: {
+          status: "SUCCESS",
+          class: null,
+          policy_score: null,
+          score_is_probability: false,
+          reason_codes: [],
+          evidence_quality: "HIGH",
+          ruleset_version: "ghana-momo-obvious-scam-rules-v1",
+          limitations: ["ABSENCE_OF_RULE_MATCH_IS_NOT_PROOF_OF_GENUINENESS"],
+        },
         automated_evidence_immutable: true,
       },
       ocr_review: {
@@ -73,6 +83,8 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
         image_forensics_version: "forensics-v1",
         image_model_version: null,
         structured_model_version: null,
+        text_fraud_schema_version: "momo-text-fraud-assessment-v1",
+        text_fraud_ruleset_version: "ghana-momo-obvious-scam-rules-v1",
       },
       progress: {
         current_stage: "FINALIZE",

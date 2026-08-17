@@ -29,7 +29,13 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
         <Text style={uiStyles.cardTitle}>Fraud risk assessment</Text>
         <StatusBadge
           label={riskLabels[result.risk.band]}
-          tone={result.risk.band === "low_risk" ? "success" : "warning"}
+          tone={
+            result.risk.band === "low_risk"
+              ? "success"
+              : result.risk.band === "high_risk"
+                ? "error"
+                : "warning"
+          }
         />
         <Text style={uiStyles.body}>{result.risk.summary}</Text>
       </AppCard>
@@ -112,6 +118,10 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
           Structured model:{" "}
           {evidenceLabel(result.evidence_summary.structured_model.status)}
         </Text>
+        <Text style={uiStyles.body} selectable>
+          Message-risk rules:{" "}
+          {evidenceLabel(result.evidence_summary.text_fraud.status)}
+        </Text>
         <Text style={uiStyles.muted} selectable>
           Automated evidence is stored immutably for this run.
         </Text>
@@ -144,6 +154,10 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
         <Text style={uiStyles.muted} selectable>
           Verification rules:{" "}
           {result.versions.rule_set_version ?? "Unavailable"}
+        </Text>
+        <Text style={uiStyles.muted} selectable>
+          Message-risk rules:{" "}
+          {result.versions.text_fraud_ruleset_version ?? "Unavailable"}
         </Text>
       </AppCard>
     </View>

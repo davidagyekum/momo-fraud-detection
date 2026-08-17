@@ -28,6 +28,7 @@ from momo_fdvs.services.ocr import (
     latest_ocr_result,
     run_and_store_ocr,
 )
+from momo_fdvs.services.text_fraud import stored_text_assessment_projection
 from momo_fdvs.storage.base import ObjectStorage
 
 ocr_blueprint = Blueprint(
@@ -91,6 +92,9 @@ def _review_projection(
         "requires_review": bool(provider_field.get("requires_review", True)),
         "warnings": list(provider_field.get("warnings", [])),
     }
+    fraud_preview = stored_text_assessment_projection(
+        ocr_result.extracted_fields.get("_text_fraud")
+    )
     partial = bool(
         {
             "OCR_ENGINE_UNAVAILABLE",
@@ -106,6 +110,7 @@ def _review_projection(
             "status": "OCR_PARTIAL" if partial else "OCR_READY",
             "ocr_result_id": ocr_result.id,
             "provider": provider,
+            "fraud_preview": fraud_preview,
             "fields": fields,
             "warnings": list(ocr_result.warnings),
             "raw_text": ocr_result.raw_text,

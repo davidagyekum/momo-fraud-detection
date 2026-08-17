@@ -47,6 +47,17 @@ class ComponentStatusSchema(Schema):
     model_version = fields.String(allow_none=True)
 
 
+class TextFraudComponentSchema(Schema):
+    status = fields.String(required=True)
+    risk_class = fields.String(attribute="class", data_key="class", allow_none=True, required=True)
+    policy_score = fields.Integer(allow_none=True, required=True)
+    score_is_probability = fields.Boolean(required=True)
+    reason_codes = fields.List(fields.String(), required=True)
+    evidence_quality = fields.String(required=True)
+    ruleset_version = fields.String(allow_none=True, required=True)
+    limitations = fields.List(fields.String(), required=True)
+
+
 class AnalysisStageSchema(Schema):
     stage = fields.String(required=True)
     status = fields.String(required=True)
@@ -71,12 +82,15 @@ class AnalysisVersionsSchema(Schema):
     image_forensics_version = fields.String(allow_none=True, required=True)
     image_model_version = fields.String(allow_none=True, required=True)
     structured_model_version = fields.String(allow_none=True, required=True)
+    text_fraud_schema_version = fields.String(allow_none=True, required=True)
+    text_fraud_ruleset_version = fields.String(allow_none=True, required=True)
 
 
 class AnalysisEvidenceSummarySchema(Schema):
     deterministic_image = fields.Nested(ComponentStatusSchema, required=True)
     image_model = fields.Nested(ComponentStatusSchema, required=True)
     structured_model = fields.Nested(ComponentStatusSchema, required=True)
+    text_fraud = fields.Nested(TextFraudComponentSchema, required=True)
     automated_evidence_immutable = fields.Boolean(required=True)
 
 

@@ -282,6 +282,15 @@ This is a critical screen.
 - correction reasons may be automatically captured; user-facing reason field only where useful;
 - confirmation creates immutable snapshot.
 
+Before the editable fields, show an immediate **Message-risk preview** derived
+from the stored OCR assessment. The card must use text and icon/badge semantics,
+not colour alone, and distinguish `High fraud risk`, `Suspicious message`, `No
+decisive text signal` and `Text assessment unavailable`. Show only fixed,
+plain-language reason summaries. When present, label the rule score `not a
+probability`. A no-match state must not say safe, genuine or verified. High and
+suspicious states include a concrete pause/official-channel safety action while
+the separate final analysis and stored-reference verification remain pending.
+
 **Primary action:** Confirm details and analyse.
 
 ### M10 — Analysis progress

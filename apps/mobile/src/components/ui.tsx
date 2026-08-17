@@ -210,14 +210,16 @@ export function StatusBadge({
   tone = "info",
 }: {
   label: string;
-  tone?: "info" | "success" | "warning";
+  tone?: "error" | "info" | "success" | "warning";
 }) {
   const backgroundColor =
-    tone === "success"
-      ? palette.mint
-      : tone === "warning"
-        ? palette.amberSoft
-        : palette.blueSoft;
+    tone === "error"
+      ? palette.redSoft
+      : tone === "success"
+        ? palette.mint
+        : tone === "warning"
+          ? palette.amberSoft
+          : palette.blueSoft;
   return (
     <View
       accessibilityLabel={`Status: ${label}`}

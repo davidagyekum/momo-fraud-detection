@@ -306,6 +306,28 @@ Runs the OCR pipeline synchronously for the prototype or returns `202` if the im
       }
     },
     "warnings": ["AMOUNT_LOW_CONFIDENCE"],
+    "fraud_preview": {
+      "schema_version": "momo-text-fraud-assessment-v1",
+      "ruleset_version": "ghana-momo-obvious-scam-rules-v1",
+      "status": "SUCCESS",
+      "class": "FRAUDULENT",
+      "score": 94,
+      "score_is_probability": false,
+      "reason_code": "OBVIOUS_SCAM_TEXT_DETECTED",
+      "reason_codes": ["PIN_OR_OTP_REQUEST"],
+      "reasons": [
+        {
+          "code": "PIN_OR_OTP_REQUEST",
+          "title": "Secret code requested",
+          "summary": "The text asks the user to disclose a MoMo PIN, OTP or security code. Legitimate support should not request these secrets.",
+          "severity": "CRITICAL"
+        }
+      ],
+      "evidence_quality": "HIGH",
+      "limitations": [],
+      "summary": "The screenshot contains strong scam-language indicators and should be treated as high risk.",
+      "disclaimer": "This is a rule-based risk assessment of the supplied screenshot text, not live confirmation from a mobile-network operator or a legal determination."
+    },
     "preview_url": "/api/v1/transactions/uuid/receipt?variant=thumbnail"
   },
   "meta": {"request_id": "..."}
@@ -315,6 +337,14 @@ Runs the OCR pipeline synchronously for the prototype or returns `202` if the im
 ### `GET /transactions/{transaction_id}/ocr-review`
 
 Returns current raw extraction projection, field confidence and validation warnings. It does not expose all raw token data to normal users unless needed for the UI.
+
+Both OCR endpoints return the same persisted, allowlisted `fraud_preview`. The
+preview is a deterministic assessment of the immutable OCR text. Its integer
+`score` is rule-ranking information on a `0..100` scale and is explicitly not a
+probability. A null class means that no decisive rule fired; it never means
+`GENUINE`. Historical OCR results without a stored assessment return
+`UNAVAILABLE` and are not silently recomputed under a newer ruleset. Raw match
+spans, phone numbers, links, secrets and OCR text are excluded from the preview.
 
 ### `POST /transactions/{transaction_id}/ocr-confirmations`
 
@@ -367,6 +397,14 @@ not proof of fraud. If the private image is unavailable, that block returns an e
 code without inventing values while completed verification evidence is retained. P13 replaces
 this transitional response with the queued full-pipeline response below while retaining
 idempotency and the separate verification/image/risk objects.
+
+The current categorical policy also consumes the version-bound OCR text
+assessment during the existing `SEMANTIC_RULES` stage. `FRAUDULENT` text maps to
+the high review band and `SUSPICIOUS` text maps to the medium review band. The
+overall `risk.score` remains null until calibrated model evidence exists, and
+missing required image or structured models keep the analysis `PARTIAL`.
+Stored-reference verification remains a separate object and never overwrites or
+authenticates the text-risk result.
 
 ```json
 {

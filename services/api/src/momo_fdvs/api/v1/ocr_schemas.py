@@ -24,11 +24,35 @@ class OCRFieldSchema(Schema):
     masked = fields.String(allow_none=True)
 
 
+class OCRTextFraudReasonSchema(Schema):
+    code = fields.String(required=True)
+    title = fields.String(required=True)
+    summary = fields.String(required=True)
+    severity = fields.String(required=True)
+
+
+class OCRTextFraudPreviewSchema(Schema):
+    schema_version = fields.String(required=True)
+    ruleset_version = fields.String(required=True)
+    status = fields.String(required=True)
+    risk_class = fields.String(attribute="class", data_key="class", allow_none=True, required=True)
+    score = fields.Integer(allow_none=True, required=True)
+    score_is_probability = fields.Boolean(required=True)
+    reason_code = fields.String(required=True)
+    reason_codes = fields.List(fields.String(), required=True)
+    reasons = fields.List(fields.Nested(OCRTextFraudReasonSchema), required=True)
+    evidence_quality = fields.String(required=True)
+    limitations = fields.List(fields.String(), required=True)
+    summary = fields.String(required=True)
+    disclaimer = fields.String(required=True)
+
+
 class OCRReviewDataSchema(Schema):
     transaction_id = fields.UUID(required=True)
     status = fields.String(required=True)
     ocr_result_id = fields.UUID(required=True)
     provider = fields.Nested(OCRProviderSchema, required=True)
+    fraud_preview = fields.Nested(OCRTextFraudPreviewSchema, required=True)
     ocr_fields = fields.Dict(
         keys=fields.String(),
         values=fields.Nested(OCRFieldSchema),

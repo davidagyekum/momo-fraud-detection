@@ -13,6 +13,7 @@ from momo_fdvs.services.risk_policy import (
     ModelPolicySignal,
     PolicyFailure,
     PolicyReason,
+    TextPolicySignal,
     evaluate_risk_policy,
     load_risk_policy,
 )
@@ -70,6 +71,57 @@ def _available_structured(predicted_class: str, score: float) -> ModelPolicySign
     )
 
 
+def _text_signal(predicted_class: str | None) -> TextPolicySignal:
+    reason_code = (
+        "PIN_OR_OTP_REQUEST"
+        if predicted_class == "FRAUDULENT"
+        else "ACCOUNT_BLOCK_THREAT_WITH_ACTION"
+    )
+    reasons = (
+        (
+            PolicyReason(
+                code=reason_code,
+                title=(
+                    "Secret code requested"
+                    if predicted_class == "FRAUDULENT"
+                    else "Account threat with demanded action"
+                ),
+                severity="CRITICAL" if predicted_class == "FRAUDULENT" else "HIGH",
+            ),
+        )
+        if predicted_class is not None
+        else ()
+    )
+    return TextPolicySignal(
+        status="SUCCESS",
+        predicted_class=predicted_class,
+        policy_score=94 if predicted_class is not None else None,
+        score_is_probability=False,
+        reason_codes=(
+            (reason_code,) if predicted_class is not None else ("NO_DECISIVE_TEXT_FRAUD_SIGNAL",)
+        ),
+        reasons=reasons,
+        ruleset_version="ghana-momo-obvious-scam-rules-v1",
+        schema_version="momo-text-fraud-assessment-v1",
+        evidence_quality="HIGH",
+    )
+
+
+def _with_text(source: AnalysisPolicyInput, predicted_class: str | None) -> AnalysisPolicyInput:
+    return AnalysisPolicyInput(
+        mode=source.mode,
+        verification_status=source.verification_status,
+        critical_verification_mismatches=source.critical_verification_mismatches,
+        confirmed_critical_fields_complete=source.confirmed_critical_fields_complete,
+        corrected_low_confidence_fields=source.corrected_low_confidence_fields,
+        deterministic_image_reasons=source.deterministic_image_reasons,
+        image_model=source.image_model,
+        structured_model=source.structured_model,
+        semantic_reasons=source.semantic_reasons,
+        text_signal=_text_signal(predicted_class),
+    )
+
+
 def _with_structured(
     source: AnalysisPolicyInput,
     predicted_class: str,
@@ -123,6 +175,74 @@ def test_reference_match_without_conclusive_model_stays_inconclusive(
     assert result.legacy_risk_class is None
     assert result.score is None
     assert "STORED_REFERENCE_MATCH_NOT_AUTHENTICITY" in result.limitations
+
+
+@pytest.mark.parametrize(
+    ("predicted_class", "expected_band", "legacy_class"),
+    [
+        ("SUSPICIOUS", RiskBand.MEDIUM, "SUSPICIOUS"),
+        ("FRAUDULENT", RiskBand.HIGH, "FRAUDULENT"),
+    ],
+)
+def test_text_rules_can_drive_categorical_risk_without_inventing_probability(
+    policy: LoadedRiskPolicy,
+    predicted_class: str,
+    expected_band: RiskBand,
+    legacy_class: str,
+) -> None:
+    result = evaluate_risk_policy(
+        policy,
+        _with_text(_unavailable_input(), predicted_class),
+    )
+
+    assert result.status == "PARTIAL"
+    assert result.band is expected_band
+    assert result.legacy_risk_class == legacy_class
+    assert result.score is None
+    assert result.reasons
+
+
+def test_no_decisive_text_rule_keeps_reference_match_inconclusive(
+    policy: LoadedRiskPolicy,
+) -> None:
+    result = evaluate_risk_policy(
+        policy,
+        _with_text(_unavailable_input(verification_status="VERIFIED"), None),
+    )
+
+    assert result.band is RiskBand.INCONCLUSIVE
+    assert result.legacy_risk_class is None
+    assert "CONCLUSIVE_TEXT_EVIDENCE_UNAVAILABLE" in result.missing_signals
+
+
+def test_text_ruleset_drift_fails_closed(policy: LoadedRiskPolicy) -> None:
+    source = _with_text(_unavailable_input(), "FRAUDULENT")
+    drifted = TextPolicySignal(
+        status="SUCCESS",
+        predicted_class="FRAUDULENT",
+        policy_score=94,
+        score_is_probability=False,
+        reason_codes=source.text_signal.reason_codes,
+        reasons=source.text_signal.reasons,
+        ruleset_version="unreviewed-rules-v2",
+        schema_version=source.text_signal.schema_version,
+        evidence_quality="HIGH",
+    )
+    value = AnalysisPolicyInput(
+        mode=source.mode,
+        verification_status=source.verification_status,
+        critical_verification_mismatches=(),
+        confirmed_critical_fields_complete=True,
+        corrected_low_confidence_fields=(),
+        deterministic_image_reasons=(),
+        image_model=source.image_model,
+        structured_model=source.structured_model,
+        semantic_reasons=(),
+        text_signal=drifted,
+    )
+
+    with pytest.raises(PolicyFailure, match="ruleset"):
+        evaluate_risk_policy(policy, value)
 
 
 def test_deterministic_warning_is_supporting_evidence_not_tamper_classification(

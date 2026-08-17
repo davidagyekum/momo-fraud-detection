@@ -112,6 +112,18 @@ export const analysisSchema = z
         deterministic_image: componentStatusSchema,
         image_model: componentStatusSchema,
         structured_model: componentStatusSchema,
+        text_fraud: z
+          .object({
+            status: z.enum(["SUCCESS", "UNAVAILABLE"]),
+            class: z.enum(["SUSPICIOUS", "FRAUDULENT"]).nullable(),
+            policy_score: z.number().int().min(0).max(100).nullable(),
+            score_is_probability: z.literal(false),
+            reason_codes: z.array(z.string()),
+            evidence_quality: z.enum(["HIGH", "MEDIUM", "LOW", "UNAVAILABLE"]),
+            ruleset_version: z.string().nullable(),
+            limitations: z.array(z.string()),
+          })
+          .strict(),
         automated_evidence_immutable: z.literal(true),
       })
       .strict(),
@@ -132,6 +144,8 @@ export const analysisSchema = z
         image_forensics_version: z.string().nullable(),
         image_model_version: z.string().nullable(),
         structured_model_version: z.string().nullable(),
+        text_fraud_schema_version: z.string().nullable(),
+        text_fraud_ruleset_version: z.string().nullable(),
       })
       .strict(),
     progress: z

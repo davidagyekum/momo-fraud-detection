@@ -6,7 +6,7 @@ import hashlib
 import json
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -14,6 +14,7 @@ from momo_fdvs.contracts.evidence import EvidenceMode, RiskBand, legacy_risk_fro
 
 AnalysisStatus = Literal["COMPLETED", "PARTIAL"]
 ModelKind = Literal["IMAGE", "STRUCTURED"]
+TextSignalStatus = Literal["SUCCESS", "UNAVAILABLE"]
 ReasonSeverity = Literal["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
 ANALYSIS_RESULT_CONTRACT_VERSION = "analysis-result-v1"
@@ -25,12 +26,16 @@ _POLICY_KEYS = {
     "policy_version",
     "critical_verification_fields",
     "structured_class_bands",
+    "text_class_bands",
+    "text_fraud_ruleset_version",
+    "text_policy_score_is_probability",
     "image_high_threshold",
     "categorical_score_is_null",
     "deterministic_image_supporting_only",
     "stored_reference_match_is_not_low_risk",
 }
 _STRUCTURED_CLASSES = {"GENUINE", "SUSPICIOUS", "FRAUDULENT"}
+_TEXT_CLASSES = {"SUSPICIOUS", "FRAUDULENT"}
 _IMAGE_CLASSES = {"unaltered", "tampered"}
 _VERIFICATION_STATUSES = {"VERIFIED", "MISMATCH", "UNVERIFIED"}
 _SEVERITIES = {"INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"}
@@ -135,6 +140,74 @@ class ModelPolicySignal:
 
 
 @dataclass(frozen=True)
+class TextPolicySignal:
+    """Versioned deterministic OCR-text evidence; its score is never a probability."""
+
+    status: TextSignalStatus
+    predicted_class: str | None
+    policy_score: int | None
+    score_is_probability: bool
+    reason_codes: tuple[str, ...]
+    reasons: tuple[PolicyReason, ...]
+    ruleset_version: str | None
+    schema_version: str | None
+    evidence_quality: str | None
+    limitations: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.status not in {"SUCCESS", "UNAVAILABLE"}:
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text signal status is invalid.")
+        _validate_reason_codes(self.reason_codes)
+        if self.score_is_probability:
+            raise PolicyFailure(
+                "RISK_POLICY_INPUT_INVALID", "The text policy score cannot be a probability."
+            )
+        if any(_REASON_CODE.fullmatch(code) is None for code in self.limitations):
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text limitations are invalid.")
+        if not set(reason.code for reason in self.reasons).issubset(self.reason_codes):
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text reasons are inconsistent.")
+        if self.status == "UNAVAILABLE":
+            if self.predicted_class is not None or self.policy_score is not None or self.reasons:
+                raise PolicyFailure(
+                    "RISK_POLICY_INPUT_INVALID",
+                    "Unavailable text evidence must not contain a class, score, or reasons.",
+                )
+            return
+        if not self.ruleset_version or not self.schema_version:
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text evidence identity is invalid.")
+        if self.evidence_quality not in {"HIGH", "MEDIUM", "LOW"}:
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text evidence quality is invalid.")
+        if self.predicted_class is None:
+            if self.policy_score is not None:
+                raise PolicyFailure(
+                    "RISK_POLICY_INPUT_INVALID", "Inconclusive text evidence must keep score null."
+                )
+            return
+        if self.predicted_class not in _TEXT_CLASSES:
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text risk class is invalid.")
+        if (
+            isinstance(self.policy_score, bool)
+            or not isinstance(self.policy_score, int)
+            or not 0 <= self.policy_score <= 100
+        ):
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text policy score is invalid.")
+
+    @classmethod
+    def unavailable(cls, reason_code: str) -> TextPolicySignal:
+        return cls(
+            status="UNAVAILABLE",
+            predicted_class=None,
+            policy_score=None,
+            score_is_probability=False,
+            reason_codes=(reason_code,),
+            reasons=(),
+            ruleset_version=None,
+            schema_version=None,
+            evidence_quality=None,
+        )
+
+
+@dataclass(frozen=True)
 class AnalysisPolicyInput:
     """All evidence the policy may use for one immutable analysis."""
 
@@ -147,6 +220,9 @@ class AnalysisPolicyInput:
     image_model: ModelPolicySignal
     structured_model: ModelPolicySignal
     semantic_reasons: tuple[PolicyReason, ...]
+    text_signal: TextPolicySignal = field(
+        default_factory=lambda: TextPolicySignal.unavailable("OCR_TEXT_RISK_UNAVAILABLE")
+    )
 
     def __post_init__(self) -> None:
         if not isinstance(self.mode, EvidenceMode):
@@ -155,6 +231,8 @@ class AnalysisPolicyInput:
             raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Verification status is invalid.")
         if self.image_model.kind != "IMAGE" or self.structured_model.kind != "STRUCTURED":
             raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Model evidence is misaligned.")
+        if not isinstance(self.text_signal, TextPolicySignal):
+            raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Text evidence is invalid.")
         if any(not field.strip() for field in self.corrected_low_confidence_fields):
             raise PolicyFailure("RISK_POLICY_INPUT_INVALID", "Correction field is invalid.")
 
@@ -167,6 +245,9 @@ class LoadedRiskPolicy:
     policy_sha256: str
     critical_verification_fields: tuple[str, ...]
     structured_class_bands: dict[str, RiskBand]
+    text_class_bands: dict[str, RiskBand]
+    text_fraud_ruleset_version: str
+    text_policy_score_is_probability: bool
     image_high_threshold: float
     categorical_score_is_null: bool
     deterministic_image_supporting_only: bool
@@ -251,6 +332,9 @@ def load_risk_policy(path: Path, *, expected_sha256: str | None = None) -> Loade
         policy_version = payload["policy_version"]
         critical_fields = payload["critical_verification_fields"]
         band_values = payload["structured_class_bands"]
+        text_band_values = payload["text_class_bands"]
+        text_ruleset_version = payload["text_fraud_ruleset_version"]
+        text_score_probability = payload["text_policy_score_is_probability"]
         threshold = payload["image_high_threshold"]
         categorical_null = payload["categorical_score_is_null"]
         supporting_only = payload["deterministic_image_supporting_only"]
@@ -269,6 +353,18 @@ def load_risk_policy(path: Path, *, expected_sha256: str | None = None) -> Loade
         if not isinstance(band_values, dict) or set(band_values) != _STRUCTURED_CLASSES:
             raise _schema_failure()
         structured_bands = {name: RiskBand(value) for name, value in band_values.items()}
+        if not isinstance(text_band_values, dict) or set(text_band_values) != _TEXT_CLASSES:
+            raise _schema_failure()
+        text_bands = {name: RiskBand(value) for name, value in text_band_values.items()}
+        if text_bands != {
+            "SUSPICIOUS": RiskBand.MEDIUM,
+            "FRAUDULENT": RiskBand.HIGH,
+        }:
+            raise _schema_failure()
+        if not isinstance(text_ruleset_version, str) or not text_ruleset_version.strip():
+            raise _schema_failure()
+        if text_score_probability is not False:
+            raise _schema_failure()
         if (
             isinstance(threshold, bool)
             or not isinstance(threshold, (int, float))
@@ -285,6 +381,9 @@ def load_risk_policy(path: Path, *, expected_sha256: str | None = None) -> Loade
         policy_sha256=policy_sha256,
         critical_verification_fields=tuple(critical_fields),
         structured_class_bands=structured_bands,
+        text_class_bands=text_bands,
+        text_fraud_ruleset_version=text_ruleset_version,
+        text_policy_score_is_probability=text_score_probability,
         image_high_threshold=float(threshold),
         categorical_score_is_null=categorical_null,
         deterministic_image_supporting_only=supporting_only,
@@ -308,7 +407,8 @@ def _limitations(value: AnalysisPolicyInput) -> tuple[str, ...]:
         limitations.append("DETERMINISTIC_IMAGE_SUPPORTING_ONLY")
     if value.corrected_low_confidence_fields:
         limitations.append("CORRECTED_LOW_CONFIDENCE_FIELDS")
-    return tuple(limitations)
+    limitations.extend(value.text_signal.limitations)
+    return _deduplicate(tuple(limitations))
 
 
 def _unavailable_model_signals(value: AnalysisPolicyInput) -> tuple[str, ...]:
@@ -327,7 +427,10 @@ def _result(
     reasons: tuple[PolicyReason, ...],
 ) -> AnalysisPolicyResult:
     combined = _deduplicate_reasons(
-        reasons + value.semantic_reasons + value.deterministic_image_reasons
+        reasons
+        + value.text_signal.reasons
+        + value.semantic_reasons
+        + value.deterministic_image_reasons
     )
     return AnalysisPolicyResult(
         policy_version=policy.policy_version,
@@ -357,6 +460,10 @@ def _inconclusive(
         missing.append("CRITICAL_OCR_FIELDS_INCOMPLETE")
     if value.verification_status == "UNVERIFIED":
         missing.append("REFERENCE_RECORD_UNAVAILABLE")
+    if value.text_signal.status == "UNAVAILABLE":
+        missing.extend(value.text_signal.reason_codes)
+    elif value.text_signal.predicted_class is None:
+        missing.append("CONCLUSIVE_TEXT_EVIDENCE_UNAVAILABLE")
     missing.extend(_unavailable_model_signals(value))
     reasons = _deduplicate_reasons(
         (
@@ -365,6 +472,7 @@ def _inconclusive(
                 title="Available evidence cannot support a fraud-risk conclusion",
                 severity="INFORMATIONAL",
             ),
+            *value.text_signal.reasons,
             *value.semantic_reasons,
             *value.deterministic_image_reasons,
         )
@@ -415,6 +523,13 @@ def evaluate_risk_policy(
         raise PolicyFailure(
             "RISK_POLICY_INPUT_INVALID", "Critical verification mismatch is invalid."
         )
+    if (
+        value.text_signal.status == "SUCCESS"
+        and value.text_signal.ruleset_version != policy.text_fraud_ruleset_version
+    ):
+        raise PolicyFailure(
+            "RISK_POLICY_INPUT_INVALID", "The text evidence ruleset is incompatible."
+        )
     if value.critical_verification_mismatches:
         titles = {
             "amount": "Amount differs from the stored record",
@@ -430,6 +545,9 @@ def evaluate_risk_policy(
             if field in value.critical_verification_mismatches
         )
         return _result(policy, value, RiskBand.HIGH, reasons)
+    text_class = value.text_signal.predicted_class
+    if value.text_signal.status == "SUCCESS" and text_class == "FRAUDULENT":
+        return _result(policy, value, policy.text_class_bands[text_class], ())
     structured_class = value.structured_model.predicted_class
     if value.structured_model.available and structured_class == "FRAUDULENT":
         return _result(policy, value, RiskBand.HIGH, (_structured_reason(structured_class),))
@@ -451,6 +569,8 @@ def evaluate_risk_policy(
                 ),
             ),
         )
+    if value.text_signal.status == "SUCCESS" and text_class == "SUSPICIOUS":
+        return _result(policy, value, policy.text_class_bands[text_class], ())
     if value.structured_model.available and structured_class is not None:
         band = policy.structured_class_bands[structured_class]
         if band is RiskBand.LOW and not value.confirmed_critical_fields_complete:
@@ -467,6 +587,7 @@ __all__ = [
     "ModelPolicySignal",
     "PolicyFailure",
     "PolicyReason",
+    "TextPolicySignal",
     "evaluate_risk_policy",
     "load_risk_policy",
 ]

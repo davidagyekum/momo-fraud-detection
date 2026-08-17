@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/pr19-release-hardening`
-- Base SHA: `5fe83763ebae19459bd49c8ddc5e0e35b67c2c03`
+- Current work branch: `codex/audit-fix-40-ocr-text-risk`
+- Base SHA: `447e7be6ed355716f007023503f1cfcf5ddd19ac`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -22,12 +22,22 @@
 - PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
-- Last updated: `2026-08-16`
-- CI status: `Logical PR19 local gates pass: backend 180 tests at 85.17% branch-aware coverage; mobile 65 tests at 83.80% statement/69.07% branch coverage; administrator portal 40 tests at 92.94% statement coverage plus 3 Playwright flows; ML 714 tests at 90.15% branch-aware coverage; 31 backend security scenarios with zero skips; controlled API/mobile/admin end-to-end flows; formatting, lint, strict typing, OpenAPI/ER drift, migrations, exports/builds and secret scan. Hosted CI remains an unverified external boundary. The bundled host is Node.js 24.19.0/npm 10.9.8 rather than pinned 24.14.0/10.9.0.`
+- Last updated: `2026-08-17`
+- CI status: `OCR text-risk repair local gates pass: backend 213 tests at 85.63% branch-aware coverage; mobile 67 tests at 83.80% statement/69.07% branch coverage; administrator portal 40 tests at 92.94% statement coverage plus 3 Playwright flows; ML 714 tests at 90.15% branch-aware coverage; 31 backend security scenarios; controlled API/mobile/admin end-to-end flows; formatting, lint, strict typing, OpenAPI/ER drift, current migration head, 28-route mobile export, builds and 642-file secret scan. A containerised current-source OCR demo used real Tesseract 5.3.0 and returned FRAUDULENT with non-probabilistic rule score 95. The all-section wrapper remains non-zero only because the host doctor finds Node.js 22.23.2/npm 10.9.8 instead of pinned 24.14.0/10.9.0 and host Tesseract is absent; the running four-service release verifier passes separately. Hosted CI remains unverified.`
 - Deployment status: `Verified local four-service release only; no hosted or production deployment claim`
-- Current phase: `Logical PR19 release hardening and full local acceptance in review`
-- Next exact task: `Review and merge logical PR19, then execute PR20 final documentation/inspection while retaining all open model, dependency, native-browser, performance, HTTPS and backup-rehearsal boundaries.`
+- Current phase: `Audit repair 40 OCR text-risk integration complete locally and pending review`
+- Next exact task: `Review and merge codex/audit-fix-40-ocr-text-risk, then execute PR20 final documentation/inspection while retaining all open model, dependency, native-browser, performance, HTTPS and backup-rehearsal boundaries.`
 - Post-acceptance local repair: the mobile web/API routing and fresh-database role seed remain healthy, and the API wheel now explicitly packages `momo_fdvs/policies/risk_policy_demo_v1.json`. A rebuilt release container verifies the installed policy at 483 bytes; API and mobile-proxy health return HTTP 200; the persisted local account, transaction and OCR confirmation remain present. Focused policy tests pass 15/15. A fresh host full-gate attempt was not claimed green: it first failed under transient Windows memory pressure and then stalled before database activity, so the previously recorded full PR19 acceptance gate remains the authoritative complete-suite evidence pending the next clean rerun.
+
+## Audit repair 40 — obvious-scam OCR text risk
+
+- Source identity: replacement ZIP SHA-256 `9b05450025363e1bde86e423dd685fbf5f5b00a191597a020a2a64d62f06fb57`; all 34 manifest files match. The package is technical reference only and ADR-040 records the compatibility decision.
+- Assessment: `momo-text-fraud-assessment-v1` / `ghana-momo-obvious-scam-rules-v1` detects bounded scam-language combinations while excluding negated official advisories and never returning raw matches or private values.
+- Product integration: OCR/review responses persist and replay an allowlisted `fraud_preview`; the mobile screen displays an accessible immediate warning; the existing `SEMANTIC_RULES` stage and `analysis-risk-policy-demo-v2` consume the categorical evidence.
+- Invariants: text rule score is not a probability; final policy score remains null; no-match text is not `GENUINE`; verification remains separate; missing accepted models retain `PARTIAL`; historical OCR is not silently recomputed.
+- Data/schema boundary: no database migration, model fit, dataset change, locked-test access or metric claim. The policy artifact SHA-256 is `1792dc73da11782c82a05a1e4e7a8f1cc585f4e8e99111b6a30e9ed220cc51b4`.
+- Verification: exact commands and results are recorded in `docs/evidence/OCR_TEXT_FRAUD_REPAIR.md` and `docs/handoffs/2026-08-17-ocr-text-risk-repair.md`.
+- Existing blocker: `flask db current` reports `20260816_0005 (head)`, but `flask db check` exposes a PR19 constraint-name mismatch (`ck_report_artifacts_ck_report_artifacts_source_version_positive` versus model name `ck_report_artifacts_source_version_positive`). This repair changes no schema and does not rewrite an applied migration; a separately scoped forward migration/metadata decision is required.
 
 ## PR10-PR13 reconciliation status
 

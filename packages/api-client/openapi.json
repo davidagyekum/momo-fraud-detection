@@ -433,13 +433,17 @@
           },
           "structured_model": {
             "$ref": "#/components/schemas/ComponentStatus"
+          },
+          "text_fraud": {
+            "$ref": "#/components/schemas/TextFraudComponent"
           }
         },
         "required": [
           "automated_evidence_immutable",
           "deterministic_image",
           "image_model",
-          "structured_model"
+          "structured_model",
+          "text_fraud"
         ],
         "type": "object"
       },
@@ -678,6 +682,14 @@
           "structured_model_version": {
             "nullable": true,
             "type": "string"
+          },
+          "text_fraud_ruleset_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "text_fraud_schema_version": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
@@ -688,7 +700,9 @@
           "policy_sha256",
           "policy_version",
           "rule_set_version",
-          "structured_model_version"
+          "structured_model_version",
+          "text_fraud_ruleset_version",
+          "text_fraud_schema_version"
         ],
         "type": "object"
       },
@@ -1511,6 +1525,9 @@
             },
             "type": "object"
           },
+          "fraud_preview": {
+            "$ref": "#/components/schemas/OCRTextFraudPreview"
+          },
           "ocr_result_id": {
             "format": "uuid",
             "type": "string"
@@ -1551,6 +1568,7 @@
           "confirmation_endpoint",
           "engine_version",
           "fields",
+          "fraud_preview",
           "ocr_result_id",
           "pipeline_version",
           "preview_url",
@@ -1577,6 +1595,101 @@
         "required": [
           "data",
           "meta"
+        ],
+        "type": "object"
+      },
+      "OCRTextFraudPreview": {
+        "additionalProperties": false,
+        "properties": {
+          "class": {
+            "nullable": true,
+            "type": "string"
+          },
+          "disclaimer": {
+            "type": "string"
+          },
+          "evidence_quality": {
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reason_code": {
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/OCRTextFraudReason"
+            },
+            "type": "array"
+          },
+          "ruleset_version": {
+            "type": "string"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "score": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "score_is_probability": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "class",
+          "disclaimer",
+          "evidence_quality",
+          "limitations",
+          "reason_code",
+          "reason_codes",
+          "reasons",
+          "ruleset_version",
+          "schema_version",
+          "score",
+          "score_is_probability",
+          "status",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "OCRTextFraudReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "summary",
+          "title"
         ],
         "type": "object"
       },
@@ -2362,6 +2475,55 @@
         "required": [
           "data",
           "meta"
+        ],
+        "type": "object"
+      },
+      "TextFraudComponent": {
+        "additionalProperties": false,
+        "properties": {
+          "class": {
+            "nullable": true,
+            "type": "string"
+          },
+          "evidence_quality": {
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "policy_score": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ruleset_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "score_is_probability": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "class",
+          "evidence_quality",
+          "limitations",
+          "policy_score",
+          "reason_codes",
+          "ruleset_version",
+          "score_is_probability",
+          "status"
         ],
         "type": "object"
       },

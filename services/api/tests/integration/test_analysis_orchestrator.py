@@ -32,6 +32,7 @@ from momo_fdvs.services.analysis_orchestrator import (
     AnalysisOrchestrationResult,
     run_analysis,
 )
+from momo_fdvs.services.text_fraud import assess_ocr_text
 from momo_fdvs.storage.local import LocalPrivateStorage
 
 pytestmark = pytest.mark.skipif(
@@ -105,6 +106,8 @@ def _controlled_case(
     tmp_path: Path,
     *,
     observed_amount: str,
+    raw_text: str = "controlled test fixture",
+    persist_text_assessment: bool = True,
 ) -> ControlledAnalysisCase:
     storage = LocalPrivateStorage(tmp_path / "analysis-storage")
     payload = _png_bytes()
@@ -152,14 +155,24 @@ def _controlled_case(
             engine_version="controlled",
             pipeline_version="ocr-pipeline-v1",
             selected_variant="original",
-            raw_text="controlled test fixture",
-            token_data=[],
+            raw_text=raw_text,
+            token_data=[{"text": word, "confidence": 90.0} for word in raw_text.split()],
             extracted_fields={
                 "amount": {"value": observed_amount, "confidence": 0.95},
                 "transaction_reference": {
                     "value": reference_code,
                     "confidence": 0.96,
                 },
+                **(
+                    {
+                        "_text_fraud": assess_ocr_text(
+                            raw_text,
+                            ocr_confidence=0.9,
+                        ).as_public_dict()
+                    }
+                    if persist_text_assessment
+                    else {}
+                ),
             },
             field_confidences={"amount": 0.95, "transaction_reference": 0.96},
             warnings=[],
@@ -250,6 +263,27 @@ def verified_case(app: Flask, tmp_path: Path) -> ControlledAnalysisCase:
     return _controlled_case(app, tmp_path, observed_amount="125.00")
 
 
+@pytest.fixture
+def obvious_text_case(app: Flask, tmp_path: Path) -> ControlledAnalysisCase:
+    return _controlled_case(
+        app,
+        tmp_path,
+        observed_amount="125.00",
+        raw_text=("Your MoMo wallet is blocked. Send your PIN and OTP to 0244000000 immediately."),
+    )
+
+
+@pytest.fixture
+def legacy_text_case(app: Flask, tmp_path: Path) -> ControlledAnalysisCase:
+    return _controlled_case(
+        app,
+        tmp_path,
+        observed_amount="125.00",
+        raw_text="Send your PIN and OTP to 0244000000 immediately.",
+        persist_text_assessment=False,
+    )
+
+
 def test_mismatch_is_partial_high_risk_when_models_are_unavailable(
     mismatch_case: ControlledAnalysisCase,
 ) -> None:
@@ -271,6 +305,35 @@ def test_verified_reference_without_models_is_partial_inconclusive(
     assert result.run.risk_class is None
     assert result.run.component_scores["policy"]["band"] == "inconclusive"
     assert result.verification.status == "VERIFIED"
+
+
+def test_obvious_scam_text_drives_categorical_risk_without_exposing_private_match(
+    obvious_text_case: ControlledAnalysisCase,
+) -> None:
+    private_phone = "0244000000"
+    result = obvious_text_case.run(key="analysis-obvious-text-fraud-key")
+
+    assert result.run.status == "PARTIAL"
+    assert result.run.risk_class == "FRAUDULENT"
+    assert result.run.risk_score is None
+    assert result.verification.status == "VERIFIED"
+    assert result.run.component_scores["text_fraud"]["score_is_probability"] is False
+    assert "PIN_OR_OTP_REQUEST" in result.run.component_scores["text_fraud"]["reason_codes"]
+    assert private_phone not in str(result.run.component_scores)
+    semantic_stage = next(stage for stage in result.stages if stage.stage == "SEMANTIC_RULES")
+    assert private_phone not in str(semantic_stage.details)
+
+
+def test_legacy_ocr_text_is_not_recomputed_under_the_current_ruleset(
+    legacy_text_case: ControlledAnalysisCase,
+) -> None:
+    result = legacy_text_case.run(key="analysis-legacy-text-key")
+
+    assert result.run.risk_class is None
+    assert result.run.component_scores["text_fraud"]["status"] == "UNAVAILABLE"
+    assert result.run.component_scores["text_fraud"]["reason_code"] == (
+        "OCR_TEXT_ASSESSMENT_NOT_PERSISTED"
+    )
 
 
 def test_same_key_and_fingerprint_replays_immutable_run(

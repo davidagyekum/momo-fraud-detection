@@ -353,6 +353,13 @@ Log safe:
 - model/rule/template version IDs;
 - safe aggregate counts.
 
+OCR text-fraud logs, stage details and audit metadata may additionally retain
+only the assessment/schema/ruleset version, status, categorical class,
+allowlisted reason codes and evidence quality. They must not retain the matched
+substring, raw OCR text, a phone number, URL, PIN/OTP-like value or other dynamic
+message value. Public OCR replay uses the stored allowlisted projection and does
+not re-run rules against historical private text.
+
 Implement a logging filter/redaction helper and tests with representative sensitive payloads.
 
 ## 14. Audit-event catalogue

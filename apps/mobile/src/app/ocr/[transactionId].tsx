@@ -24,6 +24,7 @@ import {
   StatusBadge,
   uiStyles,
 } from "@/components/ui";
+import { TextFraudRiskCard } from "@/components/text-fraud-risk-card";
 import { ApiError } from "@/lib/api";
 import {
   createAnalysisIdempotencyKey,
@@ -283,6 +284,7 @@ export default function OCRReviewScreen() {
               message={warningMessage(warning)}
             />
           ))}
+          <TextFraudRiskCard preview={review.data.fraud_preview} />
           <View
             style={[
               styles.reviewLayout,

@@ -141,6 +141,8 @@ def _versions_projection(run: AnalysisRun) -> dict[str, Any]:
         "image_forensics_version": snapshot.get("image_forensics_version"),
         "image_model_version": snapshot.get("image_model_version"),
         "structured_model_version": snapshot.get("structured_model_version"),
+        "text_fraud_schema_version": snapshot.get("text_fraud_schema_version"),
+        "text_fraud_ruleset_version": snapshot.get("text_fraud_ruleset_version"),
     }
 
 
@@ -155,6 +157,22 @@ def _component_projection(value: object) -> dict[str, Any]:
         result["reason_codes"] = reason_codes
     result["model_version"] = component.get("version")
     return result
+
+
+def _text_fraud_projection(value: object) -> dict[str, Any]:
+    component = _as_dict(value)
+    reason_codes = component.get("reason_codes")
+    limitations = component.get("limitations")
+    return {
+        "status": str(component.get("status", "UNAVAILABLE")),
+        "class": component.get("class"),
+        "policy_score": component.get("score"),
+        "score_is_probability": False,
+        "reason_codes": reason_codes if isinstance(reason_codes, list) else [],
+        "evidence_quality": str(component.get("evidence_quality", "UNAVAILABLE")),
+        "ruleset_version": component.get("ruleset_version"),
+        "limitations": limitations if isinstance(limitations, list) else [],
+    }
 
 
 def _analysis_projection(
@@ -181,6 +199,7 @@ def _analysis_projection(
             "deterministic_image": _component_projection(components.get("deterministic_image")),
             "image_model": _component_projection(components.get("image_model")),
             "structured_model": _component_projection(components.get("structured_model")),
+            "text_fraud": _text_fraud_projection(components.get("text_fraud")),
             "automated_evidence_immutable": True,
         },
         "ocr_review": {

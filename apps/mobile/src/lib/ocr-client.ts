@@ -29,6 +29,29 @@ export type OCRField = {
   masked?: string | null;
 };
 
+export type OCRTextFraudReason = {
+  code: string;
+  title: string;
+  summary: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+};
+
+export type OCRTextFraudPreview = {
+  schema_version: string;
+  ruleset_version: string;
+  status: "SUCCESS" | "UNAVAILABLE";
+  class: "SUSPICIOUS" | "FRAUDULENT" | null;
+  score: number | null;
+  score_is_probability: false;
+  reason_code: string;
+  reason_codes: string[];
+  reasons: OCRTextFraudReason[];
+  evidence_quality: "HIGH" | "MEDIUM" | "LOW" | "UNAVAILABLE";
+  limitations: string[];
+  summary: string;
+  disclaimer: string;
+};
+
 export type OCRReviewData = {
   transaction_id: string;
   status: "OCR_READY" | "OCR_PARTIAL";
@@ -39,6 +62,7 @@ export type OCRReviewData = {
     requires_review: boolean;
     warnings: string[];
   };
+  fraud_preview: OCRTextFraudPreview;
   fields: Partial<Record<Exclude<OCRFieldName, "provider_code">, OCRField>>;
   warnings: string[];
   raw_text: string;

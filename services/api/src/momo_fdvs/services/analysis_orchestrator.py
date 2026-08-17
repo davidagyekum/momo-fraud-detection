@@ -38,8 +38,12 @@ from momo_fdvs.services.risk_policy import (
     ModelPolicySignal,
     PolicyFailure,
     PolicyReason,
+    TextPolicySignal,
     evaluate_risk_policy,
     load_risk_policy,
+)
+from momo_fdvs.services.text_fraud import (
+    stored_text_assessment,
 )
 from momo_fdvs.services.verification import (
     VerificationFailure,
@@ -154,6 +158,33 @@ def _model_projection(signal: ModelPolicySignal) -> dict[str, Any]:
         "artifact_sha256": signal.artifact_sha256,
         "schema_hash": signal.schema_hash,
     }
+
+
+def _text_policy_signal(
+    confirmation: OCRConfirmation,
+) -> tuple[TextPolicySignal, dict[str, object]]:
+    assessment = stored_text_assessment(confirmation.ocr_result.extracted_fields.get("_text_fraud"))
+    projection = assessment.as_public_dict()
+    if assessment.status == "UNAVAILABLE":
+        return TextPolicySignal.unavailable(assessment.reason_code), projection
+    reasons = tuple(
+        PolicyReason(reason.code, reason.title, reason.severity) for reason in assessment.reasons
+    )
+    return (
+        TextPolicySignal(
+            status="SUCCESS",
+            predicted_class=assessment.risk_class,
+            policy_score=assessment.risk_score,
+            score_is_probability=assessment.score_is_probability,
+            reason_codes=assessment.reason_codes or (assessment.reason_code,),
+            reasons=reasons,
+            ruleset_version=assessment.ruleset_version,
+            schema_version=assessment.schema_version,
+            evidence_quality=assessment.evidence_quality,
+            limitations=assessment.limitations,
+        ),
+        projection,
+    )
 
 
 def _deterministic_reasons(result: ImageAnalysis | None) -> tuple[PolicyReason, ...]:
@@ -533,6 +564,12 @@ def run_analysis(
 
         started_at, counter = _stage_start(run, "SEMANTIC_RULES")
         deterministic_reasons = _deterministic_reasons(image_analysis)
+        text_signal, text_projection = _text_policy_signal(confirmation)
+        run.configuration_snapshot = {
+            **run.configuration_snapshot,
+            "text_fraud_schema_version": text_projection["schema_version"],
+            "text_fraud_ruleset_version": text_projection["ruleset_version"],
+        }
         stages.append(
             _record_stage(
                 run,
@@ -542,6 +579,10 @@ def run_analysis(
                 status="COMPLETED",
                 details={
                     "deterministic_supporting_reason_count": len(deterministic_reasons),
+                    "text_fraud_status": text_projection["status"],
+                    "text_fraud_reason_codes": text_projection["reason_codes"],
+                    "text_fraud_ruleset_version": text_projection["ruleset_version"],
+                    "text_policy_score_is_probability": False,
                     "risk_and_verification_separate": True,
                 },
             )
@@ -569,6 +610,7 @@ def run_analysis(
                 image_model=image_signal,
                 structured_model=structured_signal,
                 semantic_reasons=(),
+                text_signal=text_signal,
             ),
         )
         stages.append(
@@ -601,6 +643,7 @@ def run_analysis(
             },
             "image_model": _model_projection(image_signal),
             "structured_model": _model_projection(structured_signal),
+            "text_fraud": text_projection,
             "policy": policy_result.as_dict(),
         }
         run.top_reasons = [reason.as_dict() for reason in policy_result.reasons]
@@ -653,6 +696,8 @@ def run_analysis(
                 "risk_band": policy_result.band.value,
                 "verification_status": verification_outcome.status,
                 "policy_version": policy_result.policy_version,
+                "text_fraud_ruleset_version": text_projection["ruleset_version"],
+                "text_fraud_reason_codes": text_projection["reason_codes"],
                 "image_model_status": ("SUCCESS" if image_signal.available else "UNAVAILABLE"),
                 "structured_model_status": "UNAVAILABLE",
             },

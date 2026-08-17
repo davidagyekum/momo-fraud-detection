@@ -103,9 +103,14 @@ def _tokens() -> list[dict[str, Any]]:
     ]
 
 
-def _pipeline(app: Flask, *, partial: bool = False) -> OCRPipelineResult:
+def _pipeline(
+    app: Flask,
+    *,
+    partial: bool = False,
+    raw_text: str = CONTROLLED_TEXT,
+) -> OCRPipelineResult:
     with app.app_context():
-        fields, provider = parse_fields(CONTROLLED_TEXT, _tokens(), 0.75)
+        fields, provider = parse_fields(raw_text, _tokens(), 0.75)
     output = io.BytesIO()
     Image.new("L", (900, 1200), "white").save(output, format="PNG")
     warnings = ["OCR_ENGINE_UNAVAILABLE"] if partial else []
@@ -113,7 +118,7 @@ def _pipeline(app: Flask, *, partial: bool = False) -> OCRPipelineResult:
         engine_version="unavailable" if partial else "5.3.0",
         selected_variant="GRAY_CLAHE",
         selected_image=output.getvalue(),
-        raw_text="" if partial else CONTROLLED_TEXT,
+        raw_text="" if partial else raw_text,
         tokens=[] if partial else _tokens(),
         fields=fields,
         provider=provider,
@@ -165,6 +170,8 @@ def test_ocr_run_replay_review_and_owner_isolation(
     assert data["provider"]["value"] == "MTN_MOMO"
     assert data["fields"]["amount"]["value"] == "125.00"
     assert data["selected_variant"] == "GRAY_CLAHE"
+    assert data["fraud_preview"]["score_is_probability"] is False
+    assert data["fraud_preview"]["class"] is None
     assert "token_data" not in created.get_data(as_text=True)
 
     replay = client.post(f"/api/v1/transactions/{transaction_id}/ocr", headers=_headers(owner, key))
@@ -200,6 +207,42 @@ def test_ocr_run_replay_review_and_owner_isolation(
         result = db.session.get(OCRResult, uuid.UUID(data["ocr_result_id"]))
         assert result is not None
         assert result.extracted_fields["_evidence"]["parser_version"] == "generic-parser-v1"
+        assert result.extracted_fields["_text_fraud"]["ruleset_version"]
+
+
+def test_ocr_review_returns_persisted_obvious_fraud_preview_without_private_matches(
+    app: Flask, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = app.test_client()
+    owner = _register(client)
+    transaction_id = _upload(client, owner)
+    private_phone = "0244000000"
+    scam_text = (
+        f"{CONTROLLED_TEXT}\nYour MoMo wallet is blocked. "
+        f"Send your PIN and OTP to {private_phone} immediately."
+    )
+    monkeypatch.setattr(
+        "momo_fdvs.services.ocr.execute_ocr",
+        lambda *_args: _pipeline(app, raw_text=scam_text),
+    )
+
+    response = client.post(
+        f"/api/v1/transactions/{transaction_id}/ocr",
+        headers=_headers(owner, f"ocr-fraud-{uuid.uuid4()}"),
+    )
+
+    assert response.status_code == 200
+    preview = response.json["data"]["fraud_preview"]
+    assert preview["class"] == "FRAUDULENT"
+    assert preview["score_is_probability"] is False
+    assert "PIN_OR_OTP_REQUEST" in preview["reason_codes"]
+    assert private_phone not in str(preview)
+
+    replay = client.get(
+        f"/api/v1/transactions/{transaction_id}/ocr-review",
+        headers=_headers(owner),
+    )
+    assert replay.json["data"]["fraud_preview"] == preview
 
 
 def test_new_key_creates_immutable_ocr_result_but_reuses_derivative(

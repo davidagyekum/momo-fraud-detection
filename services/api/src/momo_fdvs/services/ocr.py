@@ -9,7 +9,7 @@ import re
 import shutil
 import statistics
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
@@ -36,6 +36,13 @@ from momo_fdvs.models import (
     User,
 )
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.text_fraud import (
+    TEXT_FRAUD_RULESET_VERSION,
+    TEXT_FRAUD_SCHEMA_VERSION,
+    TextFraudContext,
+    assess_ocr_text,
+    confidence_from_ocr_tokens,
+)
 from momo_fdvs.storage.base import ObjectStorage, generated_key, sha256_bytes
 
 cv2.setNumThreads(1)
@@ -112,6 +119,7 @@ class OCRPipelineResult:
     candidate_summary: list[dict[str, Any]]
     quality_features: dict[str, Any]
     partial: bool
+    fraud_preview: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -645,6 +653,11 @@ def execute_ocr(content: bytes, expected_sha256: str) -> OCRPipelineResult:
         }
         for candidate in candidates
     ]
+    fraud_preview = assess_ocr_text(
+        raw_text,
+        ocr_confidence=confidence_from_ocr_tokens(tokens),
+        context=TextFraudContext(claimed_provider=str(provider["value"])),
+    ).as_public_dict()
     return OCRPipelineResult(
         engine_version=engine_version,
         selected_variant=selected_variant,
@@ -657,6 +670,7 @@ def execute_ocr(content: bytes, expected_sha256: str) -> OCRPipelineResult:
         candidate_summary=summary,
         quality_features=quality,
         partial=partial,
+        fraud_preview=fraud_preview,
     )
 
 
@@ -828,6 +842,14 @@ def run_and_store_ocr(
         accuracy_hint = sum(bool(pipeline.fields[name]["valid"]) for name in REQUIRED_FIELDS) / len(
             REQUIRED_FIELDS
         )
+        fraud_preview = (
+            pipeline.fraud_preview
+            or assess_ocr_text(
+                pipeline.raw_text,
+                ocr_confidence=confidence_from_ocr_tokens(pipeline.tokens),
+                context=TextFraudContext(claimed_provider=str(pipeline.provider["value"])),
+            ).as_public_dict()
+        )
         ocr_result = OCRResult(
             receipt_id=receipt.id,
             template_id=template.id if template else None,
@@ -839,10 +861,13 @@ def run_and_store_ocr(
             token_data=pipeline.tokens,
             extracted_fields={
                 **pipeline.fields,
+                "_text_fraud": fraud_preview,
                 "_evidence": {
                     "parser_version": current_app.config["OCR_PARSER_VERSION"],
                     "field_schema_version": current_app.config["OCR_FIELD_SCHEMA_VERSION"],
                     "template_version": template.version if template else "generic-v1",
+                    "text_fraud_schema_version": TEXT_FRAUD_SCHEMA_VERSION,
+                    "text_fraud_ruleset_version": TEXT_FRAUD_RULESET_VERSION,
                 },
             },
             field_confidences=field_confidences,
@@ -870,6 +895,10 @@ def run_and_store_ocr(
                 "selected_variant": pipeline.selected_variant,
                 "warning_codes": pipeline.warnings,
                 "required_field_coverage": round(accuracy_hint, 4),
+                "text_fraud_status": fraud_preview["status"],
+                "text_fraud_class": fraud_preview["class"],
+                "text_fraud_reason_codes": fraud_preview["reason_codes"],
+                "text_fraud_ruleset_version": TEXT_FRAUD_RULESET_VERSION,
             },
         )
         db.session.commit()
