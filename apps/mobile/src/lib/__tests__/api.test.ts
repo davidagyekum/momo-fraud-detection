@@ -40,6 +40,32 @@ test("surfaces the API error code and safe message", async () => {
   });
 });
 
+test("preserves safe field errors for inline form recovery", async () => {
+  mockedFetch.mockResolvedValue({
+    ok: false,
+    status: 422,
+    json: async () => ({
+      error: {
+        code: "OCR_CONFIRMATION_INVALID",
+        message: "Review the highlighted OCR fields before confirming.",
+        field_errors: {
+          transaction_reference: ["Enter a valid transaction reference."],
+        },
+      },
+    }),
+  } as never);
+
+  await expect(
+    apiRequest("/api/v1/transactions/id/ocr-confirmations"),
+  ).rejects.toMatchObject({
+    status: 422,
+    code: "OCR_CONFIRMATION_INVALID",
+    fieldErrors: {
+      transaction_reference: ["Enter a valid transaction reference."],
+    },
+  });
+});
+
 test("converts transport failures into an explicit network state", async () => {
   mockedFetch.mockRejectedValue(new TypeError("connection refused"));
   await expect(apiRequest("/api/v1/me")).rejects.toMatchObject({

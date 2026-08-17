@@ -307,18 +307,19 @@ def parse_fields(
     provider = detect_provider(text)
     reference_raw = _first_match(
         (
-            r"(?:TRANSACTION\s*(?:ID|REFERENCE)|REFERENCE|REF(?:ERENCE)?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{5,49})",
+            r"(?:TRANSACTION\s*(?:ID|REFERENCE)|REFERENCE|REF(?:ERENCE)?|\bID\b)"
+            r"[\s:#-]*([A-Z0-9][A-Z0-9._/-]{5,49})",
         ),
         text,
     )
     amount_raw = _first_match(
         (
-            r"(?:AMOUNT|TOTAL|PAID|TRANSFERRED)[^\d\n]{0,24}(?:GH[₵¢S]?\s*)?([0-9][0-9,]*\.\d{2})",
-            r"(?:GH[₵¢S]?\s*)([0-9][0-9,]*\.\d{2})",
+            r"(?:AMOUNT|TOTAL|PAID|TRANSFERRED)[^\d\n]{0,24}(?:GH[₵¢CS]?\s*)?([0-9][0-9,]*\.\d{2})",
+            r"(?:GH[₵¢CS]?\s*)([0-9][0-9,]*\.\d{2})",
         ),
         text,
     )
-    currency_raw = _first_match((r"\b(GHS|GH[₵¢])\b",), text)
+    currency_raw = _first_match((r"\b(GHS|GHC|GH[₵¢])\b",), text)
     sender_phone_raw = _first_match(
         (r"(?:SENDER\s*PHONE|FROM\s*PHONE|SENDER\s*MSISDN)[\s:#-]*([+0-9][0-9 +()-]{8,20})",),
         text,

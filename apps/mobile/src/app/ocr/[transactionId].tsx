@@ -37,6 +37,7 @@ import {
   createOCRIdempotencyKey,
   fetchOrRunOCR,
   initialOCRFields,
+  REQUIRED_OCR_FIELD_NAMES,
   type OCRConfirmedFields,
   type OCRFieldName,
   type OCRReviewData,
@@ -63,6 +64,13 @@ const FIELD_ORDER: {
   { name: "occurred_at", label: "Date and time" },
   { name: "status_text", label: "Receipt status" },
 ];
+
+const REQUIRED_FIELD_ORDER = FIELD_ORDER.filter(({ name }) =>
+  REQUIRED_OCR_FIELD_NAMES.includes(name),
+);
+const OPTIONAL_FIELD_ORDER = FIELD_ORDER.filter(
+  ({ name }) => !REQUIRED_OCR_FIELD_NAMES.includes(name),
+);
 
 function readableError(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -112,9 +120,6 @@ export default function OCRReviewScreen() {
   const confirmationKey = useRef(createOCRIdempotencyKey("confirm"));
   const analysisKey = useRef(createAnalysisIdempotencyKey());
   const [fields, setFields] = useState<OCRConfirmedFields | null>(null);
-  const [reasons, setReasons] = useState<Partial<Record<OCRFieldName, string>>>(
-    {},
-  );
   const [errors, setErrors] = useState<Partial<Record<OCRFieldName, string>>>(
     {},
   );
@@ -157,11 +162,22 @@ export default function OCRReviewScreen() {
         transactionId ?? "",
         review.data,
         activeFields,
-        reasons,
         confirmationKey.current,
       );
     },
     onSuccess: () => setConfirmVisible(false),
+    onError: (error) => {
+      setConfirmVisible(false);
+      if (!(error instanceof ApiError) || !error.fieldErrors) return;
+      setErrors(
+        Object.fromEntries(
+          Object.entries(error.fieldErrors).map(([name, messages]) => [
+            name,
+            messages[0],
+          ]),
+        ),
+      );
+    },
   });
   const analysis = useMutation({
     mutationFn: () => {
@@ -180,11 +196,7 @@ export default function OCRReviewScreen() {
 
   const requestConfirmation = () => {
     if (!review.data || !activeFields) return;
-    const nextErrors = validateOCRConfirmation(
-      review.data,
-      activeFields,
-      reasons,
-    );
+    const nextErrors = validateOCRConfirmation(activeFields);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length === 0) setConfirmVisible(true);
   };
@@ -234,6 +246,60 @@ export default function OCRReviewScreen() {
       />
     </AppCard>
   );
+
+  const enteredFields = review.data
+    ? changed.filter((name) => !originalField(review.data!, name)?.value)
+    : [];
+  const correctedFields = changed.filter(
+    (name) => !enteredFields.includes(name),
+  );
+  const errorEntries = FIELD_ORDER.flatMap(({ name, label }) =>
+    errors[name] ? [`${label}: ${errors[name]}`] : [],
+  );
+  const editSummary = changed.length
+    ? `${enteredFields.length} entered, ${correctedFields.length} corrected`
+    : "No edits";
+
+  const renderField = (
+    { name, label, keyboard }: (typeof FIELD_ORDER)[number],
+    required: boolean,
+  ) => {
+    if (!review.data || !activeFields) return null;
+    const source = originalField(review.data, name);
+    const hint = source?.value
+      ? confidenceLabel(source)
+      : required
+        ? "Not detected — enter only the value shown in the image"
+        : "Optional — leave blank when it is not shown";
+    return (
+      <View key={name} style={styles.fieldGroup}>
+        <LabeledInput
+          label={`${label}${required ? " (required)" : " (optional)"}`}
+          value={activeFields[name]}
+          keyboardType={keyboard}
+          onChangeText={(value) => {
+            setFields((current) => ({
+              ...(current ?? initialOCRFields(review.data!)),
+              [name]: value,
+            }));
+            setErrors((current) => ({
+              ...current,
+              [name]: undefined,
+            }));
+            confirmation.reset();
+            analysis.reset();
+          }}
+          error={errors[name]}
+          hint={hint}
+        />
+        {source?.raw_value && source.raw_value !== activeFields[name] ? (
+          <Text selectable style={styles.originalValue}>
+            OCR read: {source.raw_value}
+          </Text>
+        ) : null}
+      </View>
+    );
+  };
 
   return (
     <ScreenShell
@@ -297,62 +363,41 @@ export default function OCRReviewScreen() {
                 <View style={uiStyles.row}>
                   <Text style={uiStyles.cardTitle}>Extracted details</Text>
                   <StatusBadge
-                    label={`${changed.length} correction${changed.length === 1 ? "" : "s"}`}
+                    label={editSummary}
                     tone={changed.length ? "warning" : "info"}
                   />
                 </View>
-                {FIELD_ORDER.map(({ name, label, keyboard }) => {
-                  const source = originalField(review.data, name);
-                  const changedField = changed.includes(name);
-                  return (
-                    <View key={name} style={{ gap: spacing.sm }}>
-                      <LabeledInput
-                        label={label}
-                        value={activeFields[name]}
-                        keyboardType={keyboard}
-                        onChangeText={(value) => {
-                          setFields((current) => ({
-                            ...(current ?? initialOCRFields(review.data)),
-                            [name]: value,
-                          }));
-                          setErrors((current) => ({
-                            ...current,
-                            [name]: undefined,
-                          }));
-                          confirmation.reset();
-                          analysis.reset();
-                        }}
-                        error={errors[name]}
-                        hint={confidenceLabel(source)}
-                      />
-                      {source?.raw_value &&
-                      source.raw_value !== activeFields[name] ? (
-                        <Text selectable style={styles.originalValue}>
-                          OCR read: {source.raw_value}
-                        </Text>
-                      ) : null}
-                      {changedField ? (
-                        <LabeledInput
-                          label={`Reason for changing ${label.toLowerCase()}`}
-                          value={reasons[name] ?? ""}
-                          onChangeText={(value) => {
-                            setReasons((current) => ({
-                              ...current,
-                              [name]: value,
-                            }));
-                            setErrors((current) => ({
-                              ...current,
-                              [name]: undefined,
-                            }));
-                          }}
-                          placeholder="What did you check on the receipt?"
-                          multiline
-                          error={errors[name]}
-                        />
-                      ) : null}
-                    </View>
-                  );
-                })}
+                <InlineAlert
+                  tone="info"
+                  title="Use only values visible in the image"
+                  message="Do not guess or invent missing details. Required fields support the separate stored-reference comparison; optional sender and receiver fields can stay blank. Your manual entries and corrections are documented automatically when you confirm."
+                />
+                {errorEntries.length ? (
+                  <InlineAlert
+                    tone="error"
+                    title={`Fix ${errorEntries.length} highlighted field${errorEntries.length === 1 ? "" : "s"}`}
+                    message={errorEntries.join("\n")}
+                  />
+                ) : null}
+                <View style={styles.formSection}>
+                  <Text style={styles.sectionTitle}>Required to continue</Text>
+                  <Text style={uiStyles.muted}>
+                    These values are needed to compare the screenshot with a
+                    stored or imported transaction record.
+                  </Text>
+                  {REQUIRED_FIELD_ORDER.map((field) =>
+                    renderField(field, true),
+                  )}
+                </View>
+                <View style={styles.formSection}>
+                  <Text style={styles.sectionTitle}>Additional details</Text>
+                  <Text style={uiStyles.muted}>
+                    Leave any value blank when it is not visible in the image.
+                  </Text>
+                  {OPTIONAL_FIELD_ORDER.map((field) =>
+                    renderField(field, false),
+                  )}
+                </View>
                 {confirmation.isError ? (
                   <InlineAlert
                     tone="error"
@@ -422,7 +467,7 @@ export default function OCRReviewScreen() {
       <ConfirmationDialog
         visible={confirmVisible}
         title="Confirm these receipt details?"
-        message={`This saves an immutable reviewed snapshot and ${changed.length} documented correction${changed.length === 1 ? "" : "s"}. Check the private image first.`}
+        message={`This saves an immutable reviewed snapshot. ${enteredFields.length} manual entr${enteredFields.length === 1 ? "y" : "ies"} and ${correctedFields.length} correction${correctedFields.length === 1 ? "" : "s"} will be documented automatically. Check the private image first.`}
         confirmLabel="Save reviewed details"
         onConfirm={() => confirmation.mutate()}
         onCancel={() => setConfirmVisible(false)}
@@ -463,6 +508,14 @@ const styles = StyleSheet.create({
   reviewLayout: { gap: spacing.md },
   reviewLayoutWide: { flexDirection: "row", alignItems: "flex-start" },
   panel: { flex: 1, minWidth: 0 },
+  formSection: { gap: spacing.md },
+  fieldGroup: { gap: spacing.sm },
+  sectionTitle: {
+    color: palette.ink,
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: "800",
+  },
   preview: {
     width: "100%",
     aspectRatio: 0.75,

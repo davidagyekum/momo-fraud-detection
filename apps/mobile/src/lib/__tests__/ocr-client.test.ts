@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api";
 import {
+  automaticOCRCorrectionReasons,
   changedOCRFields,
   confidenceLabel,
   confirmOCR,
@@ -83,16 +84,35 @@ test("maps extraction to editable canonical fields", () => {
   );
 });
 
-test("requires a reason for every changed field", () => {
+test("automatically documents manual entries and corrected OCR values", () => {
   const source = review();
-  const fields = { ...initialOCRFields(source), amount: "130.00" };
-  expect(changedOCRFields(source, fields)).toEqual(["amount"]);
-  expect(validateOCRConfirmation(source, fields, {})).toEqual({
-    amount: "Add a short reason for this correction.",
+  source.fields.transaction_reference = {
+    ...source.fields.transaction_reference!,
+    raw_value: null,
+    value: null,
+  };
+  source.fields.currency = {
+    ...source.fields.currency!,
+    raw_value: null,
+    value: null,
+  };
+  const fields = {
+    ...initialOCRFields(source),
+    transaction_reference: "ABC123456",
+    amount: "130.00",
+    currency: "GHS",
+  };
+  expect(changedOCRFields(source, fields)).toEqual([
+    "transaction_reference",
+    "amount",
+    "currency",
+  ]);
+  expect(automaticOCRCorrectionReasons(source, fields)).toEqual({
+    transaction_reference:
+      "Entered manually because OCR did not detect this value.",
+    amount: "Corrected after comparing the OCR value with the private image.",
+    currency: "Entered manually because OCR did not detect this value.",
   });
-  expect(
-    validateOCRConfirmation(source, fields, { amount: "Checked receipt" }),
-  ).toEqual({});
 });
 
 test("validates required and formatted confirmation fields", () => {
@@ -103,14 +123,23 @@ test("validates required and formatted confirmation fields", () => {
     amount: "not money",
     currency: "GH",
   };
-  const errors = validateOCRConfirmation(source, fields, {
-    transaction_reference: "Not visible",
-    amount: "Checked receipt",
-    currency: "Checked receipt",
-  });
-  expect(errors.transaction_reference).toBe("This field is required.");
+  const errors = validateOCRConfirmation(fields);
+  expect(errors.transaction_reference).toContain("Required");
   expect(errors.amount).toContain("non-negative amount");
   expect(errors.currency).toContain("three-letter");
+});
+
+test("catches invalid required references and optional identity fields", () => {
+  const fields = {
+    ...initialOCRFields(review()),
+    transaction_reference: "12345",
+    sender_name: "233554369301",
+    receiver_phone: "123",
+  };
+  const errors = validateOCRConfirmation(fields);
+  expect(errors.transaction_reference).toContain("full reference");
+  expect(errors.sender_name).toContain("leave this optional field blank");
+  expect(errors.receiver_phone).toContain("Ghanaian number");
 });
 
 test("uses existing review without starting another run", async () => {
@@ -167,7 +196,6 @@ test("submits only documented correction reasons", async () => {
     "transaction-id",
     source,
     fields,
-    { amount: "Checked receipt", sender_name: "Unused reason" },
     "confirm-key-123",
   );
   expect(request).toHaveBeenCalledWith(
@@ -175,10 +203,11 @@ test("submits only documented correction reasons", async () => {
     expect.objectContaining({
       method: "POST",
       headers: { "Idempotency-Key": "confirm-key-123" },
-      body: expect.stringContaining('"amount":"Checked receipt"'),
+      body: expect.stringContaining(
+        '"amount":"Corrected after comparing the OCR value with the private image."',
+      ),
     }),
   );
-  expect(request.mock.calls[0]?.[1]?.body).not.toContain("Unused reason");
 });
 
 test("turns numeric confidence into understandable guidance", () => {

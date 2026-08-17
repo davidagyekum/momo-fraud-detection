@@ -93,6 +93,17 @@ def test_parser_flags_low_confidence_and_unknown_template() -> None:
     assert "UNKNOWN_TEMPLATE_GENERIC_FALLBACK" in provider["warnings"]
 
 
+def test_parser_handles_sms_cash_in_id_and_legacy_ghc_currency() -> None:
+    text = """MTN MoMo
+Cash In received of GHC 210.00 from
+DEMO MERCHANT
+ID-DEMO4601001"""
+    fields, _provider = parse_fields(text, _tokens(text), 0.75)
+    assert fields["transaction_reference"]["value"] == "DEMO4601001"
+    assert fields["amount"]["value"] == "210.00"
+    assert fields["currency"]["value"] == "GHS"
+
+
 def test_preprocessing_is_deterministic_and_does_not_change_original(app: Flask) -> None:
     content = _receipt()
     original_hash = hashlib.sha256(content).hexdigest()

@@ -17,6 +17,15 @@ export const OCR_FIELD_NAMES = [
 export type OCRFieldName = (typeof OCR_FIELD_NAMES)[number];
 export type OCRConfirmedFields = Record<OCRFieldName, string>;
 
+export const REQUIRED_OCR_FIELD_NAMES: readonly OCRFieldName[] = [
+  "provider_code",
+  "transaction_reference",
+  "amount",
+  "currency",
+  "occurred_at",
+  "status_text",
+];
+
 export type OCRField = {
   raw_value: string | null;
   value: string | null;
@@ -97,7 +106,7 @@ export function initialOCRFields(data: OCRReviewData): OCRConfirmedFields {
     provider_code: data.provider.value ?? "GENERIC_MOMO",
     transaction_reference: data.fields.transaction_reference?.value ?? "",
     amount: data.fields.amount?.value ?? "",
-    currency: data.fields.currency?.value ?? "GHS",
+    currency: data.fields.currency?.value ?? "",
     sender_name: data.fields.sender_name?.value ?? "",
     sender_phone: data.fields.sender_phone?.value ?? "",
     receiver_name: data.fields.receiver_name?.value ?? "",
@@ -117,22 +126,42 @@ export function changedOCRFields(
   );
 }
 
-export function validateOCRConfirmation(
+function originalOCRValue(review: OCRReviewData, name: OCRFieldName): string {
+  if (name === "provider_code") return review.provider.value ?? "";
+  return String(review.fields[name]?.value ?? "");
+}
+
+export function automaticOCRCorrectionReasons(
   review: OCRReviewData,
   confirmed: OCRConfirmedFields,
-  reasons: Partial<Record<OCRFieldName, string>>,
+): Partial<Record<OCRFieldName, string>> {
+  return Object.fromEntries(
+    changedOCRFields(review, confirmed).map((name) => [
+      name,
+      originalOCRValue(review, name)
+        ? "Corrected after comparing the OCR value with the private image."
+        : "Entered manually because OCR did not detect this value.",
+    ]),
+  );
+}
+
+export function validateOCRConfirmation(
+  confirmed: OCRConfirmedFields,
 ): Partial<Record<OCRFieldName, string>> {
   const errors: Partial<Record<OCRFieldName, string>> = {};
-  const required: OCRFieldName[] = [
-    "provider_code",
-    "transaction_reference",
-    "amount",
-    "currency",
-    "occurred_at",
-    "status_text",
-  ];
-  for (const name of required) {
-    if (!confirmed[name].trim()) errors[name] = "This field is required.";
+  for (const name of REQUIRED_OCR_FIELD_NAMES) {
+    if (!confirmed[name].trim()) {
+      errors[name] = "Required for the stored-reference comparison.";
+    }
+  }
+  if (
+    confirmed.transaction_reference &&
+    !/^[A-Za-z0-9][A-Za-z0-9._/-]{5,49}$/.test(
+      confirmed.transaction_reference.trim(),
+    )
+  ) {
+    errors.transaction_reference =
+      "Use the full reference shown in the image (6–50 letters, numbers or . _ / -).";
   }
   if (confirmed.amount && !/^\d+(\.\d{1,2})?$/.test(confirmed.amount)) {
     errors.amount = "Use a non-negative amount such as 125.00.";
@@ -140,11 +169,32 @@ export function validateOCRConfirmation(
   if (confirmed.currency && !/^[A-Za-z]{3}$/.test(confirmed.currency)) {
     errors.currency = "Use a three-letter currency code such as GHS.";
   }
-  for (const name of changedOCRFields(review, confirmed)) {
-    const reason = reasons[name]?.trim() ?? "";
-    if (reason.length < 5) {
-      errors[name] = "Add a short reason for this correction.";
+  for (const name of ["sender_name", "receiver_name"] as const) {
+    const value = confirmed[name].trim();
+    if (value && (value.length > 150 || !/[A-Za-z]/.test(value))) {
+      errors[name] =
+        "Enter a name containing letters, or leave this optional field blank.";
     }
+  }
+  for (const name of ["sender_phone", "receiver_phone"] as const) {
+    const digits = confirmed[name].replace(/\D/g, "");
+    if (
+      digits &&
+      !(
+        (digits.startsWith("233") && digits.length === 12) ||
+        (digits.startsWith("0") && digits.length === 10) ||
+        (digits.length === 9 && /^[25]/.test(digits))
+      )
+    ) {
+      errors[name] =
+        "Use a Ghanaian number such as 0240000000, or leave this optional field blank.";
+    }
+  }
+  if (
+    confirmed.status_text &&
+    !/^[A-Za-z][A-Za-z _-]{1,49}$/.test(confirmed.status_text.trim())
+  ) {
+    errors.status_text = "Enter the transaction status shown in the image.";
   }
   return errors;
 }
@@ -178,15 +228,9 @@ export async function confirmOCR(
   transactionId: string,
   review: OCRReviewData,
   confirmed: OCRConfirmedFields,
-  reasons: Partial<Record<OCRFieldName, string>>,
   confirmationKey: string,
 ): Promise<OCRConfirmationData> {
-  const correctionReasons = Object.fromEntries(
-    changedOCRFields(review, confirmed).map((name) => [
-      name,
-      reasons[name]?.trim(),
-    ]),
-  );
+  const correctionReasons = automaticOCRCorrectionReasons(review, confirmed);
   const response = await request<Envelope<OCRConfirmationData>>(
     `/api/v1/transactions/${transactionId}/ocr-confirmations`,
     {

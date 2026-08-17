@@ -68,6 +68,30 @@ metric.
 
 ## Known external/pre-existing gate findings
 
+### User-feedback usability follow-up
+
+Live review of an SMS-style transaction screenshot exposed that values OCR did
+not detect were counted as corrections, each spawned a free-text reason field,
+and the client discarded safe server field errors. The follow-up repair:
+
+- records bounded correction reasons automatically only after the owner confirms
+  that the private image was checked;
+- separates the six required stored-reference fields from optional sender and
+  receiver details and explicitly tells users not to invent missing values;
+- surfaces field-specific client and server validation beside the affected
+  input; and
+- recognises bounded standalone `ID-...` references and legacy `GHC` amounts.
+
+The current backend gate passes 214 tests at 85.87% branch-aware coverage. The
+mobile gate passes 69 tests, formatting, lint, strict typing and the 28-route
+web export. Impeccable's mechanical UI detector returned `[]`. No private value
+from the user-provided screenshot was copied into a fixture or repository file.
+
+The replacement images built, but Docker Desktop returned a read-only internal
+containerd metadata error while recreating the API container. A non-destructive
+Docker/WSL restart did not recover its Linux engine. No Docker reset was run and
+no updated live-stack success is claimed.
+
 - Repository wrapper doctor: host Node.js `22.23.2` and npm `10.9.8` differ from
   pinned `24.14.0` / `10.9.0`; host Tesseract and optional PostgreSQL CLI are not
   installed. All registered product sections pass under the installed runtime.

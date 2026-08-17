@@ -22,6 +22,7 @@ export type ErrorEnvelope = {
   error?: {
     code?: string;
     message?: string;
+    field_errors?: Record<string, string[]>;
     details?: Record<string, unknown>;
   };
   message?: string;
