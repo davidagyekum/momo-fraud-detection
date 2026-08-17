@@ -76,24 +76,35 @@ and strict typing, then returns non-zero at pytest coverage: 164 tests pass and
 58 database tests skip, leaving aggregate coverage at 58.04% against the 85%
 gate. This is recorded as a blocked gate, not a passing backend wrapper.
 
-## Environment blocker
+## Recovered database and acceptance evidence
 
-`B-DOCKER-003` remains open. A read-only escalated `docker info` check confirmed
-that the Docker client is installed, but Docker Desktop's Linux engine returned
-HTTP 500 for its info endpoint. WSL diagnostics did not complete and were
-interrupted after the engine failure was captured. PostgreSQL was not listening
-on the repository's known local ports.
+`B-DOCKER-003` is resolved. The direct `docker desktop restart` command hung for
+two minutes and was stopped; the owner then restarted the PC. Docker Desktop
+29.6.2 returned with a healthy Linux engine and recovered the existing project
+PostgreSQL 17.5 container without any reset, volume deletion or application-data
+mutation.
 
-Consequently, these gates are blocked rather than passed:
+Three isolated databases on port 55436 kept existing `momo_fdvs` data untouched:
 
-- PostgreSQL-backed integration scenarios;
-- Alembic upgrade from a clean database;
-- Alembic upgrade from the previous revision;
-- live Compose/end-to-end verification.
+- `momo_fdvs_p01_suite_20260817` for the complete backend/security/e2e suites;
+- `momo_fdvs_p01_clean_20260817` for empty-to-head migration;
+- `momo_fdvs_p01_previous_20260817` for `20260815_0004` to head.
 
-Safe next action: restart or repair Docker Desktop/WSL without resetting or
-deleting Docker data, then rerun the database and migration gates before P0.1 is
-declared fully accepted or P0.2 begins.
+| Gate | Result |
+|---|---|
+| registered backend gate with PostgreSQL | 222 passed, zero skipped, 85.94% coverage; format/lint/strict mypy/OpenAPI/ER passed |
+| empty database migration | upgraded through all revisions to `20260816_0005 (head)` |
+| previous-revision migration | `20260815_0004` upgraded to `20260816_0005 (head)` |
+| controlled end-to-end gate | API journey passed; 7 mobile journey tests passed; 28 routes exported; 3 administrator Playwright flows passed |
+| registered security gate | 31 database scenarios passed with zero skips; admin/mobile policies passed; final secret scan passed 654 files |
+| complete mobile gate | 70 tests; 83.78% statements, 71.04% branches; type/lint/format/token policy/static export passed |
+| complete administrator gate | 40 tests; 92.94% statements, 83.22% branches; 3 Playwright flows and production build passed |
+
+Fresh-head `flask db check` continues to expose the pre-existing PR19
+`report_artifacts` check-constraint naming mismatch recorded as `B-MIG-001`.
+Both required upgrade paths and schema tests pass, and P0.1 changes no database
+schema. The compatibility should be resolved by a forward versioned migration
+when P0.2 introduces its required schema, never by editing an applied revision.
 
 ## Claims not made
 
