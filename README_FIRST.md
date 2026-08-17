@@ -1,3 +1,7 @@
+> Historical execution notice: this document is preserved for context/evidence.
+> It must not select the current task. Read `FINAL_COMPLETION_OVERRIDE.md` and
+> `IMPLEMENTATION_STATUS.md` first.
+
 # MoMo-FDVS Codex Implementation Package
 
 ## Project

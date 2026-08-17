@@ -1,3 +1,7 @@
+> Historical execution notice: this document is preserved for context/evidence.
+> It must not select the current task. Read `FINAL_COMPLETION_OVERRIDE.md` and
+> `IMPLEMENTATION_STATUS.md` first.
+
 # Web ChatGPT Review Brief — OCR Text Risk and Receipt Review UX
 
 ## How to use this document

@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/audit-fix-40-ocr-text-risk`
-- Base SHA: `447e7be6ed355716f007023503f1cfcf5ddd19ac`
+- Current work branch: `codex/audit-fix-40-final-completion`
+- Base SHA: `37a30043e4c63e2845d456e360129e067e19d16a`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -25,11 +25,12 @@
 - Last updated: `2026-08-17`
 - CI status: `OCR text-risk repair plus user-feedback form hardening pass current backend and mobile gates: backend 214 tests at 85.87% branch-aware coverage; mobile 69 tests at 83.78% statement/71.04% branch coverage and 28 exported routes; formatting, lint, strict typing, OpenAPI/ER drift and the Impeccable mechanical UI detector pass. The previously recorded administrator 40 tests plus 3 Playwright flows, ML 714 tests, 31 backend security scenarios and controlled end-to-end evidence were not rerun for this bounded follow-up. The all-section wrapper remains non-zero for the documented host Node/npm/Tesseract mismatch. Hosted CI remains unverified.`
 - Deployment status: `Previously verified local four-service release; the updated images built but are not currently running because Docker Desktop's Linux storage became read-only. No hosted or production deployment claim.`
-- Current phase: `Audit repair 40 OCR text-risk integration complete locally and pending review`
-- Next exact task: `Recover Docker Desktop without purging its data (administrator restart or Windows reboot), start project momo-fdvs-text-risk on ports 8084/8003/5177/55436, re-upload a controlled screenshot so OCR uses the repaired parser, capture the corrected review-form evidence, then review and merge codex/audit-fix-40-ocr-text-risk.`
+- Current phase: `Final completion override adopted; P0 completion work pending`
+- Next exact task: `Implement P0.1 test-first: distinguish conclusive high/medium risk from degraded component availability so ANALYSIS_EVIDENCE_INCONCLUSIVE is used only for an inconclusive risk band, then update result, notification and report projections without weakening high-risk copy.`
 - Post-acceptance local repair: the mobile web/API routing and fresh-database role seed remain healthy, and the API wheel now explicitly packages `momo_fdvs/policies/risk_policy_demo_v1.json`. A rebuilt release container verifies the installed policy at 483 bytes; API and mobile-proxy health return HTTP 200; the persisted local account, transaction and OCR confirmation remain present. Focused policy tests pass 15/15. A fresh host full-gate attempt was not claimed green: it first failed under transient Windows memory pressure and then stalled before database activity, so the previously recorded full PR19 acceptance gate remains the authoritative complete-suite evidence pending the next clean rerun.
 - User-feedback OCR review repair: absent OCR values are now manual entries rather than corrections, correction reasons are captured automatically after confirmed image review, required/optional fields and safe no-guess guidance are explicit, and API `field_errors` are preserved for inline recovery. The parser recognises bounded standalone `ID-...` and legacy `GHC` notation. Current backend and mobile gates pass at the counts above. Docker built the updated API/mobile images, but its internal overlay/containerd storage became read-only during API recreation; the dedicated stack is offline and no live-runtime pass is claimed.
 - External review handoff: `docs/WEBCHAT_GPT_OCR_TEXT_RISK_REVIEW_BRIEF.md` provides Web ChatGPT with the source-of-truth order, design and privacy boundaries, exact implementation/test evidence, current runtime blocker and targeted review questions. It contains no private value from the diagnostic screenshots.
+- Final authority adoption: `FINAL_COMPLETION_OVERRIDE.md` is now Tier 0 execution authority, with the classification index at `docs/authority/MARKDOWN_AUTHORITY_INDEX.md` and proposed screenshot-only design at `docs/architecture/ADR-041_SCREENSHOT_ONLY_TEXT_RISK_ANALYSIS.md`. Authority package ZIP SHA-256 is `b7a488e550c7f31e4071624f54cac389ef43ff40f4bac03765e943874f1629ef`; all 34 manifested files, Python syntax and 29 isolated reference tests verified. The overlay changes execution order only and does not weaken binding security/privacy/evidence contracts. Locked tests remain unopened and training remains unexecuted.
 
 ## Audit repair 40 — obvious-scam OCR text risk
 

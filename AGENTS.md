@@ -2,6 +2,14 @@
 
 These instructions apply to the entire repository. A more specific `AGENTS.md` in a subdirectory may add constraints but may not weaken these rules.
 
+## 0. Current completion override
+
+Before any task, read `FINAL_COMPLETION_OVERRIDE.md` and `IMPLEMENTATION_STATUS.md`.
+The final override supersedes stale next-step instructions in historical master plans,
+handoffs, completed Superpowers plans/specs and external review briefs. Those documents
+remain evidence and may not restart completed phases. If the override is absent, stop
+before modifying code.
+
 ## 1. Mission
 
 Implement the complete MoMo-FDVS product described in the implementation package. Deliver working, tested and documented software, not a UI-only prototype and not a collection of disconnected demonstrations.

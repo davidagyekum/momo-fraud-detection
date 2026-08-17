@@ -1,3 +1,7 @@
+> Historical execution notice: this document is preserved for context/evidence.
+> It must not select the current task. Read `FINAL_COMPLETION_OVERRIDE.md` and
+> `IMPLEMENTATION_STATUS.md` first.
+
 # Complete Codex Handoff — MoMo-FDVS
 
 This consolidated file mirrors the modular implementation package. The modular files remain the preferred source because Codex can read only the specifications relevant to the current phase.
