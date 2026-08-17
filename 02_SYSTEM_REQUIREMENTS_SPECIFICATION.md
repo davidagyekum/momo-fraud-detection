@@ -299,7 +299,7 @@ Every requirement has a stable identifier. Codex must keep `requirements_traceab
 
 | ID | Priority | Requirement | Acceptance evidence |
 |---|---|---|---|
-| `FR-RISK-005` | MUST | A failed/unavailable subsystem shall produce a PARTIAL state and disclose missing evidence. | Available evidence persists; UI does not present full-confidence success. |
+| `FR-RISK-005` | MUST | A failed/unavailable subsystem shall produce a PARTIAL state and disclose missing evidence. | Available evidence persists; `component_status` is `DEGRADED`; a decisive low/medium/high band remains `CONCLUSIVE`, while only an `inconclusive` band uses `ANALYSIS_EVIDENCE_INCONCLUSIVE`; UI does not hide unavailable components or weaken a decisive high-risk result. |
 
 ### Analysis idempotency
 

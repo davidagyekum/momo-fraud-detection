@@ -291,6 +291,11 @@ No-match text is inconclusive, not evidence of genuineness. Missing accepted
 image or structured models still produces a `PARTIAL` analysis even when the
 categorical text signal maps to a high review band.
 
+`PARTIAL` describes degraded component availability; it does not make a low,
+medium or high fraud-risk band inconclusive. Persist and project
+`conclusion_status=CONCLUSIVE` with `component_status=DEGRADED` for those runs,
+and reserve `ANALYSIS_EVIDENCE_INCONCLUSIVE` for the `inconclusive` band.
+
 ## 9. User correction
 
 The confirmed field snapshot is authoritative input to verification and structured features, but correction itself is evidence:
@@ -711,6 +716,12 @@ Suggested safe policy:
 - normal user receives conservative class/wording such as `SUSPICIOUS` or “Needs review” when high-confidence low-risk conclusion cannot be supported;
 - verification remains separately displayed;
 - top reason includes `ANALYSIS_COMPONENT_UNAVAILABLE`.
+
+For categorical policy results, component completeness and risk conclusiveness
+are separate axes. Missing optional/accepted models may retain execution status
+`PARTIAL` and explicit limitations while decisive low/medium/high evidence stays
+`CONCLUSIVE`. Reports, notifications and user interfaces must preserve that
+hierarchy and must not describe a high-risk band as inconclusive.
 
 The exact policy is versioned and tested.
 

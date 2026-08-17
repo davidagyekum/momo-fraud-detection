@@ -8,6 +8,8 @@ import {
 const risk = {
   status: "PARTIAL",
   band: "inconclusive",
+  conclusion_status: "INCONCLUSIVE",
+  component_status: "DEGRADED",
   class: null,
   score: null,
   summary: "Evidence is insufficient.",

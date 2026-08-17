@@ -15,16 +15,13 @@ function evidenceLabel(status: string): string {
 }
 
 export function AnalysisResultView({ result }: { result: AnalysisResult }) {
+  const degraded = result.risk.component_status === "DEGRADED";
+  const conclusive = result.risk.conclusion_status === "CONCLUSIVE";
+  const bandLabel = riskLabels[result.risk.band]
+    .toLowerCase()
+    .replace(" risk", "");
   return (
     <View style={uiStyles.stack}>
-      {result.status === "PARTIAL" ? (
-        <InlineAlert
-          tone="warning"
-          title="Partial analysis"
-          message="Some evidence was unavailable. Review the limitations before acting."
-        />
-      ) : null}
-
       <AppCard>
         <Text style={uiStyles.cardTitle}>Fraud risk assessment</Text>
         <StatusBadge
@@ -39,6 +36,20 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
         />
         <Text style={uiStyles.body}>{result.risk.summary}</Text>
       </AppCard>
+
+      {degraded ? (
+        <InlineAlert
+          tone="warning"
+          title={
+            conclusive ? "Some components unavailable" : "Evidence incomplete"
+          }
+          message={
+            conclusive
+              ? `The ${bandLabel} fraud-risk conclusion remains valid. Review unavailable components below.`
+              : "The available evidence was insufficient for a fraud-risk conclusion. Review unavailable components below."
+          }
+        />
+      ) : null}
 
       <AppCard>
         <Text style={uiStyles.cardTitle}>Transaction verification</Text>
@@ -105,6 +116,12 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
 
       <AppCard>
         <Text style={uiStyles.cardTitle}>Evidence availability</Text>
+        <Text style={uiStyles.body} selectable>
+          Risk conclusion: {evidenceLabel(result.risk.conclusion_status)}
+        </Text>
+        <Text style={uiStyles.body} selectable>
+          Component availability: {evidenceLabel(result.risk.component_status)}
+        </Text>
         <Text style={uiStyles.body} selectable>
           Deterministic image checks:{" "}
           {evidenceLabel(result.evidence_summary.deterministic_image.status)}

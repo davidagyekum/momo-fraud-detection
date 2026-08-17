@@ -13,6 +13,8 @@ const partialResult = {
   risk: {
     status: "INCONCLUSIVE",
     band: "inconclusive",
+    conclusion_status: "INCONCLUSIVE",
+    component_status: "DEGRADED",
     class: null,
     score: null,
     summary: "Insufficient independent signals for a fraud classification.",
@@ -132,6 +134,8 @@ test("renders a categorical high-risk result without inventing a score", async (
       ...partialResult.risk,
       status: "AVAILABLE",
       band: "high_risk",
+      conclusion_status: "CONCLUSIVE",
+      component_status: "COMPLETE",
       class: "FRAUDULENT",
       summary: "Multiple recorded signals require review.",
       reasons: [
@@ -151,4 +155,36 @@ test("renders a categorical high-risk result without inventing a score", async (
   ).toBeTruthy();
   expect(view.queryByText(/Reference mismatch/)).toBeNull();
   expect(view.queryByText(/risk score/i)).toBeNull();
+});
+
+test("keeps a partial high-risk conclusion above degraded component copy", async () => {
+  const highRisk = {
+    ...partialResult,
+    risk: {
+      ...partialResult.risk,
+      status: "PARTIAL",
+      band: "high_risk",
+      class: "FRAUDULENT",
+      conclusion_status: "CONCLUSIVE",
+      component_status: "DEGRADED",
+      summary: "Strong scam-language indicators require immediate caution.",
+      reasons: [
+        {
+          code: "PIN_OR_OTP_REQUEST",
+          title: "Secret code requested",
+          severity: "CRITICAL",
+        },
+      ],
+    },
+  } as AnalysisResult;
+
+  const view = await render(<AnalysisResultView result={highRisk} />);
+  expect(view.getByLabelText("Status: High risk")).toBeTruthy();
+  expect(view.getByText("Some components unavailable")).toBeTruthy();
+  expect(
+    view.getByText(
+      "The high fraud-risk conclusion remains valid. Review unavailable components below.",
+    ),
+  ).toBeTruthy();
+  expect(view.queryByText(/persisted result is inconclusive/i)).toBeNull();
 });

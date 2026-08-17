@@ -39,6 +39,7 @@ from momo_fdvs.services.risk_policy import (
     PolicyFailure,
     PolicyReason,
     TextPolicySignal,
+    derive_finalization_semantics,
     evaluate_risk_policy,
     load_risk_policy,
 )
@@ -648,14 +649,13 @@ def run_analysis(
         }
         run.top_reasons = [reason.as_dict() for reason in policy_result.reasons]
         run.completed_at = datetime.now(UTC)
-        run.error_code = (
-            "ANALYSIS_EVIDENCE_INCONCLUSIVE" if policy_result.status == "PARTIAL" else None
+        finalization = derive_finalization_semantics(
+            analysis_status=policy_result.status,
+            risk_band=policy_result.band,
+            missing_signals=policy_result.missing_signals,
         )
-        run.error_message_safe = (
-            "Some analysis components were unavailable; the persisted result is inconclusive."
-            if policy_result.status == "PARTIAL"
-            else None
-        )
+        run.error_code = finalization.error_code
+        run.error_message_safe = finalization.safe_message
         transaction.status = policy_result.status
         transaction.latest_analysis_run_id = run.id
         record.resource_type = "analysis_run"
@@ -671,6 +671,8 @@ def run_analysis(
                 details={
                     "analysis_status": policy_result.status,
                     "band": policy_result.band.value,
+                    "conclusion_status": finalization.conclusion_status,
+                    "component_status": finalization.component_status,
                     "automated_evidence_immutable": True,
                 },
             )

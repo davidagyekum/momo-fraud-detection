@@ -518,6 +518,22 @@
             "nullable": true,
             "type": "string"
           },
+          "component_status": {
+            "enum": [
+              "COMPLETE",
+              "DEGRADED",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "conclusion_status": {
+            "enum": [
+              "CONCLUSIVE",
+              "INCONCLUSIVE",
+              "FAILED"
+            ],
+            "type": "string"
+          },
           "disclaimer": {
             "type": "string"
           },
@@ -556,6 +572,8 @@
         "required": [
           "band",
           "class",
+          "component_status",
+          "conclusion_status",
           "disclaimer",
           "limitations",
           "missing_signals",

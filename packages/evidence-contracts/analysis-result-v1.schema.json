@@ -11,6 +11,8 @@
     "evidence_mode",
     "status",
     "band",
+    "conclusion_status",
+    "component_status",
     "legacy_risk_class",
     "score",
     "reasons",
@@ -31,6 +33,8 @@
     },
     "status": {"enum": ["COMPLETED", "PARTIAL"]},
     "band": {"enum": ["low_risk", "medium_risk", "high_risk", "inconclusive"]},
+    "conclusion_status": {"enum": ["CONCLUSIVE", "INCONCLUSIVE"]},
+    "component_status": {"enum": ["COMPLETE", "DEGRADED"]},
     "legacy_risk_class": {
       "type": ["string", "null"],
       "enum": ["GENUINE", "SUSPICIOUS", "FRAUDULENT", null]

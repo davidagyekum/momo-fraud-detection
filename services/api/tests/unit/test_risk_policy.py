@@ -14,6 +14,7 @@ from momo_fdvs.services.risk_policy import (
     PolicyFailure,
     PolicyReason,
     TextPolicySignal,
+    derive_finalization_semantics,
     evaluate_risk_policy,
     load_risk_policy,
 )
@@ -200,6 +201,57 @@ def test_text_rules_can_drive_categorical_risk_without_inventing_probability(
     assert result.legacy_risk_class == legacy_class
     assert result.score is None
     assert result.reasons
+
+
+@pytest.mark.parametrize("predicted_class", ["SUSPICIOUS", "FRAUDULENT"])
+def test_partial_text_risk_has_conclusive_degraded_semantics(
+    policy: LoadedRiskPolicy,
+    predicted_class: str,
+) -> None:
+    result = evaluate_risk_policy(
+        policy,
+        _with_text(_unavailable_input(), predicted_class),
+    )
+
+    assert result.status == "PARTIAL"
+    assert result.conclusion_status == "CONCLUSIVE"
+    assert result.component_status == "DEGRADED"
+    assert result.as_dict()["conclusion_status"] == "CONCLUSIVE"
+    assert result.as_dict()["component_status"] == "DEGRADED"
+
+
+def test_partial_inconclusive_risk_keeps_inconclusive_degraded_semantics(
+    policy: LoadedRiskPolicy,
+) -> None:
+    result = evaluate_risk_policy(policy, _unavailable_input())
+
+    assert result.status == "PARTIAL"
+    assert result.band is RiskBand.INCONCLUSIVE
+    assert result.conclusion_status == "INCONCLUSIVE"
+    assert result.component_status == "DEGRADED"
+
+
+def test_completed_decisive_band_has_complete_conclusive_semantics() -> None:
+    result = derive_finalization_semantics(
+        analysis_status="COMPLETED",
+        risk_band="medium_risk",
+    )
+
+    assert result.error_code is None
+    assert result.safe_message is None
+    assert result.conclusion_status == "CONCLUSIVE"
+    assert result.component_status == "COMPLETE"
+
+
+def test_failed_analysis_has_failed_semantics() -> None:
+    result = derive_finalization_semantics(
+        analysis_status="FAILED",
+        risk_band="inconclusive",
+    )
+
+    assert result.error_code == "ANALYSIS_FAILED"
+    assert result.conclusion_status == "FAILED"
+    assert result.component_status == "FAILED"
 
 
 def test_no_decisive_text_rule_keeps_reference_match_inconclusive(
@@ -430,3 +482,11 @@ def test_analysis_result_schema_allows_categorical_null_score(
     assert schema["$defs"]["versions"]["additionalProperties"] is False
     assert result["score"] is None
     assert result["legacy_risk_class"] == "FRAUDULENT"
+    assert schema["properties"]["conclusion_status"]["enum"] == [
+        "CONCLUSIVE",
+        "INCONCLUSIVE",
+    ]
+    assert schema["properties"]["component_status"]["enum"] == [
+        "COMPLETE",
+        "DEGRADED",
+    ]

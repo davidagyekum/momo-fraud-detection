@@ -1,6 +1,6 @@
 """Schemas for persisted analysis results and immutable evidence projections."""
 
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
 
 from momo_fdvs.api.v1.schemas import MetaSchema
 
@@ -14,6 +14,14 @@ class PolicyReasonSchema(Schema):
 class AnalysisRiskSchema(Schema):
     status = fields.String(required=True)
     band = fields.String(required=True)
+    conclusion_status = fields.String(
+        required=True,
+        validate=validate.OneOf(("CONCLUSIVE", "INCONCLUSIVE", "FAILED")),
+    )
+    component_status = fields.String(
+        required=True,
+        validate=validate.OneOf(("COMPLETE", "DEGRADED", "FAILED")),
+    )
     risk_class = fields.String(attribute="class", data_key="class", allow_none=True, required=True)
     score = fields.Float(allow_none=True, required=True)
     summary = fields.String(required=True)

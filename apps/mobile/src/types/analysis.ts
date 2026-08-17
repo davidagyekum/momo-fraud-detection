@@ -34,6 +34,8 @@ export const riskSchema = z
   .object({
     status: z.string(),
     band: riskBandSchema,
+    conclusion_status: z.enum(["CONCLUSIVE", "INCONCLUSIVE", "FAILED"]),
+    component_status: z.enum(["COMPLETE", "DEGRADED", "FAILED"]),
     class: z.enum(["GENUINE", "SUSPICIOUS", "FRAUDULENT"]).nullable(),
     score: z.number().min(0).max(1).nullable(),
     summary: z.string(),

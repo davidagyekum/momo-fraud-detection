@@ -270,6 +270,18 @@ class AnalysisPolicyResult:
     limitations: tuple[str, ...]
 
     @property
+    def conclusion_status(self) -> str:
+        """Describe whether the risk band itself is decisive."""
+
+        return "INCONCLUSIVE" if self.band is RiskBand.INCONCLUSIVE else "CONCLUSIVE"
+
+    @property
+    def component_status(self) -> str:
+        """Describe evidence-component completeness independently from risk."""
+
+        return "DEGRADED" if self.status == "PARTIAL" else "COMPLETE"
+
+    @property
     def summary(self) -> str:
         return {
             RiskBand.LOW: "Supported model evidence indicates a low configured risk band.",
@@ -288,6 +300,8 @@ class AnalysisPolicyResult:
             "evidence_mode": self.evidence_mode.value,
             "status": self.status,
             "band": self.band.value,
+            "conclusion_status": self.conclusion_status,
+            "component_status": self.component_status,
             "legacy_risk_class": self.legacy_risk_class,
             "score": self.score,
             "reasons": [reason.as_dict() for reason in self.reasons],
@@ -295,6 +309,62 @@ class AnalysisPolicyResult:
             "limitations": list(self.limitations),
             "summary": self.summary,
         }
+
+
+@dataclass(frozen=True)
+class FinalizationSemantics:
+    """Safe terminal copy and codes derived from separate risk/component states."""
+
+    error_code: str | None
+    safe_message: str | None
+    conclusion_status: str
+    component_status: str
+
+
+def derive_finalization_semantics(
+    *,
+    analysis_status: str,
+    risk_band: RiskBand | str,
+    missing_signals: tuple[str, ...] = (),
+) -> FinalizationSemantics:
+    """Never call a decisive risk band inconclusive because components are missing."""
+
+    try:
+        band = risk_band if isinstance(risk_band, RiskBand) else RiskBand(risk_band)
+    except ValueError:
+        band = RiskBand.INCONCLUSIVE
+    if analysis_status == "FAILED":
+        return FinalizationSemantics(
+            error_code="ANALYSIS_FAILED",
+            safe_message="The analysis could not be completed.",
+            conclusion_status="FAILED",
+            component_status="FAILED",
+        )
+    component_status = "DEGRADED" if analysis_status == "PARTIAL" else "COMPLETE"
+    if band is RiskBand.INCONCLUSIVE:
+        return FinalizationSemantics(
+            error_code="ANALYSIS_EVIDENCE_INCONCLUSIVE",
+            safe_message=("The available evidence was insufficient for a fraud-risk conclusion."),
+            conclusion_status="INCONCLUSIVE",
+            component_status=component_status,
+        )
+    if analysis_status == "PARTIAL":
+        suffix = " Some optional evidence components were unavailable." if missing_signals else ""
+        return FinalizationSemantics(
+            error_code="ANALYSIS_COMPONENTS_PARTIAL",
+            safe_message=(
+                f"A conclusive {band.value.replace('_', ' ')} result was produced from the "
+                f"available evidence.{suffix}"
+            ),
+            conclusion_status="CONCLUSIVE",
+            component_status="DEGRADED",
+        )
+    return FinalizationSemantics(
+        error_code=None,
+        safe_message=None,
+        conclusion_status="CONCLUSIVE",
+        component_status="COMPLETE",
+    )
 
 
 def _schema_failure() -> PolicyFailure:
@@ -583,11 +653,13 @@ __all__ = [
     "ANALYSIS_RESULT_CONTRACT_VERSION",
     "AnalysisPolicyInput",
     "AnalysisPolicyResult",
+    "FinalizationSemantics",
     "LoadedRiskPolicy",
     "ModelPolicySignal",
     "PolicyFailure",
     "PolicyReason",
     "TextPolicySignal",
+    "derive_finalization_semantics",
     "evaluate_risk_policy",
     "load_risk_policy",
 ]

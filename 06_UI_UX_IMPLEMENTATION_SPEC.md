@@ -324,6 +324,13 @@ Order matters.
 - icon + semantic status;
 - “Automated assessment” label.
 
+The risk conclusion is the first and strongest result. A `PARTIAL` execution
+must not place a generic partial/inconclusive warning above a conclusive low,
+medium or high band. Show that band first, then a secondary limitations alert
+such as “Some components unavailable”. Display `conclusion_status` separately
+from `component_status`, and use “inconclusive” only when the band itself is
+`inconclusive`.
+
 #### B. Verification card
 
 - Verified / Unverified / Mismatch;

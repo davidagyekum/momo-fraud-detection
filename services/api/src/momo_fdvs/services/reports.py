@@ -199,6 +199,12 @@ def render_analysis_report(
     )
     component_table = component_rows or "<tr><td>No component status recorded.</td></tr>"
     version_table = version_rows or "<tr><td>No version identity recorded.</td></tr>"
+    degraded_note = (
+        "<p>Some optional evidence components were unavailable. The recorded fraud-risk "
+        "conclusion remains based on the available evidence.</p>"
+        if risk["component_status"] == "DEGRADED" and risk["conclusion_status"] == "CONCLUSIVE"
+        else ""
+    )
     document = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>MoMo-FDVS analysis report</title>
@@ -216,8 +222,12 @@ border-bottom:1px solid #e8edf1}}
 <tr><th>Reference</th><td>{_safe(transaction.display_reference_masked or "Masked")}</td></tr>
 <tr><th>Confirmed OCR fields</th><td>{len(confirmation.confirmed_fields)}</td></tr>
 </table></section>
-<section><h2>Fraud-risk assessment</h2>
-<p><strong>{_safe(risk["band"])}</strong> — {_safe(risk["summary"])}</p>
+<section><h2>Fraud-risk assessment</h2><table>
+<tr><th>Risk band</th><td>{_safe(risk["band"])}</td></tr>
+<tr><th>Conclusion</th><td>{_safe(str(risk["conclusion_status"]).title())}</td></tr>
+<tr><th>Component availability</th><td>{_safe(str(risk["component_status"]).title())}</td></tr>
+</table>
+<p>{_safe(risk["summary"])}</p>{degraded_note}
 <h3>Reasons</h3><ul>{_list(risk["reasons"])}</ul>
 <h3>Limitations</h3><ul>{_list(risk["limitations"])}</ul>
 <p>{_safe(risk["disclaimer"])}</p></section>

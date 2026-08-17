@@ -11,6 +11,36 @@ from sqlalchemy.exc import IntegrityError
 
 from momo_fdvs.extensions import db
 from momo_fdvs.models import Notification
+from momo_fdvs.services.risk_policy import derive_finalization_semantics
+
+
+def analysis_outcome_copy(*, analysis_status: str, risk_band: str) -> tuple[str, str]:
+    """Return risk-first owner copy without confusing degraded components with uncertainty."""
+
+    semantics = derive_finalization_semantics(
+        analysis_status=analysis_status,
+        risk_band=risk_band,
+        missing_signals=("OPTIONAL_COMPONENT_UNAVAILABLE",) if analysis_status == "PARTIAL" else (),
+    )
+    if semantics.conclusion_status == "FAILED":
+        return "Analysis could not finish", "The analysis could not be completed."
+    if semantics.conclusion_status == "INCONCLUSIVE":
+        return (
+            "Analysis ready",
+            "The available evidence was insufficient for a fraud-risk conclusion.",
+        )
+    label = {
+        "low_risk": "low",
+        "medium_risk": "medium",
+        "high_risk": "high",
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+    }.get(risk_band.casefold(), "recorded")
+    message = f"Your analysis found a {label} fraud-risk result."
+    if semantics.component_status == "DEGRADED":
+        message += " Some optional evidence components were unavailable."
+    return "Analysis ready", message
 
 
 def create_notification(
@@ -70,18 +100,22 @@ def notify_analysis_outcome(
 ) -> list[Notification]:
     """Persist safe, deduplicated outcome notifications before domain commit."""
 
+    title, message = analysis_outcome_copy(
+        analysis_status=analysis_status,
+        risk_band=risk_band,
+    )
     notifications = [
         create_notification(
             user_id=user_id,
             notification_type="ANALYSIS_COMPLETED",
-            title="Analysis ready",
-            message=f"Your transaction analysis completed with status {analysis_status.lower()}.",
+            title=title,
+            message=message,
             dedupe_key=f"analysis-completed:{analysis_run_id}",
             target_type="ANALYSIS",
             target_id=analysis_run_id,
         )
     ]
-    if risk_band.lower() == "high":
+    if risk_band.casefold() in {"high", "high_risk"}:
         notifications.append(
             create_notification(
                 user_id=user_id,
@@ -166,6 +200,7 @@ def mark_all_notifications_read(user_id: uuid.UUID) -> int:
 
 
 __all__ = [
+    "analysis_outcome_copy",
     "create_notification",
     "list_notifications",
     "mark_all_notifications_read",

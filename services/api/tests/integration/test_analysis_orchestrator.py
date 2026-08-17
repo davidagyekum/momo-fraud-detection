@@ -18,6 +18,7 @@ from momo_fdvs.extensions import db
 from momo_fdvs.models import (
     AnalysisRun,
     FraudRuleSet,
+    Notification,
     OCRConfirmation,
     OCRResult,
     Receipt,
@@ -304,6 +305,9 @@ def test_verified_reference_without_models_is_partial_inconclusive(
     assert result.run.status == "PARTIAL"
     assert result.run.risk_class is None
     assert result.run.component_scores["policy"]["band"] == "inconclusive"
+    assert result.run.component_scores["policy"]["conclusion_status"] == "INCONCLUSIVE"
+    assert result.run.component_scores["policy"]["component_status"] == "DEGRADED"
+    assert result.run.error_code == "ANALYSIS_EVIDENCE_INCONCLUSIVE"
     assert result.verification.status == "VERIFIED"
 
 
@@ -318,10 +322,24 @@ def test_obvious_scam_text_drives_categorical_risk_without_exposing_private_matc
     assert result.run.risk_score is None
     assert result.verification.status == "VERIFIED"
     assert result.run.component_scores["text_fraud"]["score_is_probability"] is False
+    assert result.run.component_scores["policy"]["conclusion_status"] == "CONCLUSIVE"
+    assert result.run.component_scores["policy"]["component_status"] == "DEGRADED"
+    assert result.run.error_code == "ANALYSIS_COMPONENTS_PARTIAL"
+    assert "inconclusive" not in (result.run.error_message_safe or "").casefold()
     assert "PIN_OR_OTP_REQUEST" in result.run.component_scores["text_fraud"]["reason_codes"]
     assert private_phone not in str(result.run.component_scores)
     semantic_stage = next(stage for stage in result.stages if stage.stage == "SEMANTIC_RULES")
     assert private_phone not in str(semantic_stage.details)
+    with obvious_text_case.app.app_context():
+        notification = db.session.scalar(
+            select(Notification).where(
+                Notification.user_id == obvious_text_case.user_id,
+                Notification.type == "ANALYSIS_COMPLETED",
+            )
+        )
+        assert notification is not None
+        assert "high fraud-risk result" in notification.message.casefold()
+        assert "inconclusive" not in notification.message.casefold()
 
 
 def test_legacy_ocr_text_is_not_recomputed_under_the_current_ruleset(

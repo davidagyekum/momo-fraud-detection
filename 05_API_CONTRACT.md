@@ -406,6 +406,15 @@ missing required image or structured models keep the analysis `PARTIAL`.
 Stored-reference verification remains a separate object and never overwrites or
 authenticates the text-risk result.
 
+Execution completeness and fraud-risk conclusiveness are independent. Every
+terminal risk projection includes `conclusion_status` (`CONCLUSIVE`,
+`INCONCLUSIVE` or `FAILED`) and `component_status` (`COMPLETE`, `DEGRADED` or
+`FAILED`). A `PARTIAL` run with a low, medium or high band uses
+`ANALYSIS_COMPONENTS_PARTIAL`, preserves explicit missing signals and remains a
+conclusive fraud-risk result. `ANALYSIS_EVIDENCE_INCONCLUSIVE` is reserved for
+`risk.band=inconclusive`. The projection is derived for historical records, so
+no stored automated evidence is rewritten.
+
 ```json
 {
   "data": {
@@ -450,6 +459,9 @@ Completed response:
     "id": "uuid",
     "status": "COMPLETED",
     "risk": {
+      "band": "medium_risk",
+      "conclusion_status": "CONCLUSIVE",
+      "component_status": "COMPLETE",
       "class": "SUSPICIOUS",
       "score": 57.4,
       "label": "Suspicious",

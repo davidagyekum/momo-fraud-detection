@@ -31,6 +31,7 @@ from momo_fdvs.services.image_forensics import (
     image_evidence_projection,
     unavailable_image_evidence,
 )
+from momo_fdvs.services.risk_policy import derive_finalization_semantics
 from momo_fdvs.services.verification import verification_projection
 
 analyses_blueprint = Blueprint(
@@ -96,9 +97,19 @@ def risk_projection(run: AnalysisRun) -> dict[str, Any]:
         reasons = []
     missing_signals = policy.get("missing_signals", [])
     limitations = policy.get("limitations", [])
+    band = str(policy.get("band", "inconclusive"))
+    semantics = derive_finalization_semantics(
+        analysis_status=run.status,
+        risk_band=band,
+        missing_signals=tuple(str(value) for value in missing_signals if isinstance(value, str))
+        if isinstance(missing_signals, list)
+        else (),
+    )
     return {
         "status": str(policy.get("status", "UNAVAILABLE")),
-        "band": str(policy.get("band", "inconclusive")),
+        "band": band,
+        "conclusion_status": semantics.conclusion_status,
+        "component_status": semantics.component_status,
         "class": policy.get("legacy_risk_class", run.risk_class),
         "score": policy.get("score"),
         "summary": str(
