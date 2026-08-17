@@ -383,7 +383,22 @@ Server validates that the referenced OCR result belongs to the transaction/user 
 
 **Auth:** owner  
 **Headers:** `Idempotency-Key` required  
-**Precondition:** OCR reviewed.
+**Precondition:** combined mode requires reviewed OCR; screenshot-only mode requires an owned,
+receipt-linked immutable OCR result.
+
+An omitted body preserves combined analysis. Message-only screenshots may instead request:
+
+```json
+{
+  "mode": "screenshot_only",
+  "ocr_result_id": "uuid"
+}
+```
+
+The server validates ownership and receipt linkage. It does not require or synthesize amount,
+reference, name, phone, timestamp or receipt-status values for this mode. Verification and
+structured inference are persisted as `NOT_ATTEMPTED` / `NOT_APPLICABLE_SCREENSHOT_ONLY` while
+the versioned stored OCR-text assessment and available image evidence drive risk.
 
 **Response:** `202`
 
@@ -439,6 +454,9 @@ Active response:
 {
   "data": {
     "id": "uuid",
+    "analysis_mode": "combined",
+    "ocr_result_id": "uuid",
+    "ocr_confirmation_id": "uuid",
     "status": "PROCESSING",
     "current_stage": "IMAGE_FEATURES",
     "progress": {
@@ -503,6 +521,11 @@ Completed response:
   "meta": {"request_id": "..."}
 }
 ```
+
+For `screenshot_only`, `ocr_confirmation_id` is null, `ocr_result_id` is the immutable evidence
+identity and verification has status `NOT_ATTEMPTED` with basis
+`NOT_APPLICABLE_SCREENSHOT_ONLY`. Risk, execution/component availability and verification remain
+separate projections. Raw OCR text is never returned by analysis, history or report endpoints.
 
 A normal user receives an understandable summary, not every raw internal feature. Authorised evidence endpoints provide more detail.
 

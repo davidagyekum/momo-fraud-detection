@@ -150,6 +150,17 @@ class AnalysisRun(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
             name="risk_score_range",
         ),
         CheckConstraint("char_length(request_fingerprint) = 64", name="fingerprint_length"),
+        CheckConstraint(
+            "analysis_mode IN ('combined', 'screenshot_only', 'transaction_only')",
+            name="analysis_mode_valid",
+        ),
+        CheckConstraint(
+            "(analysis_mode = 'screenshot_only' AND ocr_result_id IS NOT NULL "
+            "AND ocr_confirmation_id IS NULL) OR "
+            "(analysis_mode IN ('combined', 'transaction_only') "
+            "AND ocr_confirmation_id IS NOT NULL)",
+            name="evidence_link_valid",
+        ),
         UniqueConstraint("transaction_id", "idempotency_key_hash"),
         Index("ix_analysis_runs_status_queued", "status", "queued_at"),
         Index("ix_analysis_runs_transaction_created", "transaction_id", "created_at"),
@@ -160,8 +171,12 @@ class AnalysisRun(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     transaction_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("transactions.id", ondelete="RESTRICT"), nullable=False
     )
-    ocr_confirmation_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("ocr_confirmations.id", ondelete="RESTRICT"), nullable=False
+    analysis_mode: Mapped[str] = mapped_column(String(30), nullable=False, default="combined")
+    ocr_result_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("ocr_results.id", ondelete="RESTRICT"), index=True
+    )
+    ocr_confirmation_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("ocr_confirmations.id", ondelete="RESTRICT")
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="QUEUED")
     current_stage: Mapped[str | None] = mapped_column(String(50))

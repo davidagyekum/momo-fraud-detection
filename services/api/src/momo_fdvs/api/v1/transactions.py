@@ -128,6 +128,7 @@ def _analysis_summary(
     risk = risk_projection(run)
     return {
         "id": run.id,
+        "analysis_mode": run.analysis_mode,
         "status": run.status,
         "band": risk["band"],
         "class": risk["class"],
@@ -364,7 +365,7 @@ class TransactionResource(MethodView):
         latest = next((run for run in runs if run.id == transaction.latest_analysis_run_id), None)
         confirmation = (
             db.session.get(OCRConfirmation, latest.ocr_confirmation_id)
-            if latest is not None
+            if latest is not None and latest.ocr_confirmation_id is not None
             else None
         )
         data = _transaction_summary(
@@ -375,6 +376,14 @@ class TransactionResource(MethodView):
         data.update(
             {
                 "confirmed_field_coverage": {
+                    "status": "CONFIRMED" if confirmation is not None else "NOT_REQUIRED",
+                    "ocr_result_id": (
+                        confirmation.ocr_result_id
+                        if confirmation is not None
+                        else latest.ocr_result_id
+                        if latest is not None
+                        else None
+                    ),
                     "field_count": len(confirmation.confirmed_fields)
                     if confirmation is not None
                     else 0,

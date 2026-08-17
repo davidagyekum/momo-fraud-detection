@@ -25,6 +25,7 @@ from momo_fdvs.models import (
     ImageAnalysis,
     ModelVersion,
     OCRConfirmation,
+    OCRResult,
     Transaction,
     User,
     VerificationResult,
@@ -48,6 +49,7 @@ from momo_fdvs.services.text_fraud import (
 )
 from momo_fdvs.services.verification import (
     VerificationFailure,
+    VerificationOutcome,
     claim_idempotency,
     evaluate_verification,
     request_hash,
@@ -86,6 +88,23 @@ class AnalysisOrchestrationResult:
     image_analysis: ImageAnalysis | None
     stages: tuple[AnalysisStageRun, ...]
     replayed: bool
+
+
+@dataclass(frozen=True)
+class AnalysisEvidenceSelection:
+    """One validated immutable evidence source for the analysis pipeline."""
+
+    mode: EvidenceMode
+    ocr_result: OCRResult
+    confirmation: OCRConfirmation | None
+
+    @classmethod
+    def combined(cls, confirmation: OCRConfirmation) -> AnalysisEvidenceSelection:
+        return cls(EvidenceMode.COMBINED, confirmation.ocr_result, confirmation)
+
+    @classmethod
+    def screenshot_only(cls, ocr_result: OCRResult) -> AnalysisEvidenceSelection:
+        return cls(EvidenceMode.SCREENSHOT_ONLY, ocr_result, None)
 
 
 def _stage_start(run: AnalysisRun, stage: str) -> tuple[datetime, float]:
@@ -162,9 +181,9 @@ def _model_projection(signal: ModelPolicySignal) -> dict[str, Any]:
 
 
 def _text_policy_signal(
-    confirmation: OCRConfirmation,
+    ocr_result: OCRResult,
 ) -> tuple[TextPolicySignal, dict[str, object]]:
-    assessment = stored_text_assessment(confirmation.ocr_result.extracted_fields.get("_text_fraud"))
+    assessment = stored_text_assessment(ocr_result.extracted_fields.get("_text_fraud"))
     projection = assessment.as_public_dict()
     if assessment.status == "UNAVAILABLE":
         return TextPolicySignal.unavailable(assessment.reason_code), projection
@@ -275,15 +294,26 @@ def _replay_result(
 def run_analysis(
     *,
     transaction: Transaction,
-    confirmation: OCRConfirmation,
     user: User,
     roles: set[str],
     idempotency_key: str,
     storage: ObjectStorage,
+    confirmation: OCRConfirmation | None = None,
+    evidence: AnalysisEvidenceSelection | None = None,
     policy_path: Path | None = None,
-    mode: EvidenceMode = EvidenceMode.SCREENSHOT_ONLY,
+    mode: EvidenceMode = EvidenceMode.COMBINED,
 ) -> AnalysisOrchestrationResult:
     """Execute one bounded analysis and atomically persist its final projection."""
+
+    if evidence is None:
+        if confirmation is None:
+            raise AnalysisFailure(
+                "ANALYSIS_EVIDENCE_REQUIRED", "Immutable analysis evidence is required.", 409
+            )
+        evidence = AnalysisEvidenceSelection(mode, confirmation.ocr_result, confirmation)
+    confirmation = evidence.confirmation
+    ocr_result = evidence.ocr_result
+    mode = evidence.mode
 
     try:
         policy = load_risk_policy(policy_path or _POLICY_PATH)
@@ -304,7 +334,8 @@ def run_analysis(
         {
             "owner_id": str(user.id),
             "transaction_id": str(transaction.id),
-            "confirmation_id": str(confirmation.id),
+            "ocr_result_id": str(ocr_result.id),
+            "confirmation_id": str(confirmation.id) if confirmation is not None else None,
             "mode": mode.value,
             "policy_version": policy.policy_version,
             "policy_sha256": policy.policy_sha256,
@@ -330,10 +361,12 @@ def run_analysis(
         image_model = _active_model("IMAGE")
         run = AnalysisRun(
             transaction_id=transaction.id,
-            ocr_confirmation_id=confirmation.id,
+            analysis_mode=mode.value,
+            ocr_result_id=ocr_result.id if mode is EvidenceMode.SCREENSHOT_ONLY else None,
+            ocr_confirmation_id=confirmation.id if confirmation is not None else None,
             status="PROCESSING",
             current_stage="SNAPSHOT",
-            template_id=confirmation.ocr_result.template_id,
+            template_id=ocr_result.template_id,
             rule_set_id=rule_set.id,
             image_model_id=image_model.id if image_model is not None else None,
             structured_model_id=None,
@@ -349,10 +382,12 @@ def run_analysis(
                 "policy_version": policy.policy_version,
                 "policy_sha256": policy.policy_sha256,
                 "rule_set_version": rule_set.version,
-                "ocr_pipeline_version": confirmation.ocr_result.pipeline_version,
-                "ocr_engine": confirmation.ocr_result.engine_name,
-                "ocr_engine_version": confirmation.ocr_result.engine_version,
-                "ocr_confirmation_schema": confirmation.schema_version,
+                "ocr_pipeline_version": ocr_result.pipeline_version,
+                "ocr_engine": ocr_result.engine_name,
+                "ocr_engine_version": ocr_result.engine_version,
+                "ocr_confirmation_schema": (
+                    confirmation.schema_version if confirmation is not None else None
+                ),
                 "receipt_sha256": transaction.receipt.sha256
                 if transaction.receipt is not None
                 else None,
@@ -376,19 +411,38 @@ def run_analysis(
                 details={
                     "policy_version": policy.policy_version,
                     "mode": mode.value,
-                    "confirmation_schema": confirmation.schema_version,
+                    "confirmation_schema": (
+                        confirmation.schema_version if confirmation is not None else None
+                    ),
                 },
             )
         )
 
         started_at, counter = _stage_start(run, "VERIFICATION")
-        verification_outcome = evaluate_verification(confirmation.confirmed_fields)
-        warnings = list(
-            dict.fromkeys(
-                verification_outcome.warnings
-                + verification_reuse_warnings(transaction, verification_outcome.reference)
+        if confirmation is None:
+            verification_outcome = VerificationOutcome(
+                status="NOT_ATTEMPTED",
+                reference=None,
+                candidate_method="NOT_APPLICABLE_SCREENSHOT_ONLY",
+                comparisons={},
+                matched_count=0,
+                mismatched_count=0,
+                warnings=[],
+                verifier_version="not-applicable-v1",
             )
-        )
+            verification_stage_status = "SKIPPED"
+            verification_stage_error = "NOT_APPLICABLE_SCREENSHOT_ONLY"
+            warnings: list[str] = []
+        else:
+            verification_outcome = evaluate_verification(confirmation.confirmed_fields)
+            warnings = list(
+                dict.fromkeys(
+                    verification_outcome.warnings
+                    + verification_reuse_warnings(transaction, verification_outcome.reference)
+                )
+            )
+            verification_stage_status = "COMPLETED"
+            verification_stage_error = None
         verification = VerificationResult(
             analysis_run_id=run.id,
             reference_transaction_id=(
@@ -411,7 +465,8 @@ def run_analysis(
                 "VERIFICATION",
                 started_at,
                 counter,
-                status="COMPLETED",
+                status=verification_stage_status,
+                error_code=verification_stage_error,
                 details={
                     "status": verification_outcome.status,
                     "matched_field_count": verification_outcome.matched_count,
@@ -430,7 +485,7 @@ def run_analysis(
                 image_outcome = run_image_forensics(
                     run=run,
                     transaction=transaction,
-                    ocr_result=confirmation.ocr_result,
+                    ocr_result=ocr_result,
                     storage=storage,
                 )
                 image_analysis = image_outcome.image_analysis
@@ -546,7 +601,17 @@ def run_analysis(
 
         started_at, counter = _stage_start(run, "STRUCTURED_MODEL")
         structured_signal = ModelPolicySignal.unavailable(
-            "STRUCTURED", "STRUCTURED_CONTEXT_UNAVAILABLE"
+            "STRUCTURED",
+            (
+                "NOT_APPLICABLE_SCREENSHOT_ONLY"
+                if confirmation is None
+                else "STRUCTURED_CONTEXT_UNAVAILABLE"
+            ),
+        )
+        structured_error = (
+            "NOT_APPLICABLE_SCREENSHOT_ONLY"
+            if confirmation is None
+            else "STRUCTURED_CONTEXT_UNAVAILABLE"
         )
         stages.append(
             _record_stage(
@@ -555,7 +620,7 @@ def run_analysis(
                 started_at,
                 counter,
                 status="SKIPPED",
-                error_code="STRUCTURED_CONTEXT_UNAVAILABLE",
+                error_code=structured_error,
                 details={
                     "exact_feature_contract_present": False,
                     "synthetic_defaults_used": False,
@@ -565,7 +630,7 @@ def run_analysis(
 
         started_at, counter = _stage_start(run, "SEMANTIC_RULES")
         deterministic_reasons = _deterministic_reasons(image_analysis)
-        text_signal, text_projection = _text_policy_signal(confirmation)
+        text_signal, text_projection = _text_policy_signal(ocr_result)
         run.configuration_snapshot = {
             **run.configuration_snapshot,
             "text_fraud_schema_version": text_projection["schema_version"],
@@ -591,13 +656,22 @@ def run_analysis(
 
         started_at, counter = _stage_start(run, "RISK_POLICY")
         critical_fields = ("amount", "transaction_reference")
-        critical_mismatches = tuple(
-            field
-            for field in critical_fields
-            if verification_outcome.comparisons.get(field, {}).get("status") == "MISMATCH"
+        critical_mismatches = (
+            tuple(
+                field
+                for field in critical_fields
+                if verification_outcome.comparisons.get(field, {}).get("status") == "MISMATCH"
+            )
+            if confirmation is not None
+            else ()
         )
-        confirmed_complete = all(
-            str(confirmation.confirmed_fields.get(field, "")).strip() for field in critical_fields
+        confirmed_complete = (
+            all(
+                str(confirmation.confirmed_fields.get(field, "")).strip()
+                for field in critical_fields
+            )
+            if confirmation is not None
+            else True
         )
         policy_result = evaluate_risk_policy(
             policy,
@@ -606,7 +680,11 @@ def run_analysis(
                 verification_status=verification_outcome.status,
                 critical_verification_mismatches=critical_mismatches,
                 confirmed_critical_fields_complete=confirmed_complete,
-                corrected_low_confidence_fields=_corrected_low_confidence_fields(confirmation),
+                corrected_low_confidence_fields=(
+                    _corrected_low_confidence_fields(confirmation)
+                    if confirmation is not None
+                    else ()
+                ),
                 deterministic_image_reasons=deterministic_reasons,
                 image_model=image_signal,
                 structured_model=structured_signal,

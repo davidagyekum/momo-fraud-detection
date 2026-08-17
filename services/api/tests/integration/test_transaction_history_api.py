@@ -248,7 +248,10 @@ def test_owner_history_filters_pagination_and_detail(app: Flask) -> None:
     data = detail.json["data"]
     assert data["latest_analysis"]["id"] == data["analysis_runs"][0]["id"]
     assert len(data["analysis_runs"]) == 2
-    assert data["confirmed_field_coverage"] == {
+    coverage = data["confirmed_field_coverage"]
+    assert coverage == {
+        "status": "CONFIRMED",
+        "ocr_result_id": coverage["ocr_result_id"],
         "field_count": 2,
         "correction_count": 1,
         "schema_version": "ocr-fields-v1",

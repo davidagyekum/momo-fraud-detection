@@ -1,6 +1,6 @@
 # ADR-041 — Persisted Screenshot-Only Text-Risk Analysis
 
-**Status:** Proposed by the final completion override; Codex must review, implement, test and mark accepted before release.  
+**Status:** Accepted and implemented  
 **Date:** 2026-08-17
 
 ## Context
@@ -23,6 +23,10 @@ Add to `analysis_runs`:
   - `combined` and `transaction_only` require `ocr_confirmation_id`.
 
 Historical rows backfill to `combined`; their confirmation linkage and outputs remain unchanged.
+
+Migration `20260817_0006` implements these constraints and also repairs the previously
+documented PR19 `report_artifacts.source_version` constraint-name drift through a forward
+migration. No applied migration is rewritten.
 
 ### API
 
@@ -63,6 +67,22 @@ The result exposes:
 - policy/ruleset versions and immutable evidence identifiers.
 
 Raw OCR text remains protected and is not copied into risk, notification, report-summary or audit metadata.
+
+## Implementation
+
+`AnalysisEvidenceSelection` is the single orchestration seam for immutable evidence selection.
+The route resolves and authorises either a confirmation-backed combined selection or an owned
+receipt-linked OCR-result selection; downstream stages consume that selection without inventing
+transaction fields. The same idempotency scope hashes the mode and evidence identities.
+
+Screenshot-only runs persist `NOT_ATTEMPTED` verification evidence, skip verification and the
+structured model with `NOT_APPLICABLE_SCREENSHOT_ONLY`, replay the stored text assessment, run
+available private-image checks, and project through result, evidence, history, notification and
+private-report surfaces. The omitted-body combined path remains compatible.
+
+Focused PostgreSQL-backed API, schema, orchestration, history/report, OpenAPI and mobile contract
+tests cover the decision. Full P0.2 acceptance evidence is recorded separately under
+`docs/evidence/` after the repository gates complete.
 
 ## Consequences
 

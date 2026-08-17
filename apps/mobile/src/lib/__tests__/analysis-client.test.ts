@@ -42,6 +42,9 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
     data: {
       id: "analysis-id",
       transaction_id: "transaction-id",
+      analysis_mode: "combined",
+      ocr_result_id: "ocr-result-id",
+      ocr_confirmation_id: "confirmation-id",
       status,
       risk,
       verification,
@@ -72,6 +75,8 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
         automated_evidence_immutable: true,
       },
       ocr_review: {
+        status: "CONFIRMED",
+        ocr_result_id: "ocr-result-id",
         confirmed_field_count: 10,
         correction_count: 0,
         schema_version: "ocr-fields-v1",
@@ -125,6 +130,37 @@ test("starts analysis with an encoded path and idempotency key", async () => {
   expect(request).toHaveBeenCalledWith(
     "/api/v1/transactions/transaction%2Fid/analyses",
     { method: "POST", headers: { "Idempotency-Key": "analysis-key-123" } },
+  );
+});
+
+test("starts screenshot-only analysis with its immutable OCR evidence id", async () => {
+  const request = jest.fn().mockResolvedValue({
+    data: {
+      analysis_run_id: "analysis-id",
+      transaction_id: "transaction-id",
+      status: "PARTIAL",
+      current_stage: "FINALIZE",
+      poll_url: "/api/v1/analyses/analysis-id",
+      replayed: false,
+    },
+    meta: { request_id: "request-id" },
+  });
+
+  await startAnalysis(request, "transaction-id", "analysis-key-123", {
+    mode: "screenshot_only",
+    ocrResultId: "ocr-result-id",
+  });
+
+  expect(request).toHaveBeenCalledWith(
+    "/api/v1/transactions/transaction-id/analyses",
+    {
+      method: "POST",
+      headers: { "Idempotency-Key": "analysis-key-123" },
+      body: JSON.stringify({
+        mode: "screenshot_only",
+        ocr_result_id: "ocr-result-id",
+      }),
+    },
   );
 });
 

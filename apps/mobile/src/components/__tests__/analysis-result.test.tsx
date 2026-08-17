@@ -9,6 +9,9 @@ import type { AnalysisResult } from "@/types/analysis";
 const partialResult = {
   id: "run-1",
   transaction_id: "tx-1",
+  analysis_mode: "combined",
+  ocr_result_id: "ocr-result-id",
+  ocr_confirmation_id: "confirmation-id",
   status: "PARTIAL",
   risk: {
     status: "INCONCLUSIVE",
@@ -74,6 +77,8 @@ const partialResult = {
     automated_evidence_immutable: true,
   },
   ocr_review: {
+    status: "CONFIRMED",
+    ocr_result_id: "ocr-result-id",
     confirmed_field_count: 10,
     correction_count: 1,
     schema_version: "ocr-fields-v1",
@@ -116,7 +121,7 @@ test("keeps the owner result concise and separates risk from verification", asyn
 
 test("moves technical evidence and limitations into the details view", async () => {
   const view = await render(<AnalysisDetailsView result={partialResult} />);
-  expect(view.getByText("Confirmed OCR review")).toBeTruthy();
+  expect(view.getByText("OCR evidence")).toBeTruthy();
   expect(view.getByText(/10 confirmed fields.*1 correction/i)).toBeTruthy();
   expect(view.getByText("Evidence availability")).toBeTruthy();
   expect(view.getAllByText(/Image model unavailable/i).length).toBeGreaterThan(

@@ -2,6 +2,7 @@ import { getTransaction, listTransactions } from "@/lib/history-client";
 
 const analysis = {
   id: "analysis-id",
+  analysis_mode: "combined",
   status: "PARTIAL",
   band: "inconclusive",
   class: null,
@@ -65,6 +66,8 @@ test("validates transaction detail and encodes the path", async () => {
     data: {
       ...summary,
       confirmed_field_coverage: {
+        status: "CONFIRMED",
+        ocr_result_id: "ocr-result-id",
         field_count: 2,
         correction_count: 1,
         schema_version: "ocr-fields-v1",

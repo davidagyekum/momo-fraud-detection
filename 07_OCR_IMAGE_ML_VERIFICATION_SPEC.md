@@ -310,6 +310,15 @@ Suggested features:
 
 Do not treat a normal user correction as fraud by itself.
 
+### 9.1 Screenshot-only evidence selection
+
+A message-only screenshot may be analysed from its owned immutable `OCRResult` without creating
+an `OCRConfirmation`. This path replays only the persisted versioned `_text_fraud` assessment and
+available image evidence. Stored-reference verification and structured transaction inference are
+not applicable and must be recorded as skipped; missing transaction fields must never be guessed,
+defaulted or converted into model features. The existing confirmation-backed combined path is
+unchanged.
+
 ## 10. Deterministic image evidence
 
 ### 10.1 Metadata

@@ -103,14 +103,19 @@ class AnalysisEvidenceSummarySchema(Schema):
 
 
 class AnalysisOCRReviewSchema(Schema):
+    status = fields.String(required=True)
+    ocr_result_id = fields.UUID(required=True)
     confirmed_field_count = fields.Integer(required=True)
     correction_count = fields.Integer(required=True)
-    schema_version = fields.String(required=True)
+    schema_version = fields.String(allow_none=True, required=True)
 
 
 class AnalysisDataSchema(Schema):
     id = fields.UUID(required=True)
     transaction_id = fields.UUID(required=True)
+    analysis_mode = fields.String(required=True)
+    ocr_result_id = fields.UUID(allow_none=True, required=True)
+    ocr_confirmation_id = fields.UUID(allow_none=True, required=True)
     status = fields.String(required=True)
     risk = fields.Nested(AnalysisRiskSchema, required=True)
     verification = fields.Nested(VerificationSummarySchema, allow_none=True, required=True)
@@ -131,6 +136,9 @@ class AnalysisEnvelopeSchema(Schema):
 class AnalysisEvidenceDataSchema(Schema):
     analysis_run_id = fields.UUID(required=True)
     transaction_id = fields.UUID(required=True)
+    analysis_mode = fields.String(required=True)
+    ocr_result_id = fields.UUID(allow_none=True, required=True)
+    ocr_confirmation_id = fields.UUID(allow_none=True, required=True)
     status = fields.String(required=True)
     current_stage = fields.String(allow_none=True)
     automated_evidence_immutable = fields.Boolean(required=True)

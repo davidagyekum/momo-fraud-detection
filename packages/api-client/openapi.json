@@ -259,6 +259,9 @@
       "AnalysisData": {
         "additionalProperties": false,
         "properties": {
+          "analysis_mode": {
+            "type": "string"
+          },
           "completed_at": {
             "format": "date-time",
             "nullable": true,
@@ -276,6 +279,16 @@
           },
           "id": {
             "format": "uuid",
+            "type": "string"
+          },
+          "ocr_confirmation_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "ocr_result_id": {
+            "format": "uuid",
+            "nullable": true,
             "type": "string"
           },
           "ocr_review": {
@@ -310,11 +323,14 @@
           }
         },
         "required": [
+          "analysis_mode",
           "completed_at",
           "created_at",
           "evidence_summary",
           "evidence_url",
           "id",
+          "ocr_confirmation_id",
+          "ocr_result_id",
           "ocr_review",
           "progress",
           "risk",
@@ -344,6 +360,9 @@
       "AnalysisEvidenceData": {
         "additionalProperties": false,
         "properties": {
+          "analysis_mode": {
+            "type": "string"
+          },
           "analysis_run_id": {
             "format": "uuid",
             "type": "string"
@@ -361,6 +380,16 @@
           "image_evidence": {
             "additionalProperties": {},
             "type": "object"
+          },
+          "ocr_confirmation_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "ocr_result_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
           },
           "risk": {
             "$ref": "#/components/schemas/AnalysisRisk"
@@ -391,10 +420,13 @@
           }
         },
         "required": [
+          "analysis_mode",
           "analysis_run_id",
           "automated_evidence_immutable",
           "configuration_versions",
           "image_evidence",
+          "ocr_confirmation_id",
+          "ocr_result_id",
           "risk",
           "stages",
           "status",
@@ -456,14 +488,24 @@
           "correction_count": {
             "type": "integer"
           },
+          "ocr_result_id": {
+            "format": "uuid",
+            "type": "string"
+          },
           "schema_version": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
             "type": "string"
           }
         },
         "required": [
           "confirmed_field_count",
           "correction_count",
-          "schema_version"
+          "ocr_result_id",
+          "schema_version",
+          "status"
         ],
         "type": "object"
       },
@@ -664,6 +706,25 @@
           "data",
           "meta"
         ],
+        "type": "object"
+      },
+      "AnalysisStartRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "default": "combined",
+            "enum": [
+              "combined",
+              "screenshot_only"
+            ],
+            "type": "string"
+          },
+          "ocr_result_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "AnalysisVersions": {
@@ -1089,15 +1150,25 @@
           "field_count": {
             "type": "integer"
           },
+          "ocr_result_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
           "schema_version": {
             "nullable": true,
+            "type": "string"
+          },
+          "status": {
             "type": "string"
           }
         },
         "required": [
           "correction_count",
           "field_count",
-          "schema_version"
+          "ocr_result_id",
+          "schema_version",
+          "status"
         ],
         "type": "object"
       },
@@ -2548,6 +2619,9 @@
       "TransactionAnalysisSummary": {
         "additionalProperties": false,
         "properties": {
+          "analysis_mode": {
+            "type": "string"
+          },
           "band": {
             "type": "string"
           },
@@ -2580,6 +2654,7 @@
           }
         },
         "required": [
+          "analysis_mode",
           "band",
           "class",
           "completed_at",
@@ -5214,7 +5289,8 @@
               "enum": [
                 "VERIFIED",
                 "UNVERIFIED",
-                "MISMATCH"
+                "MISMATCH",
+                "NOT_ATTEMPTED"
               ],
               "type": "string"
             }
@@ -5428,6 +5504,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisStartRequest"
+              }
+            }
+          },
+          "required": false
+        },
         "responses": {
           "202": {
             "content": {
@@ -5442,6 +5528,9 @@
           "409": {
             "description": "OCR review is required before analysis."
           },
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_ENTITY"
+          },
           "503": {
             "description": "Stored verification configuration is unavailable."
           },
@@ -5449,7 +5538,7 @@
             "$ref": "#/components/responses/DEFAULT_ERROR"
           }
         },
-        "summary": "Run the bounded evidence pipeline for an OCR-confirmed transaction.",
+        "summary": "Run combined analysis or an OCR-result-only screenshot analysis.",
         "tags": [
           "ocr-v1"
         ]

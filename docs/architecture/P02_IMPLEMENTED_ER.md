@@ -12,6 +12,8 @@ erDiagram
     }
     ANALYSIS_RUNS {
         CHAR_32 transaction_id FK
+        VARCHAR_30 analysis_mode
+        CHAR_32 ocr_result_id FK
         CHAR_32 ocr_confirmation_id FK
         VARCHAR_20 status
         VARCHAR_50 current_stage
@@ -414,6 +416,7 @@ erDiagram
     MODEL_VERSIONS ||--o{ ANALYSIS_RUNS : "references"
     MODEL_VERSIONS ||--o{ FRAUD_PREDICTIONS : "references"
     OCR_CONFIRMATIONS ||--o{ ANALYSIS_RUNS : "references"
+    OCR_RESULTS ||--o{ ANALYSIS_RUNS : "references"
     OCR_RESULTS ||--o{ OCR_CONFIRMATIONS : "references"
     RECEIPTS ||--o{ OCR_RESULTS : "references"
     RECEIPTS ||--o{ RECEIPT_DERIVATIVES : "references"

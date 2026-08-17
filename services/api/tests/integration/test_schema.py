@@ -19,10 +19,31 @@ pytestmark = pytest.mark.skipif(
 
 def test_migration_exposes_complete_schema(app) -> None:
     with app.app_context():
-        tables = set(inspect(db.engine).get_table_names())
+        inspector = inspect(db.engine)
+        tables = set(inspector.get_table_names())
+        analysis_columns = {
+            column["name"]: column for column in inspector.get_columns("analysis_runs")
+        }
+        analysis_checks = {
+            constraint["name"] for constraint in inspector.get_check_constraints("analysis_runs")
+        }
+        verification_checks = inspector.get_check_constraints("verification_results")
+        report_checks = {
+            constraint["name"] for constraint in inspector.get_check_constraints("report_artifacts")
+        }
         roles = set(db.session.scalars(select(Role.code)).all())
     assert len(tables) == 31  # 30 domain tables plus alembic_version
     assert {"users", "receipts", "analysis_runs", "verification_results", "audit_logs"} <= tables
+    assert analysis_columns["analysis_mode"]["nullable"] is False
+    assert analysis_columns["ocr_result_id"]["nullable"] is True
+    assert analysis_columns["ocr_confirmation_id"]["nullable"] is True
+    assert {
+        "ck_analysis_runs_analysis_mode_valid",
+        "ck_analysis_runs_evidence_link_valid",
+    } <= analysis_checks
+    assert any("NOT_ATTEMPTED" in constraint["sqltext"] for constraint in verification_checks)
+    assert "ck_report_artifacts_source_version_positive" in report_checks
+    assert "ck_report_artifacts_ck_report_artifacts_source_version_positive" not in report_checks
     assert roles == {"ADMIN", "INVESTIGATOR", "USER"}
 
 

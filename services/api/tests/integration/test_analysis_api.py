@@ -15,6 +15,8 @@ from sqlalchemy import select
 
 from momo_fdvs.extensions import db
 from momo_fdvs.models import (
+    AnalysisRun,
+    AnalysisStageRun,
     FraudCase,
     FraudRuleSet,
     Notification,
@@ -26,8 +28,10 @@ from momo_fdvs.models import (
     Transaction,
     User,
     UserRole,
+    VerificationResult,
 )
 from momo_fdvs.security.passwords import hash_password
+from momo_fdvs.services.text_fraud import assess_ocr_text
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("TEST_DATABASE_URL"),
@@ -111,7 +115,14 @@ def _upload(client: Any, session: dict[str, Any]) -> uuid.UUID:
     return uuid.UUID(response.json["data"]["transaction"]["id"])
 
 
-def _seed_confirmation(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUID) -> None:
+def _seed_confirmation(
+    app: Flask,
+    transaction_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    *,
+    create_confirmation: bool = True,
+    persist_suspicious_text: bool = False,
+) -> uuid.UUID:
     now = datetime.now(UTC)
     token = uuid.uuid4().hex
     reference = f"A{token[:11].upper()}"
@@ -130,6 +141,19 @@ def _seed_confirmation(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUI
             extracted_fields={
                 "amount": {"value": "125.00", "confidence": 0.95},
                 "transaction_reference": {"value": reference, "confidence": 0.96},
+                **(
+                    {
+                        "_text_fraud": assess_ocr_text(
+                            (
+                                "MTN customer care: send your MoMo PIN and OTP to "
+                                "0244000000 for verification."
+                            ),
+                            ocr_confidence=0.95,
+                        ).as_public_dict()
+                    }
+                    if persist_suspicious_text
+                    else {}
+                ),
             },
             field_confidences={"amount": 0.95, "transaction_reference": 0.96},
             warnings=[],
@@ -137,25 +161,29 @@ def _seed_confirmation(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUI
         )
         db.session.add(ocr)
         db.session.flush()
-        confirmation = OCRConfirmation(
-            ocr_result_id=ocr.id,
-            transaction_id=transaction.id,
-            confirmed_fields={
-                "provider_code": "MTN_MOMO",
-                "transaction_reference": reference,
-                "amount": "125.00",
-                "currency": "GHS",
-                "sender_name": "Controlled Sender",
-                "sender_phone": "+233240000002",
-                "receiver_name": "Controlled Receiver",
-                "receiver_phone": "+233240000001",
-                "occurred_at": "2026-08-08T14:30:00Z",
-                "status_text": "SUCCESSFUL",
-            },
-            corrections=[],
-            confirmed_by=owner.id,
-            confirmed_at=now,
-            schema_version="ocr-fields-v1",
+        confirmation = (
+            OCRConfirmation(
+                ocr_result_id=ocr.id,
+                transaction_id=transaction.id,
+                confirmed_fields={
+                    "provider_code": "MTN_MOMO",
+                    "transaction_reference": reference,
+                    "amount": "125.00",
+                    "currency": "GHS",
+                    "sender_name": "Controlled Sender",
+                    "sender_phone": "+233240000002",
+                    "receiver_name": "Controlled Receiver",
+                    "receiver_phone": "+233240000001",
+                    "occurred_at": "2026-08-08T14:30:00Z",
+                    "status_text": "SUCCESSFUL",
+                },
+                corrections=[],
+                confirmed_by=owner.id,
+                confirmed_at=now,
+                schema_version="ocr-fields-v1",
+            )
+            if create_confirmation
+            else None
         )
         batch = ReferenceImportBatch(
             source_label=f"analysis-api-{token}",
@@ -182,7 +210,9 @@ def _seed_confirmation(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUI
                     row_version=1,
                 )
             )
-        db.session.add_all([confirmation, batch])
+        if confirmation is not None:
+            db.session.add(confirmation)
+        db.session.add(batch)
         db.session.flush()
         db.session.add(
             ReferenceTransaction(
@@ -202,6 +232,128 @@ def _seed_confirmation(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUI
         )
         transaction.status = "READY"
         db.session.commit()
+        return ocr.id
+
+
+def _seed_unconfirmed_ocr(app: Flask, transaction_id: uuid.UUID, owner_id: uuid.UUID) -> uuid.UUID:
+    return _seed_confirmation(
+        app,
+        transaction_id,
+        owner_id,
+        create_confirmation=False,
+        persist_suspicious_text=True,
+    )
+
+
+def test_screenshot_only_analysis_does_not_require_field_confirmation(app: Flask) -> None:
+    client = app.test_client()
+    owner = _register(client, "Screenshot Analysis Owner")
+    outsider = _register(client, "Screenshot Analysis Outsider")
+    transaction_id = _upload(client, owner)
+    ocr_result_id = _seed_unconfirmed_ocr(app, transaction_id, uuid.UUID(owner["user"]["id"]))
+
+    outsider_transaction_id = _upload(client, outsider)
+    outsider_ocr_result_id = _seed_unconfirmed_ocr(
+        app, outsider_transaction_id, uuid.UUID(outsider["user"]["id"])
+    )
+    denied = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        json={
+            "mode": "screenshot_only",
+            "ocr_result_id": str(outsider_ocr_result_id),
+        },
+        headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
+    )
+    assert denied.status_code == 404
+    assert denied.json["error"]["code"] == "OCR_RESULT_NOT_FOUND"
+
+    key = f"analysis-{uuid.uuid4()}"
+    created = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        json={"mode": "screenshot_only", "ocr_result_id": str(ocr_result_id)},
+        headers=_headers(owner, key),
+    )
+
+    assert created.status_code == 202, created.get_data(as_text=True)
+    run_id = uuid.UUID(created.json["data"]["analysis_run_id"])
+    replay = client.post(
+        f"/api/v1/transactions/{transaction_id}/analyses",
+        json={"mode": "screenshot_only", "ocr_result_id": str(ocr_result_id)},
+        headers=_headers(owner, key),
+    )
+    assert replay.status_code == 202
+    assert replay.json["data"]["analysis_run_id"] == str(run_id)
+    assert replay.json["data"]["replayed"] is True
+    detail = client.get(f"/api/v1/analyses/{run_id}", headers=_headers(owner))
+    assert detail.status_code == 200
+    projection = detail.json["data"]
+    assert projection["analysis_mode"] == "screenshot_only"
+    assert projection["ocr_result_id"] == str(ocr_result_id)
+    assert projection["ocr_confirmation_id"] is None
+    assert projection["ocr_review"] == {
+        "status": "NOT_REQUIRED",
+        "ocr_result_id": str(ocr_result_id),
+        "confirmed_field_count": 0,
+        "correction_count": 0,
+        "schema_version": None,
+    }
+    assert projection["verification"]["status"] == "NOT_ATTEMPTED"
+    assert projection["verification"]["basis"] == "NOT_APPLICABLE_SCREENSHOT_ONLY"
+    assert projection["risk"]["band"] == "high_risk"
+    assert projection["risk"]["class"] == "FRAUDULENT"
+    assert projection["risk"]["conclusion_status"] == "CONCLUSIVE"
+
+    transaction_detail = client.get(
+        f"/api/v1/transactions/{transaction_id}", headers=_headers(owner)
+    )
+    assert transaction_detail.status_code == 200
+    assert transaction_detail.json["data"]["latest_analysis"]["analysis_mode"] == (
+        "screenshot_only"
+    )
+    assert transaction_detail.json["data"]["latest_analysis"]["verification_status"] == (
+        "NOT_ATTEMPTED"
+    )
+    assert transaction_detail.json["data"]["confirmed_field_coverage"] == {
+        "status": "NOT_REQUIRED",
+        "ocr_result_id": str(ocr_result_id),
+        "field_count": 0,
+        "correction_count": 0,
+        "schema_version": None,
+    }
+
+    report = client.post(
+        f"/api/v1/transactions/{transaction_id}/reports",
+        json={"format": "HTML"},
+        headers=_headers(owner, f"report-{uuid.uuid4()}"),
+    )
+    assert report.status_code == 201, report.get_data(as_text=True)
+    download = client.get(report.json["data"]["download_url"], headers=_headers(owner))
+    assert download.status_code == 200
+    report_text = download.get_data(as_text=True)
+    assert "Screenshot Only" in report_text
+    assert "Not attempted" in report_text
+    assert "send your MoMo PIN and OTP" not in report_text
+
+    with app.app_context():
+        run = db.session.get(AnalysisRun, run_id)
+        assert run is not None
+        assert run.analysis_mode == "screenshot_only"
+        assert run.ocr_result_id == ocr_result_id
+        assert run.ocr_confirmation_id is None
+        verification = db.session.scalar(
+            select(VerificationResult).where(VerificationResult.analysis_run_id == run.id)
+        )
+        assert verification is not None and verification.status == "NOT_ATTEMPTED"
+        stages = {
+            stage.stage: stage
+            for stage in db.session.scalars(
+                select(AnalysisStageRun).where(AnalysisStageRun.analysis_run_id == run.id)
+            )
+        }
+        assert stages["VERIFICATION"].status == "SKIPPED"
+        assert stages["VERIFICATION"].error_code == "NOT_APPLICABLE_SCREENSHOT_ONLY"
+        assert stages["STRUCTURED_MODEL"].status == "SKIPPED"
+        assert stages["STRUCTURED_MODEL"].error_code == "NOT_APPLICABLE_SCREENSHOT_ONLY"
 
 
 def test_start_replay_poll_and_owner_visibility(app: Flask) -> None:
@@ -264,6 +416,8 @@ def test_start_replay_poll_and_owner_visibility(app: Flask) -> None:
         "This is an automated risk assessment, not a final legal determination."
     )
     assert projection["ocr_review"] == {
+        "status": "CONFIRMED",
+        "ocr_result_id": projection["ocr_result_id"],
         "confirmed_field_count": 10,
         "correction_count": 0,
         "schema_version": "ocr-fields-v1",

@@ -118,7 +118,7 @@ def _claim_report_key(
 
 def _analysis_context(
     user_id: uuid.UUID, transaction_id: uuid.UUID
-) -> tuple[Transaction, AnalysisRun, OCRConfirmation, VerificationResult | None]:
+) -> tuple[Transaction, AnalysisRun, OCRConfirmation | None, VerificationResult | None]:
     transaction = db.session.scalar(
         select(Transaction).where(
             Transaction.id == transaction_id,
@@ -140,8 +140,12 @@ def _analysis_context(
             "A completed or partial analysis is required before generating a report.",
             409,
         )
-    confirmation = db.session.get(OCRConfirmation, run.ocr_confirmation_id)
-    if confirmation is None:
+    confirmation = (
+        db.session.get(OCRConfirmation, run.ocr_confirmation_id)
+        if run.ocr_confirmation_id is not None
+        else None
+    )
+    if confirmation is None and run.analysis_mode != "screenshot_only":
         raise ReportFailure("REPORT_UNAVAILABLE", "The report cannot be generated.", 503)
     verification = db.session.scalar(
         select(VerificationResult).where(VerificationResult.analysis_run_id == run.id)
@@ -165,7 +169,7 @@ def _list(values: object) -> str:
 def render_analysis_report(
     transaction: Transaction,
     run: AnalysisRun,
-    confirmation: OCRConfirmation,
+    confirmation: OCRConfirmation | None,
     verification: VerificationResult | None,
     *,
     generated_at: datetime,
@@ -205,6 +209,18 @@ def render_analysis_report(
         if risk["component_status"] == "DEGRADED" and risk["conclusion_status"] == "CONCLUSIVE"
         else ""
     )
+    analysis_mode = str(getattr(run, "analysis_mode", "combined"))
+    confirmed_field_count: int | str = (
+        len(confirmation.confirmed_fields) if confirmation is not None else "Not applicable"
+    )
+    verification_limitation = (
+        "No transaction verification was attempted for this screenshot-only analysis."
+        if analysis_mode == "screenshot_only"
+        else (
+            "Verification uses stored or imported reference transactions. It is not a live "
+            "confirmation from a mobile-money provider."
+        )
+    )
     document = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>MoMo-FDVS analysis report</title>
@@ -220,7 +236,8 @@ border-bottom:1px solid #e8edf1}}
 <section><h2>Transaction</h2><table>
 <tr><th>Provider</th><td>{_safe(transaction.provider_code or "Not recorded")}</td></tr>
 <tr><th>Reference</th><td>{_safe(transaction.display_reference_masked or "Masked")}</td></tr>
-<tr><th>Confirmed OCR fields</th><td>{len(confirmation.confirmed_fields)}</td></tr>
+<tr><th>Analysis mode</th><td>{_safe(analysis_mode.replace("_", " ").title())}</td></tr>
+<tr><th>Confirmed OCR fields</th><td>{confirmed_field_count}</td></tr>
 </table></section>
 <section><h2>Fraud-risk assessment</h2><table>
 <tr><th>Risk band</th><td>{_safe(risk["band"])}</td></tr>
@@ -237,8 +254,7 @@ border-bottom:1px solid #e8edf1}}
 <section><h2>Component availability</h2><table>{component_table}</table></section>
 <section><h2>Evidence versions</h2><table>{version_table}</table></section>
 <section class="notice"><h2>Important limitation</h2>
-<p>Verification uses stored or imported reference transactions. It is not a live confirmation
-from a mobile-money provider.</p>
+<p>{verification_limitation}</p>
 <p>This report supports review and does not by itself prove fraud or complete a legal
 determination.</p></section>
 </body></html>"""

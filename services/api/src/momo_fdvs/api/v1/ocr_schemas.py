@@ -128,8 +128,17 @@ class AnalysisStartEnvelopeSchema(Schema):
     meta = fields.Nested(MetaSchema, required=True)
 
 
+class AnalysisStartRequestSchema(Schema):
+    mode = fields.String(
+        load_default="combined",
+        validate=validate.OneOf(("combined", "screenshot_only")),
+    )
+    ocr_result_id = fields.UUID(allow_none=True)
+
+
 __all__ = [
     "AnalysisStartEnvelopeSchema",
+    "AnalysisStartRequestSchema",
     "OCRConfirmationEnvelopeSchema",
     "OCRConfirmationRequestSchema",
     "OCRReviewEnvelopeSchema",

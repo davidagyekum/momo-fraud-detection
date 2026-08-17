@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 
 import { AppCard, InlineAlert, StatusBadge, uiStyles } from "@/components/ui";
+import { verificationTone } from "@/lib/verification-client";
 import type { AnalysisResult, RiskBand } from "@/types/analysis";
 
 const riskLabels: Record<RiskBand, string> = {
@@ -57,11 +58,7 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
           <>
             <StatusBadge
               label={result.verification.label}
-              tone={
-                result.verification.status === "VERIFIED"
-                  ? "success"
-                  : "warning"
-              }
+              tone={verificationTone(result.verification.status)}
             />
             <Text style={uiStyles.body}>{result.verification.summary}</Text>
             <Text style={uiStyles.muted}>{result.verification.disclaimer}</Text>
@@ -100,18 +97,27 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
       </AppCard>
 
       <AppCard>
-        <Text style={uiStyles.cardTitle}>Confirmed OCR review</Text>
-        <Text style={uiStyles.body} selectable>
-          {result.ocr_review.confirmed_field_count} confirmed fields;{" "}
-          {result.ocr_review.correction_count}{" "}
-          {result.ocr_review.correction_count === 1
-            ? "correction"
-            : "corrections"}
-          .
-        </Text>
-        <Text style={uiStyles.muted} selectable>
-          Confirmation schema: {result.ocr_review.schema_version}
-        </Text>
+        <Text style={uiStyles.cardTitle}>OCR evidence</Text>
+        {result.ocr_review.status === "NOT_REQUIRED" ? (
+          <Text style={uiStyles.body} selectable>
+            Field confirmation was not required for this screenshot-only
+            analysis.
+          </Text>
+        ) : (
+          <>
+            <Text style={uiStyles.body} selectable>
+              {result.ocr_review.confirmed_field_count} confirmed fields;{" "}
+              {result.ocr_review.correction_count}{" "}
+              {result.ocr_review.correction_count === 1
+                ? "correction"
+                : "corrections"}
+              .
+            </Text>
+            <Text style={uiStyles.muted} selectable>
+              Confirmation schema: {result.ocr_review.schema_version}
+            </Text>
+          </>
+        )}
       </AppCard>
 
       <AppCard>

@@ -106,7 +106,10 @@ class ReferenceTransaction(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
 class VerificationResult(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "verification_results"
     __table_args__ = (
-        CheckConstraint("status IN ('VERIFIED', 'UNVERIFIED', 'MISMATCH')", name="status_valid"),
+        CheckConstraint(
+            "status IN ('VERIFIED', 'UNVERIFIED', 'MISMATCH', 'NOT_ATTEMPTED')",
+            name="status_valid",
+        ),
         CheckConstraint("matched_field_count >= 0", name="matched_nonnegative"),
         CheckConstraint("mismatched_field_count >= 0", name="mismatched_nonnegative"),
         Index("ix_verification_results_status_created", "status", "created_at"),

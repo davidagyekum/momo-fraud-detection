@@ -81,7 +81,9 @@ class TransactionHistoryQuerySchema(Schema):
             ]
         )
     )
-    verification = fields.String(validate=validate.OneOf(["VERIFIED", "UNVERIFIED", "MISMATCH"]))
+    verification = fields.String(
+        validate=validate.OneOf(["VERIFIED", "UNVERIFIED", "MISMATCH", "NOT_ATTEMPTED"])
+    )
     band = fields.String(
         validate=validate.OneOf(["low_risk", "medium_risk", "high_risk", "inconclusive"])
     )
@@ -89,6 +91,7 @@ class TransactionHistoryQuerySchema(Schema):
 
 class TransactionAnalysisSummarySchema(Schema):
     id = fields.UUID(required=True)
+    analysis_mode = fields.String(required=True)
     status = fields.String(required=True)
     band = fields.String(required=True)
     risk_class = fields.String(attribute="class", data_key="class", allow_none=True, required=True)
@@ -126,6 +129,8 @@ class TransactionHistoryEnvelopeSchema(Schema):
 
 
 class ConfirmedFieldCoverageSchema(Schema):
+    status = fields.String(required=True)
+    ocr_result_id = fields.UUID(allow_none=True, required=True)
     field_count = fields.Integer(required=True)
     correction_count = fields.Integer(required=True)
     schema_version = fields.String(allow_none=True, required=True)

@@ -37,7 +37,7 @@ _POLICY_KEYS = {
 _STRUCTURED_CLASSES = {"GENUINE", "SUSPICIOUS", "FRAUDULENT"}
 _TEXT_CLASSES = {"SUSPICIOUS", "FRAUDULENT"}
 _IMAGE_CLASSES = {"unaltered", "tampered"}
-_VERIFICATION_STATUSES = {"VERIFIED", "MISMATCH", "UNVERIFIED"}
+_VERIFICATION_STATUSES = {"VERIFIED", "MISMATCH", "UNVERIFIED", "NOT_ATTEMPTED"}
 _SEVERITIES = {"INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"}
 
 
@@ -473,6 +473,8 @@ def _limitations(value: AnalysisPolicyInput) -> tuple[str, ...]:
     limitations: list[str] = []
     if value.verification_status == "VERIFIED":
         limitations.append("STORED_REFERENCE_MATCH_NOT_AUTHENTICITY")
+    if value.verification_status == "NOT_ATTEMPTED":
+        limitations.append("REFERENCE_VERIFICATION_NOT_APPLICABLE")
     if value.deterministic_image_reasons:
         limitations.append("DETERMINISTIC_IMAGE_SUPPORTING_ONLY")
     if value.corrected_low_confidence_fields:

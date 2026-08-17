@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  analysisModeSchema,
   analysisStatusSchema,
   riskBandSchema,
   verificationStatusSchema,
@@ -22,6 +23,7 @@ export const transactionStatusSchema = z.enum([
 export const transactionAnalysisSummarySchema = z
   .object({
     id: z.string().min(1),
+    analysis_mode: analysisModeSchema,
     status: analysisStatusSchema,
     band: riskBandSchema,
     class: z.enum(["GENUINE", "SUSPICIOUS", "FRAUDULENT"]).nullable(),
@@ -60,6 +62,8 @@ export const transactionDetailSchema = transactionSummarySchema
   .extend({
     confirmed_field_coverage: z
       .object({
+        status: z.enum(["CONFIRMED", "NOT_REQUIRED"]),
+        ocr_result_id: z.string().min(1).nullable(),
         field_count: z.number().int().nonnegative(),
         correction_count: z.number().int().nonnegative(),
         schema_version: z.string().nullable(),

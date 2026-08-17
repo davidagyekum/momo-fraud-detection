@@ -11,6 +11,7 @@ from flask_smorest import Blueprint
 
 from momo_fdvs.api.v1.ocr_schemas import (
     AnalysisStartEnvelopeSchema,
+    AnalysisStartRequestSchema,
     OCRConfirmationEnvelopeSchema,
     OCRConfirmationRequestSchema,
     OCRReviewEnvelopeSchema,
@@ -19,7 +20,11 @@ from momo_fdvs.errors import error_response
 from momo_fdvs.extensions import db, limiter
 from momo_fdvs.models import OCRResult
 from momo_fdvs.policies.auth import owned_transaction, require_roles
-from momo_fdvs.services.analysis_orchestrator import AnalysisFailure, run_analysis
+from momo_fdvs.services.analysis_orchestrator import (
+    AnalysisEvidenceSelection,
+    AnalysisFailure,
+    run_analysis,
+)
 from momo_fdvs.services.audit import audit_event
 from momo_fdvs.services.ocr import (
     OCRFailure,
@@ -299,20 +304,48 @@ class AnalysisReadinessResource(MethodView):
             503: {"description": "Stored verification configuration is unavailable."},
         },
     )
+    @ocr_blueprint.arguments(AnalysisStartRequestSchema, required=False)
     @ocr_blueprint.response(202, AnalysisStartEnvelopeSchema)
-    def post(self, transaction_id: uuid.UUID) -> Any:
-        """Run the bounded evidence pipeline for an OCR-confirmed transaction."""
+    def post(self, payload: dict[str, Any], transaction_id: uuid.UUID) -> Any:
+        """Run combined analysis or an OCR-result-only screenshot analysis."""
         transaction = owned_transaction(transaction_id)
         if transaction is None:
             return error_response("TRANSACTION_NOT_FOUND", "Transaction not found.", 404)
-        confirmation = latest_confirmation(transaction)
-        if transaction.status not in {"READY", "PARTIAL", "COMPLETED"} or confirmation is None:
-            return error_response(
-                "OCR_REVIEW_REQUIRED",
-                "Confirm the OCR fields before starting analysis.",
-                409,
-            )
         try:
+            mode = payload.get("mode", "combined")
+            if mode == "screenshot_only":
+                raw_ocr_result_id = payload.get("ocr_result_id")
+                if raw_ocr_result_id is None:
+                    raise AnalysisFailure(
+                        "OCR_RESULT_REQUIRED",
+                        "An OCR result is required for screenshot-only analysis.",
+                        422,
+                    )
+                ocr_result_id = raw_ocr_result_id
+                ocr_result = db.session.get(OCRResult, ocr_result_id)
+                if (
+                    ocr_result is None
+                    or transaction.receipt is None
+                    or ocr_result.receipt_id != transaction.receipt.id
+                ):
+                    raise AnalysisFailure("OCR_RESULT_NOT_FOUND", "OCR result not found.", 404)
+                evidence = AnalysisEvidenceSelection.screenshot_only(ocr_result)
+            else:
+                if payload.get("ocr_result_id") is not None:
+                    raise AnalysisFailure(
+                        "ANALYSIS_REQUEST_INVALID", "The analysis request is invalid.", 422
+                    )
+                confirmation = latest_confirmation(transaction)
+                if (
+                    transaction.status not in {"READY", "PARTIAL", "COMPLETED"}
+                    or confirmation is None
+                ):
+                    raise AnalysisFailure(
+                        "OCR_REVIEW_REQUIRED",
+                        "Confirm the OCR fields before starting combined analysis.",
+                        409,
+                    )
+                evidence = AnalysisEvidenceSelection.combined(confirmation)
             key = request.headers.get("Idempotency-Key", "").strip()
             if not key:
                 raise AnalysisFailure(
@@ -320,11 +353,11 @@ class AnalysisReadinessResource(MethodView):
                 )
             result = run_analysis(
                 transaction=transaction,
-                confirmation=confirmation,
                 user=g.current_user,
                 roles=set(g.current_roles),
                 idempotency_key=key,
                 storage=_storage(),
+                evidence=evidence,
             )
             return {
                 "data": {

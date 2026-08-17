@@ -39,6 +39,7 @@ RECEIVER NAME: Demo Receiver
 RECEIVER PHONE: 0240000001
 DATE/TIME: 2026-08-15 12:30
 STATUS: Successful"""
+MESSAGE_TEXT = "MTN customer care: send your MoMo PIN and OTP now for verification."
 
 
 @pytest.fixture(autouse=True)
@@ -63,8 +64,8 @@ def _png() -> bytes:
     return output.getvalue()
 
 
-def _pipeline(app: Flask, reference: str) -> OCRPipelineResult:
-    text = TEXT.replace("JOURNEY12345", reference)
+def _pipeline(app: Flask, reference: str, *, text_template: str = TEXT) -> OCRPipelineResult:
+    text = text_template.replace("JOURNEY12345", reference)
     tokens = [
         {
             "id": index,
@@ -203,6 +204,44 @@ def test_controlled_screenshot_analysis_journey(
     )
     assert login.status_code == 200
     session = login.json["data"]
+
+    message_upload = client.post(
+        "/api/v1/transactions",
+        data={
+            "receipt": (io.BytesIO(_png()), "controlled-message.png", "image/png"),
+            "source": "GALLERY",
+        },
+        headers=_headers(session, f"upload-{uuid.uuid4()}"),
+        content_type="multipart/form-data",
+    )
+    assert message_upload.status_code == 201
+    message_transaction_id = message_upload.json["data"]["transaction"]["id"]
+    message_reference = f"M{uuid.uuid4().hex[:12].upper()}"
+    monkeypatch.setattr(
+        "momo_fdvs.services.ocr.execute_ocr",
+        lambda *_args: _pipeline(app, message_reference, text_template=MESSAGE_TEXT),
+    )
+    message_ocr = client.post(
+        f"/api/v1/transactions/{message_transaction_id}/ocr",
+        headers=_headers(session, f"ocr-{uuid.uuid4()}"),
+    )
+    assert message_ocr.status_code == 200
+    message_result_id = message_ocr.json["data"]["ocr_result_id"]
+    message_started = client.post(
+        f"/api/v1/transactions/{message_transaction_id}/analyses",
+        json={"mode": "screenshot_only", "ocr_result_id": message_result_id},
+        headers=_headers(session, f"analysis-{uuid.uuid4()}"),
+    )
+    assert message_started.status_code == 202
+    message_analysis = client.get(
+        f"/api/v1/analyses/{message_started.json['data']['analysis_run_id']}",
+        headers=_headers(session),
+    )
+    assert message_analysis.status_code == 200
+    assert message_analysis.json["data"]["analysis_mode"] == "screenshot_only"
+    assert message_analysis.json["data"]["risk"]["band"] == "high_risk"
+    assert message_analysis.json["data"]["risk"]["conclusion_status"] == "CONCLUSIVE"
+    assert message_analysis.json["data"]["verification"]["status"] == "NOT_ATTEMPTED"
 
     upload = client.post(
         "/api/v1/transactions",

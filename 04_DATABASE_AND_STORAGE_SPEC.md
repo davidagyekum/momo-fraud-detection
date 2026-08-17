@@ -289,7 +289,9 @@ Unique `(rule_set_id, code)`.
 |---|---|---|
 | `id` | UUID | PK |
 | `transaction_id` | UUID | FK transactions.id, indexed |
-| `ocr_confirmation_id` | UUID | FK ocr_confirmations.id |
+| `analysis_mode` | VARCHAR(30) | `combined`, `screenshot_only`, `transaction_only`; not null |
+| `ocr_result_id` | UUID | FK ocr_results.id, nullable, indexed |
+| `ocr_confirmation_id` | UUID | FK ocr_confirmations.id, nullable |
 | `status` | VARCHAR(20) | `QUEUED`, `PROCESSING`, `COMPLETED`, `PARTIAL`, `FAILED`, `CANCELLED`; indexed |
 | `current_stage` | VARCHAR(50) | indexed |
 | `template_id` | UUID | snapshot FK, nullable |
@@ -315,6 +317,8 @@ Unique `(rule_set_id, code)`.
 | `created_at` | TIMESTAMPTZ | not null |
 
 Unique `(transaction_id, idempotency_key_hash)` when the key is present. Index for queue claim `(status, queued_at)`.
+`screenshot_only` requires `ocr_result_id` and forbids a confirmation link; `combined` and
+`transaction_only` require `ocr_confirmation_id`. Historical rows are `combined`.
 
 ### 5.5 `analysis_stage_runs`
 
@@ -439,7 +443,7 @@ Unique policy: `(provider_code, transaction_reference, source_system_id)` when s
 | `id` | UUID | PK |
 | `analysis_run_id` | UUID | FK analysis_runs.id, unique |
 | `reference_transaction_id` | UUID | FK reference_transactions.id, nullable |
-| `status` | VARCHAR(20) | `VERIFIED`, `UNVERIFIED`, `MISMATCH`; indexed |
+| `status` | VARCHAR(20) | `VERIFIED`, `UNVERIFIED`, `MISMATCH`, `NOT_ATTEMPTED`; indexed |
 | `verifier_version` | VARCHAR(100) | not null |
 | `candidate_method` | VARCHAR(100) | not null |
 | `field_comparisons` | JSONB | match/mismatch/NA, tolerances and masked values |
@@ -447,6 +451,9 @@ Unique policy: `(provider_code, transaction_reference, source_system_id)` when s
 | `mismatched_field_count` | INTEGER | non-negative |
 | `warnings` | JSONB | not null default `[]` |
 | `created_at` | TIMESTAMPTZ | not null |
+
+`NOT_ATTEMPTED` is persisted for screenshot-only risk analysis and uses candidate method
+`NOT_APPLICABLE_SCREENSHOT_ONLY`; it is not equivalent to `UNVERIFIED`.
 
 ## 7. Cases, reports, notifications and audit
 

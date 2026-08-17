@@ -62,12 +62,23 @@ export async function startAnalysis(
   request: JsonRequest,
   transactionId: string,
   idempotencyKey: string,
+  options?:
+    | { mode: "screenshot_only"; ocrResultId: string }
+    | { mode?: "combined"; ocrResultId?: never },
 ): Promise<AnalysisStart> {
+  const body =
+    options?.mode === "screenshot_only"
+      ? JSON.stringify({
+          mode: options.mode,
+          ocr_result_id: options.ocrResultId,
+        })
+      : undefined;
   const response = await request<unknown>(
     `/api/v1/transactions/${encodeURIComponent(transactionId)}/analyses`,
     {
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
+      ...(body ? { body } : {}),
     },
   );
   return parseAnalysis(

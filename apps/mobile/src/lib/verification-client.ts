@@ -1,4 +1,5 @@
-export type VerificationStatus = "VERIFIED" | "MISMATCH" | "UNVERIFIED";
+export type VerificationStatus =
+  "VERIFIED" | "MISMATCH" | "UNVERIFIED" | "NOT_ATTEMPTED";
 
 export function verificationTone(
   status: VerificationStatus,

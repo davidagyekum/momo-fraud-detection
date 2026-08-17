@@ -77,9 +77,9 @@ export default function TransactionDetailScreen() {
               </Text>
             ) : null}
             <Text style={uiStyles.muted}>
-              {detail.data.confirmed_field_coverage.field_count} confirmed
-              fields · {detail.data.confirmed_field_coverage.correction_count}{" "}
-              corrections
+              {detail.data.confirmed_field_coverage.status === "NOT_REQUIRED"
+                ? "Field confirmation was not required for this screenshot-only analysis."
+                : `${detail.data.confirmed_field_coverage.field_count} confirmed fields · ${detail.data.confirmed_field_coverage.correction_count} corrections`}
             </Text>
           </AppCard>
           {detail.data.analysis_runs.length === 0 ? (

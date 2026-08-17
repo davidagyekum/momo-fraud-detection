@@ -1141,13 +1141,20 @@ def verification_projection(result: VerificationResult) -> dict[str, Any]:
             "differed."
         ),
         "UNVERIFIED": "No usable stored/imported reference record was available.",
+        "NOT_ATTEMPTED": (
+            "Stored-record verification was not requested for this screenshot-only analysis."
+        ),
     }
     run = db.session.get(AnalysisRun, result.analysis_run_id)
     rule_set = db.session.get(FraudRuleSet, run.rule_set_id) if run else None
     return {
         "status": result.status,
-        "label": result.status.title(),
-        "basis": "STORED_IMPORTED_RECORD",
+        "label": "Not attempted" if result.status == "NOT_ATTEMPTED" else result.status.title(),
+        "basis": (
+            "NOT_APPLICABLE_SCREENSHOT_ONLY"
+            if result.status == "NOT_ATTEMPTED"
+            else "STORED_IMPORTED_RECORD"
+        ),
         "summary": summaries[result.status],
         "reference_transaction_id": result.reference_transaction_id,
         "candidate_method": result.candidate_method,
@@ -1157,7 +1164,11 @@ def verification_projection(result: VerificationResult) -> dict[str, Any]:
         "matched_field_count": result.matched_field_count,
         "mismatched_field_count": result.mismatched_field_count,
         "warnings": result.warnings,
-        "disclaimer": "This is not live confirmation from a mobile-network operator.",
+        "disclaimer": (
+            "No transaction verification was attempted in screenshot-only mode."
+            if result.status == "NOT_ATTEMPTED"
+            else "This is not live confirmation from a mobile-network operator."
+        ),
     }
 
 

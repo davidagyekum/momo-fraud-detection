@@ -20,6 +20,13 @@ export const verificationStatusSchema = z.enum([
   "VERIFIED",
   "MISMATCH",
   "UNVERIFIED",
+  "NOT_ATTEMPTED",
+]);
+
+export const analysisModeSchema = z.enum([
+  "combined",
+  "screenshot_only",
+  "transaction_only",
 ]);
 
 export const policyReasonSchema = z
@@ -51,7 +58,7 @@ export const verificationSchema = z
   .object({
     status: verificationStatusSchema,
     label: z.string(),
-    basis: z.literal("STORED_IMPORTED_RECORD"),
+    basis: z.enum(["STORED_IMPORTED_RECORD", "NOT_APPLICABLE_SCREENSHOT_ONLY"]),
     summary: z.string(),
     reference_transaction_id: z.string().nullable(),
     candidate_method: z.string(),
@@ -106,6 +113,9 @@ export const analysisSchema = z
   .object({
     id: z.string().min(1),
     transaction_id: z.string().min(1),
+    analysis_mode: analysisModeSchema,
+    ocr_result_id: z.string().min(1).nullable(),
+    ocr_confirmation_id: z.string().min(1).nullable(),
     status: analysisStatusSchema,
     risk: riskSchema,
     verification: verificationSchema.nullable(),
@@ -131,9 +141,11 @@ export const analysisSchema = z
       .strict(),
     ocr_review: z
       .object({
+        status: z.enum(["CONFIRMED", "NOT_REQUIRED"]),
+        ocr_result_id: z.string().min(1),
         confirmed_field_count: z.number().int().nonnegative(),
         correction_count: z.number().int().nonnegative(),
-        schema_version: z.string(),
+        schema_version: z.string().nullable(),
       })
       .strict(),
     versions: z
@@ -167,5 +179,6 @@ export const analysisSchema = z
 export type AnalysisStart = z.infer<typeof analysisStartSchema>;
 export type AnalysisResult = z.infer<typeof analysisSchema>;
 export type AnalysisStatus = z.infer<typeof analysisStatusSchema>;
+export type AnalysisMode = z.infer<typeof analysisModeSchema>;
 export type RiskBand = z.infer<typeof riskBandSchema>;
 export type StoredReferenceVerification = z.infer<typeof verificationSchema>;

@@ -195,12 +195,26 @@ def _analysis_projection(
     components = run.component_scores
     stage_items = [_stage_projection(stage) for stage in stages]
     completed = sum(stage.status in {"COMPLETED", "SKIPPED", "FAILED"} for stage in stages)
-    confirmation = db.session.get(OCRConfirmation, run.ocr_confirmation_id)
-    if confirmation is None:
-        raise RuntimeError("analysis run is missing its immutable OCR confirmation")
+    confirmation = (
+        db.session.get(OCRConfirmation, run.ocr_confirmation_id)
+        if run.ocr_confirmation_id is not None
+        else None
+    )
+    ocr_result_id = (
+        run.ocr_result_id
+        if run.ocr_result_id is not None
+        else confirmation.ocr_result_id
+        if confirmation is not None
+        else None
+    )
+    if ocr_result_id is None:
+        raise RuntimeError("analysis run is missing its immutable OCR evidence")
     return {
         "id": run.id,
         "transaction_id": transaction.id,
+        "analysis_mode": run.analysis_mode,
+        "ocr_result_id": ocr_result_id,
+        "ocr_confirmation_id": run.ocr_confirmation_id,
         "status": run.status,
         "risk": risk_projection(run),
         "verification": (
@@ -214,9 +228,13 @@ def _analysis_projection(
             "automated_evidence_immutable": True,
         },
         "ocr_review": {
-            "confirmed_field_count": len(confirmation.confirmed_fields),
-            "correction_count": len(confirmation.corrections),
-            "schema_version": confirmation.schema_version,
+            "status": "CONFIRMED" if confirmation is not None else "NOT_REQUIRED",
+            "ocr_result_id": ocr_result_id,
+            "confirmed_field_count": (
+                len(confirmation.confirmed_fields) if confirmation is not None else 0
+            ),
+            "correction_count": len(confirmation.corrections) if confirmation is not None else 0,
+            "schema_version": confirmation.schema_version if confirmation is not None else None,
         },
         "versions": _versions_projection(run),
         "progress": {
@@ -302,6 +320,18 @@ class AnalysisEvidenceResource(MethodView):
             return _deny(analysis_run_id, "analysis.evidence_access_denied")
         run, transaction, staff_access = visible
         verification, image_analysis, stages = _analysis_rows(run)
+        confirmation = (
+            db.session.get(OCRConfirmation, run.ocr_confirmation_id)
+            if run.ocr_confirmation_id is not None
+            else None
+        )
+        ocr_result_id = (
+            run.ocr_result_id
+            if run.ocr_result_id is not None
+            else confirmation.ocr_result_id
+            if confirmation is not None
+            else None
+        )
         deterministic_stage = next(
             (stage for stage in stages if stage.stage == "DETERMINISTIC_IMAGE"), None
         )
@@ -322,6 +352,9 @@ class AnalysisEvidenceResource(MethodView):
             "data": {
                 "analysis_run_id": run.id,
                 "transaction_id": transaction.id,
+                "analysis_mode": run.analysis_mode,
+                "ocr_result_id": ocr_result_id,
+                "ocr_confirmation_id": run.ocr_confirmation_id,
                 "status": run.status,
                 "current_stage": run.current_stage,
                 "automated_evidence_immutable": True,

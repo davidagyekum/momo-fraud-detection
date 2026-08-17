@@ -23,6 +23,7 @@ test("renders persisted statuses and opens the selected owner transaction", asyn
     owner_visible: true,
     latest_analysis: {
       id: "run-1",
+      analysis_mode: "combined",
       status: "PARTIAL",
       band: "inconclusive",
       class: null,
