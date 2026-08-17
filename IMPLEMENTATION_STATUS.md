@@ -8,6 +8,7 @@
 - Default branch: `main`
 - Current work branch: `codex/audit-fix-40-final-completion`
 - Base SHA: `76e7e31dc405b28c21049c3fa83efaef6bd7f381`
+- P0.2 screenshot-only analysis implementation SHA: `d84b95d72db1c38b7bf120fe0eaef6da730b596a`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
 - PR13 PaySim acquisition/registration code SHA: `9ac904bd9164a1c8848ad300addc1b2a89b7e144`
@@ -219,7 +220,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `68 / 87`
 - SHOULD requirements complete: `6 / 11`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-16 — PR19 casework, reports, notifications, operations, security and local release evidence reconciled; incomplete filters, administration, model and hosted-release gates remain explicit`
+- Traceability file last verified: `2026-08-17 — P0.2 FR-SCREENSHOT-001 through FR-SCREENSHOT-005 reconcile persisted screenshot-only analysis, immutable OCR linkage, not-applicable verification/structured stages, durable projections and combined-mode compatibility; P1 UI and existing model/hosted-release limitations remain explicit`
 
 ## Current blockers
 

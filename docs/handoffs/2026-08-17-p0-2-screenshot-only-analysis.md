@@ -8,9 +8,10 @@
 - Base branch: `codex/audit-fix-40-final-completion`
 - Base SHA: `5970a9ef35683e0ab37b8162419f831979b41f91`
 - Work branch: `codex/audit-fix-40-final-completion`
-- Final head SHA: recorded in the pushed branch and final session report
+- Implementation SHA: `d84b95d72db1c38b7bf120fe0eaef6da730b596a`
+- Final head SHA: recorded in the pushed branch and final session report because this handoff is part of the final documentation commit
 - Pull request: not opened; final authority sequence defers PR/release work
-- Push status: pending final commit at handoff authoring time
+- Push status: implementation committed locally; final documentation commit and push pending at handoff update time
 - Worktree status: expected clean after the final documentation commit
 
 ## Scope completed
@@ -108,7 +109,8 @@ because no password was entered and P1 has not yet exposed the new action.
 ```text
 base: 5970a9ef35683e0ab37b8162419f831979b41f91
 branch: codex/audit-fix-40-final-completion
-implementation/final head: recorded after commit and push
+implementation: d84b95d72db1c38b7bf120fe0eaef6da730b596a
+final pushed head: reported in the final session response
 ```
 
 ## Next exact task
