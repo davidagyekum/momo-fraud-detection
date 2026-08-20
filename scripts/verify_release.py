@@ -14,7 +14,7 @@ from pathlib import Path
 from _common import REPO_ROOT, display_command
 
 EXPECTED_SERVICES = {"db", "api", "admin", "mobile"}
-EXPECTED_MIGRATION = "20260816_0005"
+EXPECTED_MIGRATION = "20260817_0006"
 
 
 def capture(
