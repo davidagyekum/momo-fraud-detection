@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppCard, InlineAlert, StatusBadge, uiStyles } from "@/components/ui";
@@ -31,8 +32,10 @@ function safetyMessage(preview: OCRTextFraudPreview): string | null {
 
 export function TextFraudRiskCard({
   preview,
+  footer,
 }: {
   preview: OCRTextFraudPreview;
+  footer?: ReactNode;
 }) {
   const safety = safetyMessage(preview);
   const title = previewTitle(preview);
@@ -54,9 +57,18 @@ export function TextFraudRiskCard({
       <Text style={uiStyles.body}>{preview.summary}</Text>
       {preview.score !== null ? (
         <Text style={styles.score}>
-          Rule score {Math.round(preview.score)}/100 · not a probability
+          Policy score {Math.round(preview.score)}/100 — not a probability
         </Text>
       ) : null}
+
+      {safety ? (
+        <InlineAlert
+          tone={previewTone(preview)}
+          title="What to do now"
+          message={safety}
+        />
+      ) : null}
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
 
       {preview.reasons.length > 0 ? (
         <View style={styles.reasons}>
@@ -70,14 +82,6 @@ export function TextFraudRiskCard({
             </View>
           ))}
         </View>
-      ) : null}
-
-      {safety ? (
-        <InlineAlert
-          tone={previewTone(preview)}
-          title="What to do now"
-          message={safety}
-        />
       ) : null}
       <Text style={styles.disclaimer}>{preview.disclaimer}</Text>
     </AppCard>
@@ -112,5 +116,11 @@ const styles = StyleSheet.create({
     color: palette.muted,
     fontSize: typeScale.caption,
     lineHeight: 19,
+  },
+  footer: {
+    gap: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+    paddingTop: spacing.md,
   },
 });

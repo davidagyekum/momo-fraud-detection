@@ -24,7 +24,7 @@ import {
   StatusBadge,
   uiStyles,
 } from "@/components/ui";
-import { TextFraudRiskCard } from "@/components/text-fraud-risk-card";
+import { OCRAnalysisChoices } from "@/components/ocr-analysis-choices";
 import { ApiError } from "@/lib/api";
 import {
   createAnalysisIdempotencyKey,
@@ -82,17 +82,19 @@ function readableError(error: unknown): string {
 function warningMessage(code: string): string {
   const labels: Record<string, string> = {
     OCR_ENGINE_UNAVAILABLE:
-      "Automatic text reading is unavailable. Enter the receipt details manually.",
+      "Automatic text reading is unavailable. Inspect the private image and retry if needed; any saved risk result will state this limitation.",
     OCR_ENGINE_TIMEOUT:
-      "Automatic text reading took too long. Check and enter missing details manually.",
+      "Automatic text reading took too long. Retry if needed; any saved risk result will state this limitation.",
     OCR_ENGINE_FAILED:
-      "Automatic text reading could not finish. Your original receipt is still safe.",
+      "Automatic text reading could not finish. The original private image is unchanged.",
     CRITICAL_OCR_FIELDS_MISSING:
-      "Some required details were not detected and need your review.",
+      "Some transaction details were not detected. They are required only if you choose reference comparison.",
     UNKNOWN_TEMPLATE_GENERIC_FALLBACK:
       "This layout is not recognised, so a generic parser was used.",
   };
-  return labels[code] ?? "Check the receipt carefully before confirming.";
+  return (
+    labels[code] ?? "Review this note and the private image before acting."
+  );
 }
 
 function originalField(review: OCRReviewData, name: OCRFieldName) {
@@ -118,13 +120,16 @@ export default function OCRReviewScreen() {
   const validId = typeof transactionId === "string" && transactionId.length > 0;
   const runKey = useRef(createOCRIdempotencyKey("run"));
   const confirmationKey = useRef(createOCRIdempotencyKey("confirm"));
-  const analysisKey = useRef(createAnalysisIdempotencyKey());
+  const screenshotAnalysisKey = useRef(createAnalysisIdempotencyKey());
+  const referenceAnalysisKey = useRef(createAnalysisIdempotencyKey());
   const [fields, setFields] = useState<OCRConfirmedFields | null>(null);
   const [errors, setErrors] = useState<Partial<Record<OCRFieldName, string>>>(
     {},
   );
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [zoomVisible, setZoomVisible] = useState(false);
+  const [comparisonVisible, setComparisonVisible] = useState(false);
+  const [rawTextVisible, setRawTextVisible] = useState(false);
 
   const review = useQuery({
     queryKey: ["ocr-review", transactionId],
@@ -179,19 +184,39 @@ export default function OCRReviewScreen() {
       );
     },
   });
-  const analysis = useMutation({
+  const openAnalysis = (analysisRunId: string) =>
+    router.replace({
+      pathname: "/analysis/[analysisRunId]",
+      params: { analysisRunId },
+    } as unknown as Href);
+  const screenshotAnalysis = useMutation({
+    mutationFn: () => {
+      if (!review.data) throw new Error("OCR review is not ready.");
+      return startAnalysis(
+        request,
+        transactionId ?? "",
+        screenshotAnalysisKey.current,
+        {
+          mode: "screenshot_only",
+          ocrResultId: review.data.ocr_result_id,
+        },
+      );
+    },
+    onSuccess: (started) => openAnalysis(started.analysis_run_id),
+  });
+  const referenceAnalysis = useMutation({
     mutationFn: () => {
       if (!confirmation.data)
         throw new Error(
           "Confirm the receipt details before checking a reference.",
         );
-      return startAnalysis(request, transactionId ?? "", analysisKey.current);
+      return startAnalysis(
+        request,
+        transactionId ?? "",
+        referenceAnalysisKey.current,
+      );
     },
-    onSuccess: (started) =>
-      router.replace({
-        pathname: "/analysis/[analysisRunId]",
-        params: { analysisRunId: started.analysis_run_id },
-      } as unknown as Href),
+    onSuccess: (started) => openAnalysis(started.analysis_run_id),
   });
 
   const requestConfirmation = () => {
@@ -203,7 +228,7 @@ export default function OCRReviewScreen() {
 
   if (status === "restoring") {
     return (
-      <ScreenShell title="Review receipt details">
+      <ScreenShell title="Review screenshot risk">
         <SkeletonBlock label="Restoring secure session" />
       </ScreenShell>
     );
@@ -233,7 +258,13 @@ export default function OCRReviewScreen() {
           <Image
             source={{ uri: preview.data }}
             accessibilityLabel="Private receipt for OCR review"
-            style={styles.preview}
+            style={[
+              styles.preview,
+              {
+                height:
+                  width >= 820 ? 560 : Math.min(520, Math.max(360, width)),
+              },
+            ]}
             contentFit="contain"
           />
           <Text style={styles.zoomHint}>Tap to inspect and zoom</Text>
@@ -241,8 +272,8 @@ export default function OCRReviewScreen() {
       )}
       <InlineAlert
         tone="info"
-        title="Check the image"
-        message="Automatic reading can make mistakes. Compare every important value with the receipt before confirming."
+        title="Private image evidence"
+        message="Automatic reading can make mistakes. Inspect the image before using any extracted value for the optional transaction comparison."
       />
     </AppCard>
   );
@@ -287,7 +318,7 @@ export default function OCRReviewScreen() {
               [name]: undefined,
             }));
             confirmation.reset();
-            analysis.reset();
+            referenceAnalysis.reset();
           }}
           error={errors[name]}
           hint={hint}
@@ -303,8 +334,8 @@ export default function OCRReviewScreen() {
 
   return (
     <ScreenShell
-      title="Review receipt details"
-      subtitle="OCR reads visible text; it does not prove authenticity or verify a transaction with a mobile network."
+      title="Review screenshot risk"
+      subtitle="Text and image evidence estimate fraud risk. Comparing transaction details is optional and is not live mobile-network verification."
     >
       {!validId ? (
         <InlineAlert
@@ -323,7 +354,7 @@ export default function OCRReviewScreen() {
         <AppCard>
           <SkeletonBlock label="Reading receipt text" />
           <Text selectable style={uiStyles.muted}>
-            Creating safe image variants and reading visible text…
+            Creating protected image variants and reading visible text…
           </Text>
         </AppCard>
       ) : review.isError ? (
@@ -337,7 +368,7 @@ export default function OCRReviewScreen() {
             <InlineAlert
               tone="warning"
               title="Automatic reading is partial"
-              message="Your receipt is safe, but some details need manual entry before analysis can begin."
+              message="Some visible text could not be read. You can still save the screenshot-risk result, or open the optional transaction comparison and enter only values shown in the image."
             />
           ) : (
             <StatusBadge label="Ready for your review" tone="success" />
@@ -350,81 +381,130 @@ export default function OCRReviewScreen() {
               message={warningMessage(warning)}
             />
           ))}
-          <TextFraudRiskCard preview={review.data.fraud_preview} />
+          <OCRAnalysisChoices
+            preview={review.data.fraud_preview}
+            online={online}
+            saving={screenshotAnalysis.isPending}
+            saveError={
+              screenshotAnalysis.isError
+                ? readableError(screenshotAnalysis.error)
+                : null
+            }
+            comparisonExpanded={comparisonVisible}
+            onSave={() => screenshotAnalysis.mutate()}
+            onToggleComparison={() => {
+              setComparisonVisible((current) => !current);
+              screenshotAnalysis.reset();
+            }}
+          />
           <View
             style={[
               styles.reviewLayout,
-              width >= 820 ? styles.reviewLayoutWide : null,
+              comparisonVisible && width >= 820
+                ? styles.reviewLayoutWide
+                : null,
             ]}
           >
-            <View style={styles.panel}>{receiptPanel}</View>
-            <View style={styles.panel}>
-              <AppCard>
-                <View style={uiStyles.row}>
-                  <Text style={uiStyles.cardTitle}>Extracted details</Text>
-                  <StatusBadge
-                    label={editSummary}
-                    tone={changed.length ? "warning" : "info"}
-                  />
-                </View>
-                <InlineAlert
-                  tone="info"
-                  title="Use only values visible in the image"
-                  message="Do not guess or invent missing details. Required fields support the separate stored-reference comparison; optional sender and receiver fields can stay blank. Your manual entries and corrections are documented automatically when you confirm."
-                />
-                {errorEntries.length ? (
-                  <InlineAlert
-                    tone="error"
-                    title={`Fix ${errorEntries.length} highlighted field${errorEntries.length === 1 ? "" : "s"}`}
-                    message={errorEntries.join("\n")}
-                  />
-                ) : null}
-                <View style={styles.formSection}>
-                  <Text style={styles.sectionTitle}>Required to continue</Text>
-                  <Text style={uiStyles.muted}>
-                    These values are needed to compare the screenshot with a
-                    stored or imported transaction record.
-                  </Text>
-                  {REQUIRED_FIELD_ORDER.map((field) =>
-                    renderField(field, true),
-                  )}
-                </View>
-                <View style={styles.formSection}>
-                  <Text style={styles.sectionTitle}>Additional details</Text>
-                  <Text style={uiStyles.muted}>
-                    Leave any value blank when it is not visible in the image.
-                  </Text>
-                  {OPTIONAL_FIELD_ORDER.map((field) =>
-                    renderField(field, false),
-                  )}
-                </View>
-                {confirmation.isError ? (
-                  <InlineAlert
-                    tone="error"
-                    title="Confirmation not saved"
-                    message={readableError(confirmation.error)}
-                  />
-                ) : null}
-                <AppButton
-                  label="Confirm reviewed details"
-                  onPress={requestConfirmation}
-                  loading={confirmation.isPending}
-                  disabled={!online}
-                />
-              </AppCard>
+            <View
+              style={[
+                styles.panel,
+                !comparisonVisible && width >= 820
+                  ? styles.receiptPanelSolo
+                  : null,
+              ]}
+            >
+              {receiptPanel}
             </View>
+            {comparisonVisible ? (
+              <View style={styles.panel}>
+                <AppCard>
+                  <View style={uiStyles.row}>
+                    <Text style={uiStyles.cardTitle}>
+                      Optional transaction comparison
+                    </Text>
+                    <StatusBadge
+                      label={editSummary}
+                      tone={changed.length ? "warning" : "info"}
+                    />
+                  </View>
+                  <InlineAlert
+                    tone="info"
+                    title="Use only values visible in the image"
+                    message="Do not guess or invent missing details. The required fields below apply only to stored/imported reference comparison; optional sender and receiver fields can stay blank."
+                  />
+                  {errorEntries.length ? (
+                    <InlineAlert
+                      tone="error"
+                      title={`Fix ${errorEntries.length} highlighted field${errorEntries.length === 1 ? "" : "s"}`}
+                      message={errorEntries.join("\n")}
+                    />
+                  ) : null}
+                  <View style={styles.formSection}>
+                    <Text style={styles.sectionTitle}>
+                      Required only for comparison
+                    </Text>
+                    <Text style={uiStyles.muted}>
+                      These values are needed to compare the screenshot with a
+                      stored or imported transaction record.
+                    </Text>
+                    {REQUIRED_FIELD_ORDER.map((field) =>
+                      renderField(field, true),
+                    )}
+                  </View>
+                  <View style={styles.formSection}>
+                    <Text style={styles.sectionTitle}>Additional details</Text>
+                    <Text style={uiStyles.muted}>
+                      Leave any value blank when it is not visible in the image.
+                    </Text>
+                    {OPTIONAL_FIELD_ORDER.map((field) =>
+                      renderField(field, false),
+                    )}
+                  </View>
+                  {confirmation.isError ? (
+                    <InlineAlert
+                      tone="error"
+                      title="Confirmation not saved"
+                      message={readableError(confirmation.error)}
+                    />
+                  ) : null}
+                  <AppButton
+                    label="Save details for reference comparison"
+                    onPress={requestConfirmation}
+                    loading={confirmation.isPending}
+                    disabled={!online}
+                  />
+                </AppCard>
+              </View>
+            ) : null}
           </View>
           {review.data.raw_text ? (
             <AppCard>
-              <Text style={uiStyles.cardTitle}>Raw OCR text</Text>
-              <Text selectable style={styles.rawText}>
-                {review.data.raw_text}
-              </Text>
+              <Text style={uiStyles.cardTitle}>Technical OCR text</Text>
               <Text style={uiStyles.muted}>
-                Pipeline {review.data.pipeline_version} · selected{" "}
-                {review.data.selected_variant}. Raw token boxes remain protected
-                as technical evidence.
+                Optional technical evidence. The risk result above already uses
+                the stored OCR assessment.
               </Text>
+              <AppButton
+                label={
+                  rawTextVisible ? "Hide raw OCR text" : "Show raw OCR text"
+                }
+                onPress={() => setRawTextVisible((current) => !current)}
+                variant="secondary"
+                accessibilityState={{ expanded: rawTextVisible }}
+                accessibilityHint="Shows or hides the raw text read from the private image"
+              />
+              {rawTextVisible ? (
+                <>
+                  <Text selectable style={styles.rawText}>
+                    {review.data.raw_text}
+                  </Text>
+                  <Text style={uiStyles.muted}>
+                    Pipeline {review.data.pipeline_version} · selected{" "}
+                    {review.data.selected_variant}. Raw token boxes remain
+                    protected as technical evidence.
+                  </Text>
+                </>
+              ) : null}
             </AppCard>
           ) : null}
         </>
@@ -443,17 +523,17 @@ export default function OCRReviewScreen() {
             title="Verification is not live provider confirmation"
             message="This check uses reference records imported by an administrator. It does not query a mobile-network operator."
           />
-          {analysis.isError ? (
+          {referenceAnalysis.isError ? (
             <InlineAlert
               tone="error"
               title="Reference check unavailable"
-              message={readableError(analysis.error)}
+              message={readableError(referenceAnalysis.error)}
             />
           ) : null}
           <AppButton
             label="Check stored/imported reference"
-            onPress={() => analysis.mutate()}
-            loading={analysis.isPending}
+            onPress={() => referenceAnalysis.mutate()}
+            loading={referenceAnalysis.isPending}
             disabled={!online}
           />
         </AppCard>
@@ -508,6 +588,7 @@ const styles = StyleSheet.create({
   reviewLayout: { gap: spacing.md },
   reviewLayoutWide: { flexDirection: "row", alignItems: "flex-start" },
   panel: { flex: 1, minWidth: 0 },
+  receiptPanelSolo: { width: "100%", maxWidth: 720, alignSelf: "center" },
   formSection: { gap: spacing.md },
   fieldGroup: { gap: spacing.sm },
   sectionTitle: {
@@ -518,7 +599,6 @@ const styles = StyleSheet.create({
   },
   preview: {
     width: "100%",
-    aspectRatio: 0.75,
     borderRadius: radius.md,
     backgroundColor: palette.canvas,
   },

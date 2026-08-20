@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import {
+  type AccessibilityState,
   ActivityIndicator,
   Modal,
   Pressable,
@@ -71,12 +72,16 @@ export function AppButton({
   loading = false,
   disabled = false,
   variant = "primary",
+  accessibilityHint,
+  accessibilityState,
 }: {
   label: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
   variant?: "primary" | "secondary" | "danger";
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
 }) {
   const backgroundColor =
     variant === "primary"
@@ -89,7 +94,12 @@ export function AppButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ busy: loading, disabled: disabled || loading }}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{
+        ...accessibilityState,
+        busy: loading,
+        disabled: disabled || loading,
+      }}
       disabled={disabled || loading}
       onPress={onPress}
       style={({ pressed }) => [

@@ -33,7 +33,9 @@ test("shows explicit fraud wording, safe action and a non-probability rule score
     view.getByLabelText(/Preliminary message-risk preview.*High fraud risk/),
   ).toBeTruthy();
   expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
-  expect(view.getByText("Rule score 95/100 · not a probability")).toBeTruthy();
+  expect(
+    view.getByText("Policy score 95/100 — not a probability"),
+  ).toBeTruthy();
   expect(view.getByText(/CRITICAL · Secret code requested/)).toBeTruthy();
   expect(
     view.getByText(/Do not share a PIN, OTP or security code/),
@@ -59,5 +61,5 @@ test("keeps unavailable evidence distinct from a safe or genuine result", async 
     view.getByLabelText("Status: Text assessment unavailable"),
   ).toBeTruthy();
   expect(view.queryByText(/safe|genuine/i)).toBeNull();
-  expect(view.queryByText(/Rule score/)).toBeNull();
+  expect(view.queryByText(/Policy score/)).toBeNull();
 });

@@ -123,7 +123,8 @@ test("moves technical evidence and limitations into the details view", async () 
   const view = await render(<AnalysisDetailsView result={partialResult} />);
   expect(view.getByText("OCR evidence")).toBeTruthy();
   expect(view.getByText(/10 confirmed fields.*1 correction/i)).toBeTruthy();
-  expect(view.getByText("Evidence availability")).toBeTruthy();
+  expect(view.getByText("Image evidence")).toBeTruthy();
+  expect(view.getByText("Component availability")).toBeTruthy();
   expect(view.getAllByText(/Image model unavailable/i).length).toBeGreaterThan(
     0,
   );

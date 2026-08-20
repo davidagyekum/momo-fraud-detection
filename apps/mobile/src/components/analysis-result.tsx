@@ -121,13 +121,7 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
       </AppCard>
 
       <AppCard>
-        <Text style={uiStyles.cardTitle}>Evidence availability</Text>
-        <Text style={uiStyles.body} selectable>
-          Risk conclusion: {evidenceLabel(result.risk.conclusion_status)}
-        </Text>
-        <Text style={uiStyles.body} selectable>
-          Component availability: {evidenceLabel(result.risk.component_status)}
-        </Text>
+        <Text style={uiStyles.cardTitle}>Image evidence</Text>
         <Text style={uiStyles.body} selectable>
           Deterministic image checks:{" "}
           {evidenceLabel(result.evidence_summary.deterministic_image.status)}
@@ -136,6 +130,16 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
           {imageModelUnavailable
             ? "Image model unavailable"
             : `Image model: ${evidenceLabel(result.evidence_summary.image_model.status)}`}
+        </Text>
+      </AppCard>
+
+      <AppCard>
+        <Text style={uiStyles.cardTitle}>Component availability</Text>
+        <Text style={uiStyles.body} selectable>
+          Risk conclusion: {evidenceLabel(result.risk.conclusion_status)}
+        </Text>
+        <Text style={uiStyles.body} selectable>
+          Overall availability: {evidenceLabel(result.risk.component_status)}
         </Text>
         <Text style={uiStyles.body} selectable>
           Structured model:{" "}
