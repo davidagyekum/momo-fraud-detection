@@ -265,14 +265,22 @@ The target of 90% is a goal, not a value to report until measured on the declare
 
 ### 8.1 Deterministic OCR-text fraud assessment
 
-After recognition and before user confirmation, run the versioned
-`ghana-momo-obvious-scam-rules-v1` assessment over immutable raw OCR text. The
-initial high-precision rules cover bounded combinations such as a request to
+After recognition and before user confirmation, run the active versioned
+`ghana-momo-obvious-scam-rules-v2` assessment over immutable raw OCR text. The
+high-precision rules cover bounded combinations such as a request to
 disclose a PIN/OTP, a wrong-transfer return lure, a payment demanded to unlock
 funds, an account threat plus external action, an account-action link, an
 unverified contact redirect, a prize/action lure and urgency pressure. Negated
 official advisories such as “never share your PIN” must not trigger the secret
 request rule.
+
+Ruleset v2 removes every Unicode format-control character before matching,
+recognises contrastive clause boundaries, and permits compound cues only in the
+same or immediately adjacent bounded clause. Scheme-less short links require a
+corroborating account or credential action. One critical reason family or two
+independent high reason families produces `FRAUDULENT`; one high family remains
+`SUSPICIOUS` even when urgency is also present. Stored v1 assessments retain
+their original result through version-aware validation and are never recomputed.
 
 The assessment must:
 

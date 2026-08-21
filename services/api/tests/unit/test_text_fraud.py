@@ -13,7 +13,7 @@ from momo_fdvs.services.text_fraud import (
 
 
 @pytest.mark.parametrize(
-    "text, expected_code",
+    "text, expected_code, expected_class",
     [
         (
             (
@@ -21,18 +21,22 @@ from momo_fdvs.services.text_fraud import (
                 "Call 0244000000 immediately to reactivate it."
             ),
             "ACCOUNT_BLOCK_THREAT_WITH_ACTION",
+            "FRAUDULENT",
         ),
         (
             "I sent money to you by mistake. Kindly refund GHS 500 to 0550000000 now.",
             "WRONG_TRANSFER_REFUND_LURE",
+            "FRAUDULENT",
         ),
         (
             "MTN customer care: send your MoMo PIN and OTP to 0244000000 for verification.",
             "PIN_OR_OTP_REQUEST",
+            "FRAUDULENT",
         ),
         (
             "Pay a processing fee of GHS 50 to unlock and release your mobile money funds.",
             "PAY_TO_UNLOCK_OR_RELEASE",
+            "FRAUDULENT",
         ),
         (
             (
@@ -40,19 +44,24 @@ from momo_fdvs.services.text_fraud import (
                 "http://momo-check.example/login immediately."
             ),
             "SUSPICIOUS_LINK_ACCOUNT_ACTION",
+            "SUSPICIOUS",
         ),
         (
             "Congratulations, you have won a MoMo bonus. Call 0550000000 to claim your prize.",
             "PRIZE_OR_BONUS_LURE",
+            "FRAUDULENT",
         ),
     ],
 )
-def test_obvious_scam_text_is_fraudulent(text: str, expected_code: str) -> None:
+def test_obvious_scam_text_uses_independent_family_thresholds(
+    text: str,
+    expected_code: str,
+    expected_class: str,
+) -> None:
     result = assess_ocr_text(text, ocr_confidence=0.84)
 
     assert result.status == "SUCCESS"
-    assert result.risk_class == "FRAUDULENT"
-    assert result.risk_score is not None and result.risk_score >= 80
+    assert result.risk_class == expected_class
     assert expected_code in result.reason_codes
     assert result.ruleset_version == TEXT_FRAUD_RULESET_VERSION
 
@@ -100,6 +109,83 @@ def test_advisory_sentence_cannot_hide_a_separate_secret_request() -> None:
 
     assert result.risk_class == "FRAUDULENT"
     assert "PIN_OR_OTP_REQUEST" in result.reason_codes
+
+
+def test_contrastive_clause_cannot_extend_an_advisory_over_a_secret_request() -> None:
+    result = assess_ocr_text(
+        "Never share your PIN, but send your OTP now to keep the wallet active.",
+        ocr_confidence=0.9,
+    )
+
+    assert result.risk_class == "FRAUDULENT"
+    assert "PIN_OR_OTP_REQUEST" in result.reason_codes
+
+
+def test_all_unicode_format_controls_are_removed_before_matching() -> None:
+    result = assess_ocr_text(
+        "S\u2066e\u2069n\u00add your O\u200fTP now to keep the wallet active.",
+        ocr_confidence=0.9,
+    )
+
+    assert result.risk_class == "FRAUDULENT"
+    assert "PIN_OR_OTP_REQUEST" in result.reason_codes
+
+
+def test_compound_cues_outside_an_adjacent_clause_window_do_not_combine() -> None:
+    result = assess_ocr_text(
+        "Pay your normal bill. The fee statement is ready. The notice says release funds.",
+        ocr_confidence=0.9,
+    )
+
+    assert "PAY_TO_UNLOCK_OR_RELEASE" not in result.reason_codes
+    assert result.risk_class is None
+
+
+def test_scheme_less_short_link_needs_account_or_credential_action() -> None:
+    corroborated = assess_ocr_text(
+        "Log in to your MoMo account at bit.ly/momo-check to confirm it.",
+        ocr_confidence=0.9,
+    )
+    uncorroborated = assess_ocr_text(
+        "Read the community promotion news at bit.ly/momo-check.",
+        ocr_confidence=0.9,
+    )
+
+    assert corroborated.risk_class == "SUSPICIOUS"
+    assert "SUSPICIOUS_LINK_ACCOUNT_ACTION" in corroborated.reason_codes
+    assert "SUSPICIOUS_LINK_ACCOUNT_ACTION" not in uncorroborated.reason_codes
+
+
+def test_international_contact_redirect_is_cautious_without_a_second_high_family() -> None:
+    result = assess_ocr_text(
+        "Contact MoMo support on +44 20 7946 0958 about your account.",
+        ocr_confidence=0.9,
+    )
+
+    assert result.risk_class == "SUSPICIOUS"
+    assert result.reason_codes == ("UNVERIFIED_CONTACT_REDIRECT",)
+
+
+def test_single_high_family_plus_urgency_remains_suspicious() -> None:
+    result = assess_ocr_text(
+        "Urgent: your wallet is blocked. Submit details now to reactivate it.",
+        ocr_confidence=0.9,
+    )
+
+    assert result.risk_class == "SUSPICIOUS"
+    assert "ACCOUNT_BLOCK_THREAT_WITH_ACTION" in result.reason_codes
+    assert "URGENCY_PRESSURE" in result.reason_codes
+
+
+def test_two_independent_high_families_are_fraudulent() -> None:
+    result = assess_ocr_text(
+        "Your MoMo wallet is blocked. Log in at bit.ly/momo-check to restore your account.",
+        ocr_confidence=0.9,
+    )
+
+    assert result.risk_class == "FRAUDULENT"
+    assert "ACCOUNT_BLOCK_THREAT_WITH_ACTION" in result.reason_codes
+    assert "SUSPICIOUS_LINK_ACCOUNT_ACTION" in result.reason_codes
 
 
 def test_legitimate_reversal_status_with_support_contact_is_not_a_wrong_transfer_lure() -> None:
@@ -187,6 +273,34 @@ def test_legacy_stored_projection_is_unavailable_without_recomputation() -> None
     assert projection["class"] is None
     assert projection["score"] is None
     assert projection["reason_code"] == "OCR_TEXT_ASSESSMENT_NOT_PERSISTED"
+
+
+def test_historical_v1_projection_keeps_its_original_high_plus_urgency_result() -> None:
+    projection = stored_text_assessment_projection(
+        {
+            "schema_version": "momo-text-fraud-assessment-v1",
+            "ruleset_version": "ghana-momo-obvious-scam-rules-v1",
+            "status": "SUCCESS",
+            "class": "FRAUDULENT",
+            "score": 82,
+            "score_is_probability": False,
+            "reason_code": "CORROBORATED_SCAM_TEXT",
+            "reason_codes": ["ACCOUNT_BLOCK_THREAT_WITH_ACTION", "URGENCY_PRESSURE"],
+            "reasons": [],
+            "evidence_quality": "HIGH",
+            "limitations": [],
+        }
+    )
+
+    assert projection["ruleset_version"] == "ghana-momo-obvious-scam-rules-v1"
+    assert projection["class"] == "FRAUDULENT"
+    assert projection["score"] == 82
+
+
+def test_new_assessments_use_the_v2_ruleset() -> None:
+    result = assess_ocr_text("Send your OTP now.", ocr_confidence=0.9)
+
+    assert result.ruleset_version == "ghana-momo-obvious-scam-rules-v2"
 
 
 def test_obfuscated_ocr_variants_are_detected() -> None:

@@ -18,17 +18,32 @@ from dataclasses import asdict, dataclass
 from typing import Final, Literal, cast
 
 TEXT_FRAUD_SCHEMA_VERSION: Final = "momo-text-fraud-assessment-v1"
-TEXT_FRAUD_RULESET_VERSION: Final = "ghana-momo-obvious-scam-rules-v1"
+LEGACY_TEXT_FRAUD_RULESET_VERSION: Final = "ghana-momo-obvious-scam-rules-v1"
+TEXT_FRAUD_RULESET_VERSION: Final = "ghana-momo-obvious-scam-rules-v2"
+_SUPPORTED_RULESET_VERSIONS: Final = {
+    LEGACY_TEXT_FRAUD_RULESET_VERSION,
+    TEXT_FRAUD_RULESET_VERSION,
+}
 
 Severity = Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 RiskClass = Literal["GENUINE", "SUSPICIOUS", "FRAUDULENT"]
 AssessmentStatus = Literal["SUCCESS", "UNAVAILABLE"]
 EvidenceQuality = Literal["HIGH", "MEDIUM", "LOW", "UNAVAILABLE"]
 
-_ZERO_WIDTH = re.compile(r"[\u200b-\u200f\u202a-\u202e\u2060\ufeff]")
 _SPACE = re.compile(r"\s+")
-_PHONE = re.compile(r"(?<!\d)(?:\+?233[\s().-]?|0)(?:2|5)\d(?:[\s().-]?\d){7}(?!\d)")
+_GHANA_PHONE = re.compile(r"(?<!\d)(?:\+?233[\s().-]?|0)(?:2|5)\d(?:[\s().-]?\d){7}(?!\d)")
+_INTERNATIONAL_PHONE = re.compile(r"(?<![\d.])\+\d(?:[\s().-]?\d){7,14}(?!\d)")
 _URL = re.compile(r"\b(?:https?://|www\.)[^\s]+", re.IGNORECASE)
+_SHORT_LINK = re.compile(
+    r"(?<![\w@])(?:bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd|cutt\.ly|"
+    r"rb\.gy|buff\.ly)/[a-z0-9_-]+\b",
+    re.IGNORECASE,
+)
+_CLAUSE_BOUNDARY = re.compile(
+    r"\s*(?:[.!?;:]+(?=\s|$)|,(?=\s)|"
+    r"\b(?:but|however|yet|although|nevertheless|instead)\b)\s*",
+    re.IGNORECASE,
+)
 _SAFE_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,79}")
 
 # A second, OCR-tolerant form is used only for matching. It is never persisted.
@@ -299,7 +314,9 @@ class TextFraudAssessment:
 
 def _normalize_text(raw_text: str) -> tuple[str, str]:
     canonical = unicodedata.normalize("NFKC", raw_text)
-    canonical = _ZERO_WIDTH.sub("", canonical)
+    canonical = "".join(
+        character for character in canonical if unicodedata.category(character) != "Cf"
+    )
     canonical = canonical.replace("\N{RIGHT SINGLE QUOTATION MARK}", "'").replace("`", "'")
     # OCR engines expose visual lines. Keep them as sentence boundaries so an
     # official advisory on one line cannot suppress a separate secret request.
@@ -311,6 +328,37 @@ def _normalize_text(raw_text: str) -> tuple[str, str]:
     return canonical, tolerant
 
 
+def _bounded_clauses(text: str) -> tuple[str, ...]:
+    return tuple(value.strip() for value in _CLAUSE_BOUNDARY.split(text) if value.strip())
+
+
+def _clause_windows(canonical: str, tolerant: str) -> tuple[tuple[str, str], ...]:
+    clauses: list[tuple[str, str]] = []
+    start = 0
+    for boundary in _CLAUSE_BOUNDARY.finditer(tolerant):
+        canonical_clause = canonical[start : boundary.start()].strip()
+        tolerant_clause = tolerant[start : boundary.start()].strip()
+        if canonical_clause and tolerant_clause:
+            clauses.append((canonical_clause, tolerant_clause))
+        start = boundary.end()
+    canonical_clause = canonical[start:].strip()
+    tolerant_clause = tolerant[start:].strip()
+    if canonical_clause and tolerant_clause:
+        clauses.append((canonical_clause, tolerant_clause))
+
+    windows: list[tuple[str, str]] = []
+    for index, (canonical_clause, tolerant_clause) in enumerate(clauses):
+        windows.append((canonical_clause, tolerant_clause))
+        if index + 1 < len(clauses):
+            windows.append(
+                (
+                    f"{canonical_clause} . {clauses[index + 1][0]}",
+                    f"{tolerant_clause} . {clauses[index + 1][1]}",
+                )
+            )
+    return tuple(windows)
+
+
 def _contains_secret_request(tolerant: str) -> bool:
     """Return true when at least one bounded clause requests a secret.
 
@@ -319,8 +367,7 @@ def _contains_secret_request(tolerant: str) -> bool:
     an advisory sentence before a separate request.
     """
 
-    clauses = [value.strip() for value in re.split(r"[.!?;]+", tolerant) if value.strip()]
-    for clause in clauses:
+    for clause in _bounded_clauses(tolerant):
         if (
             _SECRET.search(clause)
             and _SECRET_DISCLOSURE_VERB.search(clause)
@@ -331,7 +378,19 @@ def _contains_secret_request(tolerant: str) -> bool:
 
 
 def _has_phone(text: str) -> bool:
-    return _PHONE.search(text) is not None
+    return _GHANA_PHONE.search(text) is not None or _INTERNATIONAL_PHONE.search(text) is not None
+
+
+def _has_explicit_link(text: str) -> bool:
+    return _URL.search(text) is not None
+
+
+def _has_account_action_link(canonical: str, tolerant: str) -> bool:
+    return bool(
+        (_has_explicit_link(canonical) or _SHORT_LINK.search(canonical))
+        and _LINK_ACTION.search(tolerant)
+        and _LINK_CONTEXT.search(tolerant)
+    )
 
 
 def _reason(code: str) -> FraudReason:
@@ -352,48 +411,75 @@ def _detect_reasons(
     context: TextFraudContext,
 ) -> tuple[FraudReason, ...]:
     codes: set[str] = set()
+    windows = _clause_windows(canonical, tolerant)
 
     if _contains_secret_request(tolerant):
         _add_reason(codes, "PIN_OR_OTP_REQUEST")
 
-    wrong_transfer = _WRONG_TRANSFER.search(tolerant)
-    mistaken_transfer_claim = _MISTAKEN_TRANSFER_CLAIM.search(tolerant)
-    money_return = _MONEY_RETURN_ACTION.search(canonical) or _MONEY_RETURN_ACTION.search(tolerant)
-    contact_redirect = _CONTACT.search(tolerant) and (
-        _has_phone(canonical) or _URL.search(canonical) is not None
+    wrong_transfer_lure = any(
+        (
+            _WRONG_TRANSFER.search(tolerant_window)
+            and (
+                _MONEY_RETURN_ACTION.search(canonical_window)
+                or _MONEY_RETURN_ACTION.search(tolerant_window)
+            )
+            and not _COMPLETED_REVERSAL.search(tolerant_window)
+        )
+        or (
+            _MISTAKEN_TRANSFER_CLAIM.search(tolerant_window)
+            and _CONTACT.search(tolerant_window)
+            and (_has_phone(canonical_window) or _has_explicit_link(canonical_window))
+        )
+        for canonical_window, tolerant_window in windows
     )
-    completed_status = _COMPLETED_REVERSAL.search(tolerant)
-    return_demand = bool(wrong_transfer and money_return and not completed_status)
-    redirected_mistake_claim = bool(mistaken_transfer_claim and contact_redirect)
-    if return_demand or redirected_mistake_claim:
+    if wrong_transfer_lure:
         _add_reason(codes, "WRONG_TRANSFER_REFUND_LURE")
 
-    account_external_action = (
-        _ACCOUNT_EXTERNAL_ACTION.search(tolerant)
-        or (_CONTACT.search(tolerant) and _has_phone(canonical))
-        or (_URL.search(canonical) is not None and _LINK_ACTION.search(tolerant))
+    account_threat = any(
+        _ACCOUNT_CONTEXT.search(tolerant_window)
+        and _ACCOUNT_THREAT.search(tolerant_window)
+        and (
+            _ACCOUNT_EXTERNAL_ACTION.search(tolerant_window)
+            or (_CONTACT.search(tolerant_window) and _has_phone(canonical_window))
+            or _has_account_action_link(canonical_window, tolerant_window)
+        )
+        for canonical_window, tolerant_window in windows
     )
-    if (
-        _ACCOUNT_CONTEXT.search(tolerant)
-        and _ACCOUNT_THREAT.search(tolerant)
-        and account_external_action
-    ):
+    if account_threat:
         _add_reason(codes, "ACCOUNT_BLOCK_THREAT_WITH_ACTION")
 
-    if _PAY.search(tolerant) and _FEE.search(tolerant) and _RELEASE.search(tolerant):
+    if any(
+        _PAY.search(tolerant_window)
+        and _FEE.search(tolerant_window)
+        and _RELEASE.search(tolerant_window)
+        for _, tolerant_window in windows
+    ):
         _add_reason(codes, "PAY_TO_UNLOCK_OR_RELEASE")
 
-    has_link = _URL.search(canonical) is not None
-    if has_link and _LINK_ACTION.search(tolerant) and _LINK_CONTEXT.search(tolerant):
+    if any(
+        _has_account_action_link(canonical_window, tolerant_window)
+        for canonical_window, tolerant_window in windows
+    ):
         _add_reason(codes, "SUSPICIOUS_LINK_ACCOUNT_ACTION")
 
-    if _has_phone(canonical) and _CONTACT.search(tolerant) and _CONTACT_CONTEXT.search(tolerant):
+    if any(
+        _has_phone(canonical_window)
+        and _CONTACT.search(tolerant_window)
+        and _CONTACT_CONTEXT.search(tolerant_window)
+        for canonical_window, tolerant_window in windows
+    ):
         _add_reason(codes, "UNVERIFIED_CONTACT_REDIRECT")
 
-    if _PRIZE.search(tolerant) and _PRIZE_ACTION.search(tolerant):
+    if any(
+        _PRIZE.search(tolerant_window) and _PRIZE_ACTION.search(tolerant_window)
+        for _, tolerant_window in windows
+    ):
         _add_reason(codes, "PRIZE_OR_BONUS_LURE")
 
-    if _URGENCY.search(tolerant) and _ACTION.search(tolerant):
+    if any(
+        _URGENCY.search(tolerant_window) and _ACTION.search(tolerant_window)
+        for _, tolerant_window in windows
+    ):
         _add_reason(codes, "URGENCY_PRESSURE")
 
     if (
@@ -422,7 +508,7 @@ def _quality(ocr_confidence: float | None, character_count: int) -> EvidenceQual
     return "LOW"
 
 
-def _classify(
+def _classify_v1(
     reasons: tuple[FraudReason, ...],
     *,
     evidence_quality: EvidenceQuality,
@@ -445,6 +531,40 @@ def _classify(
     if counts["MEDIUM"] == 1:
         return "SUSPICIOUS", 42, "SUSPICIOUS_TEXT_SIGNAL"
     return None, None, "NO_DECISIVE_TEXT_FRAUD_SIGNAL"
+
+
+def _classify_v2(
+    reasons: tuple[FraudReason, ...],
+    *,
+    evidence_quality: EvidenceQuality,
+) -> tuple[RiskClass | None, int | None, str]:
+    counts = {severity: 0 for severity in _SEVERITY_ORDER}
+    for reason in reasons:
+        counts[reason.severity] += 1
+
+    if counts["CRITICAL"] >= 1:
+        score = min(100, 94 + 2 * (counts["CRITICAL"] - 1) + counts["HIGH"])
+        return "FRAUDULENT", score, "OBVIOUS_SCAM_TEXT_DETECTED"
+    if counts["HIGH"] >= 2:
+        return "FRAUDULENT", min(95, 86 + 3 * (counts["HIGH"] - 2)), "CORROBORATED_SCAM_TEXT"
+    if counts["HIGH"] >= 1:
+        return "SUSPICIOUS", 70 if evidence_quality != "LOW" else 62, "HIGH_RISK_TEXT_SIGNAL"
+    if counts["MEDIUM"] >= 2:
+        return "SUSPICIOUS", 58, "MULTIPLE_SUSPICIOUS_TEXT_SIGNALS"
+    if counts["MEDIUM"] == 1:
+        return "SUSPICIOUS", 42, "SUSPICIOUS_TEXT_SIGNAL"
+    return None, None, "NO_DECISIVE_TEXT_FRAUD_SIGNAL"
+
+
+def _classify_for_ruleset(
+    ruleset_version: str,
+    reasons: tuple[FraudReason, ...],
+    *,
+    evidence_quality: EvidenceQuality,
+) -> tuple[RiskClass | None, int | None, str]:
+    if ruleset_version == LEGACY_TEXT_FRAUD_RULESET_VERSION:
+        return _classify_v1(reasons, evidence_quality=evidence_quality)
+    return _classify_v2(reasons, evidence_quality=evidence_quality)
 
 
 def _assessment_summary(result: TextFraudAssessment) -> str:
@@ -518,7 +638,7 @@ def assess_ocr_text(
         )
 
     reasons = _detect_reasons(canonical, tolerant, context=context or TextFraudContext())
-    risk_class, score, reason_code = _classify(reasons, evidence_quality=evidence_quality)
+    risk_class, score, reason_code = _classify_v2(reasons, evidence_quality=evidence_quality)
     limitations: list[str] = []
     if evidence_quality == "LOW":
         limitations.append("OCR_CONFIDENCE_LOW")
@@ -577,7 +697,7 @@ def stored_text_assessment(value: object) -> TextFraudAssessment:
     limitations = value.get("limitations")
     if (
         value.get("schema_version") != TEXT_FRAUD_SCHEMA_VERSION
-        or value.get("ruleset_version") != TEXT_FRAUD_RULESET_VERSION
+        or value.get("ruleset_version") not in _SUPPORTED_RULESET_VERSIONS
         or value.get("score_is_probability") is not False
         or status not in {"SUCCESS", "UNAVAILABLE"}
         or risk_class not in {None, "SUSPICIOUS", "FRAUDULENT"}
@@ -611,7 +731,8 @@ def stored_text_assessment(value: object) -> TextFraudAssessment:
         ):
             return legacy
     else:
-        expected_class, expected_score, expected_reason_code = _classify(
+        expected_class, expected_score, expected_reason_code = _classify_for_ruleset(
+            cast(str, value["ruleset_version"]),
             reasons,
             evidence_quality=cast(EvidenceQuality, evidence_quality),
         )
@@ -623,7 +744,7 @@ def stored_text_assessment(value: object) -> TextFraudAssessment:
             return legacy
     return TextFraudAssessment(
         TEXT_FRAUD_SCHEMA_VERSION,
-        TEXT_FRAUD_RULESET_VERSION,
+        cast(str, value["ruleset_version"]),
         cast(AssessmentStatus, status),
         cast(RiskClass | None, risk_class),
         score,
@@ -641,6 +762,7 @@ def stored_text_assessment_projection(value: object) -> dict[str, object]:
 
 
 __all__ = [
+    "LEGACY_TEXT_FRAUD_RULESET_VERSION",
     "TEXT_FRAUD_RULESET_VERSION",
     "TEXT_FRAUD_SCHEMA_VERSION",
     "FraudReason",

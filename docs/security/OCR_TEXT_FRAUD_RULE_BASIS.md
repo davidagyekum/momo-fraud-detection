@@ -2,7 +2,7 @@
 
 ## Purpose and boundary
 
-`ghana-momo-obvious-scam-rules-v1` is a conservative, deterministic safety layer
+`ghana-momo-obvious-scam-rules-v2` is a conservative, deterministic safety layer
 over OCR text from a user-supplied screenshot. It is not a trained classifier, a
 calibrated probability, live mobile-network verification or a legal finding.
 No-match text does not establish that a transaction is genuine.
@@ -35,10 +35,20 @@ versions, categorical class, non-probabilistic rule score, evidence quality and
 limitations. Dynamic phone numbers, URLs, secrets, values and snippets are not
 persisted in the assessment projection.
 
-Every assessment is bound to
-`momo-text-fraud-assessment-v1` and
-`ghana-momo-obvious-scam-rules-v1`. Historical evidence is not silently
-recomputed under a later ruleset.
+Every assessment is bound to `momo-text-fraud-assessment-v1` and an explicit
+ruleset version. New assessments use `ghana-momo-obvious-scam-rules-v2`. The
+frozen v1 classifier is retained only to validate the class, score and safe
+reason metadata already stored for historical v1 evidence. Historical OCR text
+is never reassessed.
+
+Ruleset v2 removes all Unicode format-control characters before matching and
+uses contrastive, sentence and visual-line boundaries. Compound signals must
+occur within one clause or an immediately adjacent pair. Scheme-less short links
+require a corroborating account or credential action. Ordinary Ghanaian and
+international contact redirects remain a single high reason family, so they are
+`SUSPICIOUS` without another independent high family. One critical family or two
+independent high families is required for `FRAUDULENT`; urgency does not promote
+a lone high family.
 
 ## Evaluation limitation
 

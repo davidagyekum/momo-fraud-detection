@@ -102,7 +102,7 @@ def _text_signal(predicted_class: str | None) -> TextPolicySignal:
             (reason_code,) if predicted_class is not None else ("NO_DECISIVE_TEXT_FRAUD_SIGNAL",)
         ),
         reasons=reasons,
-        ruleset_version="ghana-momo-obvious-scam-rules-v1",
+        ruleset_version="ghana-momo-obvious-scam-rules-v2",
         schema_version="momo-text-fraud-assessment-v1",
         evidence_quality="HIGH",
     )

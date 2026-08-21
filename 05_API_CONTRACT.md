@@ -308,7 +308,7 @@ Runs the OCR pipeline synchronously for the prototype or returns `202` if the im
     "warnings": ["AMOUNT_LOW_CONFIDENCE"],
     "fraud_preview": {
       "schema_version": "momo-text-fraud-assessment-v1",
-      "ruleset_version": "ghana-momo-obvious-scam-rules-v1",
+      "ruleset_version": "ghana-momo-obvious-scam-rules-v2",
       "status": "SUCCESS",
       "class": "FRAUDULENT",
       "score": 94,
@@ -345,6 +345,9 @@ probability. A null class means that no decisive rule fired; it never means
 `GENUINE`. Historical OCR results without a stored assessment return
 `UNAVAILABLE` and are not silently recomputed under a newer ruleset. Raw match
 spans, phone numbers, links, secrets and OCR text are excluded from the preview.
+New OCR assessments use `ghana-momo-obvious-scam-rules-v2`. Stored v1
+assessments retain their original class, score and safe reason metadata through
+version-aware validation; neither v1 nor v2 is rerun against historical OCR text.
 
 ### `POST /transactions/{transaction_id}/ocr-confirmations`
 

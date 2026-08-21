@@ -1,6 +1,6 @@
 {
   "schema_version": "analysis-risk-policy-schema-v1",
-  "policy_version": "analysis-risk-policy-demo-v2",
+  "policy_version": "analysis-risk-policy-demo-v3",
   "critical_verification_fields": [
     "amount",
     "transaction_reference"
@@ -14,7 +14,7 @@
     "SUSPICIOUS": "medium_risk",
     "FRAUDULENT": "high_risk"
   },
-  "text_fraud_ruleset_version": "ghana-momo-obvious-scam-rules-v1",
+  "text_fraud_ruleset_version": "ghana-momo-obvious-scam-rules-v2",
   "text_policy_score_is_probability": false,
   "image_high_threshold": 0.85,
   "categorical_score_is_null": true,
