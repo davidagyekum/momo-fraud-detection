@@ -27,14 +27,24 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-21`
-- CI status: `P0.3 local acceptance is complete. The registered backend gate passes 233 tests at 85.68% branch-aware coverage plus Ruff, strict mypy, OpenAPI and ER drift. Empty-to-head and representative 20260816_0005-to-head PostgreSQL upgrades reach 20260817_0006 and flask db check is clean. The controlled end-to-end gate passes the API journey, 7 mobile journey tests, 28-route static export and 3 administrator Playwright flows. The registered security gate passes 31 database scenarios with zero skips plus policy and secret checks. The complete mobile gate passes 73 tests at 83.78% statement/71.04% branch coverage; the administrator gate passes 40 tests at 92.94% statement/83.22% branch coverage; and the ML gate passes 714 tests at 90.15% coverage with training_executed=false. Hosted CI remains unverified.`
+- CI status: `The final submission freeze local acceptance is complete. The registered backend gate passes 233 tests with zero skips at 85.88% branch-aware coverage plus Ruff, strict mypy, OpenAPI and ER drift. Empty-to-head and representative 20260816_0005-to-head PostgreSQL upgrades reach 20260817_0006 and flask db check is clean. The controlled end-to-end gate passes the API journey, 7 mobile journey tests, 28-route static export and 3 administrator Playwright flows. The registered security gate passes 31 database scenarios with zero skips plus policy and a 677-file secret/prohibited-artifact scan. The complete mobile gate passes 73 tests at 83.78% statement/71.04% branch coverage; the administrator gate passes 40 tests at 92.94% statement/83.22% branch coverage; and the ML gate passes 714 tests at 90.15% coverage with training_executed=false. Nine submission-package tests pass and all 41 safe evidence files are indexed exactly once. Hosted CI remains unverified because of B-CI-001.`
 - Deployment status: `The rebuilt isolated local stack momo-fdvs-text-risk is healthy: PostgreSQL localhost:55436, API http://localhost:8003, administrator portal http://localhost:5177 and mobile web http://localhost:8084. The installed API reports text ruleset ghana-momo-obvious-scam-rules-v2 and policy analysis-risk-policy-demo-v3. A controlled browser journey completed upload -> OCR -> v2 score 96 high-risk screenshot-only persistence -> transaction detail -> History, with verification shown separately as NOT_ATTEMPTED and no browser warnings/errors. This is local test evidence only; no hosted, staging or production deployment claim is made.`
-- Current phase: `Final completion P0.1-P0.3 and P1 are implemented and locally accepted; final submission freeze and evidence packaging is next`
-- Next exact task: `Freeze the final submission candidate: confirm the clean pushed branch and exact SHAs, reconcile the academic report and evidence index with P0.1-P0.3 and P1, preserve explicit image-model, hosted-CI, native-device and live-MNO limitations, and package only repository-safe submission artifacts.`
+- Current phase: `P20 final documentation/evidence freeze is locally accepted; the exact-SHA repository-safe academic submission artifact is ready to generate from the final pushed commit`
+- Next exact task: `Owner action: submit or provide the generated ZIP and its SHA-256 to the supervisor/examiner. Do not start a historical phase from an old plan; any further work requires a newly authorised scope and must preserve the final limitations/non-claims.`
 - Post-acceptance local repair: the mobile web/API routing and fresh-database role seed remain healthy, and the API wheel now explicitly packages `momo_fdvs/policies/risk_policy_demo_v1.json`. A rebuilt release container verifies the installed policy at 483 bytes; API and mobile-proxy health return HTTP 200; the persisted local account, transaction and OCR confirmation remain present. Focused policy tests pass 15/15. A fresh host full-gate attempt was not claimed green: it first failed under transient Windows memory pressure and then stalled before database activity, so the previously recorded full PR19 acceptance gate remains the authoritative complete-suite evidence pending the next clean rerun.
 - User-feedback OCR review repair: absent OCR values are now manual entries rather than corrections, correction reasons are captured automatically after confirmed image review, required/optional fields and safe no-guess guidance are explicit, and API `field_errors` are preserved for inline recovery. The parser recognises bounded standalone `ID-...` and legacy `GHC` notation. Current backend and mobile gates pass at the counts above. Docker built the updated API/mobile images, but its internal overlay/containerd storage became read-only during API recreation; the dedicated stack is offline and no live-runtime pass is claimed.
 - External review handoff: `docs/WEBCHAT_GPT_OCR_TEXT_RISK_REVIEW_BRIEF.md` provides Web ChatGPT with the source-of-truth order, design and privacy boundaries, exact implementation/test evidence, current runtime blocker and targeted review questions. It contains no private value from the diagnostic screenshots.
 - Final authority adoption: `FINAL_COMPLETION_OVERRIDE.md` is now Tier 0 execution authority, with the classification index at `docs/authority/MARKDOWN_AUTHORITY_INDEX.md` and proposed screenshot-only design at `docs/architecture/ADR-041_SCREENSHOT_ONLY_TEXT_RISK_ANALYSIS.md`. Authority package ZIP SHA-256 is `b7a488e550c7f31e4071624f54cac389ef43ff40f4bac03765e943874f1629ef`; all 34 manifested files, Python syntax and 29 isolated reference tests verified. The overlay changes execution order only and does not weaken binding security/privacy/evidence contracts. Locked tests remain unopened and training remains unexecuted.
+
+## P20 final academic submission freeze
+
+- Submission entry point: `docs/submission/README.md` leads an examiner through limitations, Chapter Four mapping, the 41-item evidence manifest, current status, accepted local gates and the run guide.
+- Evidence reconciliation: every safe file beneath `docs/evidence/` is indexed exactly once. P0.1, P0.2, P0.3, P1, deterministic image, P11/P12 evaluation and PR12-PR16 governance records now preserve their actual SHA/environment/scope.
+- Artifact boundary: ADR-044 and `docs/submission/SUBMISSION_ARTIFACT_POLICY.md` require a clean pushed exact Git tree. `scripts/build_submission_package.py` rejects private, secret, generated, model and nested-archive paths; writes deterministic ZIP metadata; embeds exact commit and per-file SHA-256 records; and independently verifies membership, hashes, timestamps and evidence coverage.
+- Verification: 9 packaging/evidence tests; backend 233 at 85.88% with zero skips; mobile 73 and 28 routes; administrator 40 plus 3 Playwright flows/build; ML 714 at 90.15% with training disabled; security 31 zero-skip plus a 677-file scan; E2E; empty and previous migrations; four-service release verifier all pass.
+- Honest failures retained: the quick host doctor reports Node/npm pin drift and absent host Tesseract; containers provide the accepted pinned/build dependencies. A backend invocation without a test database skipped 59 tests and failed coverage, and the first isolated database-enabled invocation failed before the documented migration prerequisite. Both were corrected explicitly and are not acceptance evidence. The release verifier first checked its default project and found no services; the documented isolated project/port rerun passed.
+- Non-claims: no hosted CI/deployment, native Android/iOS acceptance, live MNO verification, active image model, representative provider-wide metric, locked-test access or model training. P12 remains rejected at macro F1 `0.333333`; original completion counts remain `89 / 108` MUST and `6 / 12` SHOULD.
+- Derived artifact: the final ZIP and checksum are generated after the final commit/push beneath ignored `output/submission/`; the internal generated manifest is the exact final SHA authority.
 
 ## Final-completion P0.3 — text-rule locality and negation hardening
 
@@ -237,7 +247,7 @@
 | P17 | UI completion, accessibility, responsive and visual QA | In Review | logical PR19 | pending PR head | Mobile and staff critical workflows have state/accessibility tests and browser flows | Native Android and evergreen multi-browser matrix remain outstanding. |
 | P18 | Full hardening, security, performance and regression QA | In Review | logical PR19 | pending PR head | Security, regression and end-to-end gates pass locally | B-SEC-002 and formal performance/load evidence remain open. |
 | P19 | Staging deployment, release engineering and rollback | In Review | logical PR19 | pending PR head | Four local containers, migration, restart, health/readiness and rollback runbook verified | No hosted HTTPS deployment; exact host toolchain and restore rehearsal remain open. |
-| P20 | Final documentation, evidence, cleanup and inspection handoff | Not Started |  |  |  |  |
+| P20 | Final documentation, evidence, cleanup and inspection handoff | Complete | `codex/audit-fix-40-final-completion` | exact final SHA is generated inside the submission ZIP manifest | 41-item safe evidence manifest; Chapter Four index; binding limitation record; 9 package tests; complete local regression/migration/release gates; deterministic exact-Git-tree ZIP verification | Academic upload/review is an owner action. Packaging does not close P12 or P14-P19 product gaps and does not create hosted/native/live-MNO evidence. |
 
 Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Complete`.
 
@@ -246,7 +256,7 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 - MUST requirements complete: `89 / 108`
 - SHOULD requirements complete: `6 / 12`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-21 — P0.3 FR-P0-3-TEXT-001 through FR-P0-3-TEXT-003 reconcile versioned Unicode/clause locality, corroborated link/contact evidence, revised fraudulent thresholds and frozen v1 compatibility; existing model, hosted-release and native-device limitations remain explicit`
+- Traceability file last verified: `2026-08-21 — final submission freeze links inactive image-model, stored-reference-only verification, performance, restore, compatibility and private-data/package evidence without changing their completion status. The evidence manifest covers all 41 safe evidence files exactly once; existing model, hosted-release and native-device limitations remain explicit.`
 
 ## Current blockers
 
@@ -263,6 +273,13 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 ## Active known limitations
 
 - No live MNO integration is part of the prototype.
+- No hosted, staging or production deployment is claimed; the accepted four-service environment is local HTTP Docker Compose only.
+- Hosted GitHub Actions acceptance remains unverified under B-CI-001.
+- Final native Android/iOS device automation and the complete evergreen multi-browser matrix were not executed; accepted mobile browser evidence is Expo web in Chromium.
+- The P12 image model failed acceptance at held-out macro F1 `0.333333`, remains inactive/unavailable and is not packaged. Deterministic image signals are supporting evidence only.
+- The current accepted release reports optional image and structured models not activated and `full_analysis_available=false`; no missing probability is fabricated.
+- Formal load/performance evidence and a non-production backup/restore rehearsal remain outstanding.
+- Original traceability remains `89 / 108` MUST and `6 / 12` SHOULD complete; P20 packaging does not inflate those counts.
 - Real/supervisor-approved receipt dataset and production reference source are not yet supplied.
 - Brand/deployment credentials are not yet supplied.
 - Docker Desktop 29.6.2 with Compose v5.3.1 is installed per-user; the API container supplies Tesseract 5.3.0 and the PostgreSQL container supplies the database CLI.
@@ -273,16 +290,14 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-21-p0-3-text-rule-hardening.md`
-- Summary: `Implemented and locally accepted the versioned P0.3 text-rule hardening. New OCR uses v2 and policy v3, historical v1 projections remain immutable and readable, and the full local gate plus controlled browser persistence journey pass; final submission freeze is next.`
+- Handoff file: `docs/handoffs/2026-08-21-final-submission-freeze.md`
+- Summary: `Reconciled all 41 safe evidence files, added examiner-facing Chapter Four and limitation records, implemented and tested exact-Git-tree deterministic packaging, reran the complete local regression/migration/release gates, and froze P20 without changing outstanding product/model/deployment statuses.`
 
 ## Next session startup
 
 1. Read `AGENTS.md` and this file.
-2. Fetch/prune and verify the current SHA/worktree.
-3. Read ADR-038, ADR-039, the PR18 evidence and PR19 acceptance/security/release runbooks before changing orchestration or release semantics.
-4. Confirm the pushed PR19 head and clean worktree. Preserve immutable policy/evidence, private storage and case object scope.
-5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or rerun it.
-6. Verify `docs/evidence/PR12_COLAB_FOUNDATION_SMOKE.json` and preserve the owner-reported manifest SHA-256 `bb0ebffbbae57175d936563a7ee3a04bac1618f9e661ca480ab07393f963b279` as logical PR12 infrastructure evidence only.
-7. Preserve the three exact PR14 Drive bundles and the completed PaySim/MoMTSim v1 PR15 bundles. Keep all locked-test partitions sealed and unavailable for decisions before PR20; keep the v2 run explicitly incomplete.
-8. Read `docs/handoffs/2026-08-16-PR19-full-acceptance.md`. Keep P12 inactive, verification separate from risk, and resolve only explicitly recorded PR20/product boundaries.
+2. Confirm the exact submitted SHA from `FINAL_SUBMISSION_PACKAGE_MANIFEST.json` and verify the ZIP/checksum before sharing it.
+3. Read `docs/submission/README.md` and `docs/submission/LIMITATIONS_AND_NON_CLAIMS.md`; do not weaken their wording in the academic report.
+4. Do not resume P12 or P14-P19 from historical plans. Any new implementation requires explicit owner authority and a new scoped status update.
+5. Preserve P12 acceptance `false`, held-out macro F1 `0.333333`, and artifact SHA-256 `3d074298835a28a9af92fca8b50cc618dc8eb67585e2b312c261121f43a70046`; do not activate or relabel it.
+6. Keep all locked-test partitions sealed. No final metric, hosted deployment, native-device acceptance or live-MNO verification exists unless new external evidence is supplied and recorded.

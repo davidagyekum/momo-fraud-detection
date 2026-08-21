@@ -15,9 +15,13 @@ Logical PR11 adds a fail-closed dataset registry, portable transaction/image/OCR
 
 ## Repository status
 
-P00 is merged. P01 now provides the runnable API and local PostgreSQL/Docker foundation; product domain features remain phase-gated. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for the exact verified state.
+The repository is frozen as a **locally verified academic prototype submission candidate**. The final accepted OCR-first journey persists deterministic screenshot risk without fabricated transaction fields, while optional stored/imported-record comparison remains separate. New OCR text assessments use `ghana-momo-obvious-scam-rules-v2` under `analysis-risk-policy-demo-v3`.
 
-## Planned architecture
+Start with the [academic submission entry point](docs/submission/README.md), [evidence index](docs/submission/CHAPTER4_EVIDENCE_INDEX.md), [limitations and non-claims](docs/submission/LIMITATIONS_AND_NON_CLAIMS.md), and [exact implementation status](IMPLEMENTATION_STATUS.md).
+
+This is not a hosted or production deployment. Native-device acceptance, live MNO verification, an accepted active image model and several original product gates remain explicitly unavailable or incomplete.
+
+## Implemented architecture
 
 - Mobile: Expo + React Native + TypeScript
 - Staff portal: React + TypeScript + Vite
@@ -50,7 +54,9 @@ python scripts/verify.py --quick
 python scripts/verify.py --backend
 ```
 
-`python scripts/verify.py --all` will intentionally fail until later application phases exist. It reports missing sections instead of representing them as successful or silently skipped. See [local development](docs/deployment/LOCAL_DEVELOPMENT.md) for API, PostgreSQL and Docker setup.
+The registered full gates require the repository's supported runtimes and Docker services. See [the local run guide](docs/LOCAL_RUN_GUIDE.md), [current recorded counts](IMPLEMENTATION_STATUS.md), and [P0.3 acceptance evidence](docs/evidence/P0_3_TEXT_RULE_HARDENING.md). A host toolchain mismatch or unavailable Docker dependency is reported as a failure; it is never converted into a skipped success.
+
+The deterministic final ZIP is built and verified with `scripts/build_submission_package.py`; see the [submission artifact policy](docs/submission/SUBMISSION_ARTIFACT_POLICY.md).
 
 ## Local bootstrap
 
