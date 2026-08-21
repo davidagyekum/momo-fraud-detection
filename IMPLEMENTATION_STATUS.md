@@ -10,6 +10,7 @@
 - Base SHA: `76e7e31dc405b28c21049c3fa83efaef6bd7f381`
 - P1 OCR-first mobile implementation SHA: `7e910bab494db7115c911034bf2118f65aafde49`
 - P1 release-verifier repair SHA: `6804a479ed191622288e13474d0eb0296db36682`
+- P0.3 text-rule hardening implementation SHA: `96e700b9b3d4f14b7182b12520e6406de9c11561`
 - P0.2 screenshot-only analysis implementation SHA: `d84b95d72db1c38b7bf120fe0eaef6da730b596a`
 - PR13 immutable implementation SHA: `aad3f01b6c0aa0605e22d788761927114c1fe2ea`
 - PR13 PaySim rights-decision SHA: `2a53bfc835bbc149852f7762463823f1b67c8242`
@@ -25,15 +26,26 @@
 - PR13 STFD registration implementation SHA: `bc9c0b4ae833bb9bcd2c2d145957967d466635c0`
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
-- Last updated: `2026-08-20`
-- CI status: `P1 local acceptance is complete. The registered backend gate passes 224 tests with zero skips at 85.80% branch-aware coverage plus Ruff, strict mypy, OpenAPI and ER drift. Empty-to-head and representative 20260816_0005-to-head PostgreSQL 17.5 upgrades reach 20260817_0006 and flask db check is clean. The controlled end-to-end gate passes the API journey, 7 mobile journey tests, 28-route static export and 3 administrator Playwright flows. The registered security gate passes 31 database scenarios with zero skips plus policy and secret checks. The complete mobile gate passes 73 tests at 83.78% statement/71.04% branch coverage; the complete administrator gate passes 40 tests at 92.94% statement/83.22% branch coverage; and the ML gate passes 714 tests at 90.15% branch-aware coverage with training_executed=false. Hosted CI remains unverified.`
-- Deployment status: `The rebuilt isolated local stack momo-fdvs-text-risk is healthy: PostgreSQL localhost:55436, API http://localhost:8003, administrator portal http://localhost:5177 and mobile web http://localhost:8084. Direct health/readiness, mobile and administrator probes return HTTP 200. The controlled browser journey completed upload -> OCR -> high-risk screenshot-only persistence -> transaction detail -> History, with verification shown separately as NOT_ATTEMPTED. This is a local test environment only; no hosted, staging or production deployment claim is made.`
-- Current phase: `Final completion P1 OCR-first mobile experience complete and locally accepted; P0.3 text-rule locality and negation hardening is next`
-- Next exact task: `Implement P0.3 as a new versioned text ruleset: remove Unicode format controls, add bounded contrastive-clause locality, tighten compound/short-link/contact evidence, preserve historical v1 results, and cover the new fraudulent-versus-suspicious thresholds with red/green tests before changing the active policy.`
+- Last updated: `2026-08-21`
+- CI status: `P0.3 local acceptance is complete. The registered backend gate passes 233 tests at 85.68% branch-aware coverage plus Ruff, strict mypy, OpenAPI and ER drift. Empty-to-head and representative 20260816_0005-to-head PostgreSQL upgrades reach 20260817_0006 and flask db check is clean. The controlled end-to-end gate passes the API journey, 7 mobile journey tests, 28-route static export and 3 administrator Playwright flows. The registered security gate passes 31 database scenarios with zero skips plus policy and secret checks. The complete mobile gate passes 73 tests at 83.78% statement/71.04% branch coverage; the administrator gate passes 40 tests at 92.94% statement/83.22% branch coverage; and the ML gate passes 714 tests at 90.15% coverage with training_executed=false. Hosted CI remains unverified.`
+- Deployment status: `The rebuilt isolated local stack momo-fdvs-text-risk is healthy: PostgreSQL localhost:55436, API http://localhost:8003, administrator portal http://localhost:5177 and mobile web http://localhost:8084. The installed API reports text ruleset ghana-momo-obvious-scam-rules-v2 and policy analysis-risk-policy-demo-v3. A controlled browser journey completed upload -> OCR -> v2 score 96 high-risk screenshot-only persistence -> transaction detail -> History, with verification shown separately as NOT_ATTEMPTED and no browser warnings/errors. This is local test evidence only; no hosted, staging or production deployment claim is made.`
+- Current phase: `Final completion P0.1-P0.3 and P1 are implemented and locally accepted; final submission freeze and evidence packaging is next`
+- Next exact task: `Freeze the final submission candidate: confirm the clean pushed branch and exact SHAs, reconcile the academic report and evidence index with P0.1-P0.3 and P1, preserve explicit image-model, hosted-CI, native-device and live-MNO limitations, and package only repository-safe submission artifacts.`
 - Post-acceptance local repair: the mobile web/API routing and fresh-database role seed remain healthy, and the API wheel now explicitly packages `momo_fdvs/policies/risk_policy_demo_v1.json`. A rebuilt release container verifies the installed policy at 483 bytes; API and mobile-proxy health return HTTP 200; the persisted local account, transaction and OCR confirmation remain present. Focused policy tests pass 15/15. A fresh host full-gate attempt was not claimed green: it first failed under transient Windows memory pressure and then stalled before database activity, so the previously recorded full PR19 acceptance gate remains the authoritative complete-suite evidence pending the next clean rerun.
 - User-feedback OCR review repair: absent OCR values are now manual entries rather than corrections, correction reasons are captured automatically after confirmed image review, required/optional fields and safe no-guess guidance are explicit, and API `field_errors` are preserved for inline recovery. The parser recognises bounded standalone `ID-...` and legacy `GHC` notation. Current backend and mobile gates pass at the counts above. Docker built the updated API/mobile images, but its internal overlay/containerd storage became read-only during API recreation; the dedicated stack is offline and no live-runtime pass is claimed.
 - External review handoff: `docs/WEBCHAT_GPT_OCR_TEXT_RISK_REVIEW_BRIEF.md` provides Web ChatGPT with the source-of-truth order, design and privacy boundaries, exact implementation/test evidence, current runtime blocker and targeted review questions. It contains no private value from the diagnostic screenshots.
 - Final authority adoption: `FINAL_COMPLETION_OVERRIDE.md` is now Tier 0 execution authority, with the classification index at `docs/authority/MARKDOWN_AUTHORITY_INDEX.md` and proposed screenshot-only design at `docs/architecture/ADR-041_SCREENSHOT_ONLY_TEXT_RISK_ANALYSIS.md`. Authority package ZIP SHA-256 is `b7a488e550c7f31e4071624f54cac389ef43ff40f4bac03765e943874f1629ef`; all 34 manifested files, Python syntax and 29 isolated reference tests verified. The overlay changes execution order only and does not weaken binding security/privacy/evidence contracts. Locked tests remain unopened and training remains unexecuted.
+
+## Final-completion P0.3 — text-rule locality and negation hardening
+
+- Versioning: new OCR text assessments bind `ghana-momo-obvious-scam-rules-v2`; the active deterministic policy is `analysis-risk-policy-demo-v3`. Historical v1 projections remain readable through a minimal frozen classifier/validator and are never recomputed from raw OCR.
+- Normalization/locality: all Unicode `Cf` format-control characters are removed; sentence, visual-line and contrastive boundaries produce bounded same-or-adjacent clause windows for compound cues.
+- Corroboration: scheme-less short links require bounded account/credential actions. Ghanaian and international contact redirects remain cautious high evidence rather than becoming fraudulent alone.
+- Thresholds: one critical family or two independent high families is `FRAUDULENT`; a single high family, including high plus urgency, is `SUSPICIOUS`. Public results contain only allowlisted reason metadata and safe copy.
+- Verification: focused red/green ended at 58 tests; backend 233, mobile 73, administrator 40 plus 3 Playwright, ML 714 with training disabled, security 31 database scenarios with zero skips, E2E, empty/previous migration, four-service release and a clean-console live browser persistence journey all pass.
+- Browser result: a controlled fictitious screenshot produced a v2 96/100 high-fraud preview, persisted High risk with verification Not attempted, and showed those statuses separately in History.
+- Evidence: `docs/evidence/P0_3_TEXT_RULE_HARDENING.md`; ADR-043; `docs/handoffs/2026-08-21-p0-3-text-rule-hardening.md`.
+- Safety: no model training, locked-test access, private real-world data, live-MNO verification, hosted deployment or probability/accuracy claim was introduced.
 
 ## Final-completion P1 — OCR-first mobile experience
 
@@ -231,10 +243,10 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Requirements summary
 
-- MUST requirements complete: `68 / 87`
-- SHOULD requirements complete: `6 / 11`
+- MUST requirements complete: `89 / 108`
+- SHOULD requirements complete: `6 / 12`
 - Blocked requirements: `None recorded`
-- Traceability file last verified: `2026-08-17 — P0.2 FR-SCREENSHOT-001 through FR-SCREENSHOT-005 reconcile persisted screenshot-only analysis, immutable OCR linkage, not-applicable verification/structured stages, durable projections and combined-mode compatibility; P1 UI and existing model/hosted-release limitations remain explicit`
+- Traceability file last verified: `2026-08-21 — P0.3 FR-P0-3-TEXT-001 through FR-P0-3-TEXT-003 reconcile versioned Unicode/clause locality, corroborated link/contact evidence, revised fraudulent thresholds and frozen v1 compatibility; existing model, hosted-release and native-device limitations remain explicit`
 
 ## Current blockers
 
@@ -261,8 +273,8 @@ Allowed status values: `Not Started`, `In Progress`, `Blocked`, `In Review`, `Co
 
 ## Last completed session
 
-- Handoff file: `docs/handoffs/2026-08-17-p0-2-screenshot-only-analysis.md`
-- Summary: `Implemented and locally accepted persisted screenshot-only fraud-risk analysis without fabricated transaction fields. Both analysis modes pass the controlled API journey and the isolated four-service local stack is healthy; P1 mobile presentation is next.`
+- Handoff file: `docs/handoffs/2026-08-21-p0-3-text-rule-hardening.md`
+- Summary: `Implemented and locally accepted the versioned P0.3 text-rule hardening. New OCR uses v2 and policy v3, historical v1 projections remain immutable and readable, and the full local gate plus controlled browser persistence journey pass; final submission freeze is next.`
 
 ## Next session startup
 
