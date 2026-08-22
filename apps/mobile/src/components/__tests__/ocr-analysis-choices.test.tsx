@@ -80,3 +80,21 @@ test("announces save failures and the expanded comparison state", async () => {
       .props.accessibilityState,
   ).toMatchObject({ expanded: true });
 });
+
+test("uses the inconclusive-specific save action", async () => {
+  const view = await render(
+    <OCRAnalysisChoices
+      preview={{ ...preview, class: null, score: null, reason_codes: [] }}
+      online
+      saving={false}
+      saveError={null}
+      comparisonExpanded={false}
+      onSave={jest.fn()}
+      onToggleComparison={jest.fn()}
+    />,
+  );
+
+  expect(
+    view.getByRole("button", { name: "Save inconclusive assessment" }),
+  ).toBeTruthy();
+});

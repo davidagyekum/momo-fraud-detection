@@ -134,6 +134,46 @@ export const analysisSchema = z
             evidence_quality: z.enum(["HIGH", "MEDIUM", "LOW", "UNAVAILABLE"]),
             ruleset_version: z.string().nullable(),
             limitations: z.array(z.string()),
+            evidence: z
+              .object({
+                sender: z
+                  .object({
+                    sender_kind: z.enum([
+                      "NUMERIC",
+                      "ALPHANUMERIC",
+                      "MIXED",
+                      "UNKNOWN",
+                    ]),
+                    sender_confidence: z.number().min(0).max(1),
+                    header_phone_present: z.boolean(),
+                    header_provider_label_present: z.boolean(),
+                    source: z.string(),
+                  })
+                  .strict()
+                  .optional(),
+                consensus: z
+                  .object({
+                    accepted_reason_codes: z.array(z.string()),
+                    vote_counts: z.record(
+                      z.string(),
+                      z.number().int().nonnegative(),
+                    ),
+                    candidate_count: z.number().int().nonnegative(),
+                    limitations: z.array(z.string()),
+                  })
+                  .strict()
+                  .optional(),
+                format_profile: z
+                  .object({
+                    status: z.string(),
+                    version: z.string(),
+                    sha256: z.string(),
+                  })
+                  .strict()
+                  .optional(),
+              })
+              .strict()
+              .optional(),
           })
           .strict(),
         automated_evidence_immutable: z.literal(true),

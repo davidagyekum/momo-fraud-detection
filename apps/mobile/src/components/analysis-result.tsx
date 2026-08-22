@@ -7,9 +7,15 @@ import type { AnalysisResult, RiskBand } from "@/types/analysis";
 const riskLabels: Record<RiskBand, string> = {
   low_risk: "Low risk",
   medium_risk: "Medium risk",
-  high_risk: "High risk",
-  inconclusive: "Inconclusive",
+  high_risk: "High fraud risk",
+  inconclusive: "Inconclusive — no reliable fraud classification",
 };
+
+const INCONCLUSIVE_COPY =
+  "The available evidence did not support a decisive result. This is not a genuine or safe verdict.";
+const COUNTERFEIT_COPY = "Likely counterfeit transaction notification";
+const COUNTERFEIT_GUIDANCE =
+  "Do not act on this message. Do not send money or disclose a PIN, OTP or security code. Verify through an official provider channel.";
 
 function evidenceLabel(status: string): string {
   return status.toLowerCase().replaceAll("_", " ");
@@ -18,9 +24,22 @@ function evidenceLabel(status: string): string {
 export function AnalysisResultView({ result }: { result: AnalysisResult }) {
   const degraded = result.risk.component_status === "DEGRADED";
   const conclusive = result.risk.conclusion_status === "CONCLUSIVE";
-  const bandLabel = riskLabels[result.risk.band]
-    .toLowerCase()
-    .replace(" risk", "");
+  const bandLabel =
+    result.risk.band === "high_risk"
+      ? "high"
+      : result.risk.band === "medium_risk"
+        ? "medium"
+        : result.risk.band === "low_risk"
+          ? "low"
+          : "inconclusive";
+  const counterfeitTextEvidence =
+    result.evidence_summary.text_fraud.class === "FRAUDULENT";
+  const riskSummary =
+    result.risk.band === "inconclusive"
+      ? INCONCLUSIVE_COPY
+      : counterfeitTextEvidence
+        ? COUNTERFEIT_COPY
+        : result.risk.summary;
   return (
     <View style={uiStyles.stack}>
       <AppCard>
@@ -35,7 +54,16 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
                 : "warning"
           }
         />
-        <Text style={uiStyles.body}>{result.risk.summary}</Text>
+        <Text selectable style={uiStyles.body}>
+          {riskSummary}
+        </Text>
+        {counterfeitTextEvidence ? (
+          <InlineAlert
+            tone="error"
+            title="What to do now"
+            message={COUNTERFEIT_GUIDANCE}
+          />
+        ) : null}
       </AppCard>
 
       {degraded ? (

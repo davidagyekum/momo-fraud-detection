@@ -108,15 +108,28 @@ const partialResult = {
 
 test("keeps the owner result concise and separates risk from verification", async () => {
   const view = await render(<AnalysisResultView result={partialResult} />);
-  expect(view.getByLabelText("Status: Inconclusive")).toBeTruthy();
+  expect(
+    view.getByLabelText(
+      "Status: Inconclusive — no reliable fraud classification",
+    ),
+  ).toBeTruthy();
   expect(view.getByText("Transaction verification")).toBeTruthy();
   expect(view.getByText("Fraud risk assessment")).toBeTruthy();
   expect(view.getByLabelText("Status: Mismatch found")).toBeTruthy();
-  expect(view.queryByText(/verified genuine|confirmed fraud|safe/i)).toBeNull();
+  expect(
+    view.queryByText(
+      /verified genuine|confirmed fraud|this (?:message|result) is safe/i,
+    ),
+  ).toBeNull();
   expect(view.queryByText(/risk score/i)).toBeNull();
   expect(view.queryByText("Confirmed OCR review")).toBeNull();
   expect(view.queryByText("Evidence availability")).toBeNull();
   expect(view.queryByText("Limitations and missing signals")).toBeNull();
+  expect(
+    view.getByText(
+      "The available evidence did not support a decisive result. This is not a genuine or safe verdict.",
+    ),
+  ).toBeTruthy();
 });
 
 test("moves technical evidence and limitations into the details view", async () => {
@@ -155,7 +168,7 @@ test("renders a categorical high-risk result without inventing a score", async (
     },
   } as AnalysisResult;
   const view = await render(<AnalysisResultView result={highRisk} />);
-  expect(view.getByLabelText("Status: High risk")).toBeTruthy();
+  expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
   expect(
     view.getByText("Multiple recorded signals require review."),
   ).toBeTruthy();
@@ -182,10 +195,17 @@ test("keeps a partial high-risk conclusion above degraded component copy", async
         },
       ],
     },
+    evidence_summary: {
+      ...partialResult.evidence_summary,
+      text_fraud: {
+        ...partialResult.evidence_summary.text_fraud,
+        class: "FRAUDULENT",
+      },
+    },
   } as AnalysisResult;
 
   const view = await render(<AnalysisResultView result={highRisk} />);
-  expect(view.getByLabelText("Status: High risk")).toBeTruthy();
+  expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
   expect(view.getByText("Some components unavailable")).toBeTruthy();
   expect(
     view.getByText(
@@ -193,4 +213,10 @@ test("keeps a partial high-risk conclusion above degraded component copy", async
     ),
   ).toBeTruthy();
   expect(view.queryByText(/persisted result is inconclusive/i)).toBeNull();
+  expect(
+    view.getByText("Likely counterfeit transaction notification"),
+  ).toBeTruthy();
+  expect(
+    view.getByText(/Do not act on this message.*official provider channel/s),
+  ).toBeTruthy();
 });

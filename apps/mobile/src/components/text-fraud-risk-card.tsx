@@ -2,33 +2,12 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppCard, InlineAlert, StatusBadge, uiStyles } from "@/components/ui";
+import {
+  evidenceRowsForPreview,
+  riskPresentation,
+} from "@/lib/fraud-risk-presentation";
 import type { OCRTextFraudPreview } from "@/lib/ocr-client";
 import { palette, spacing, typeScale } from "@/theme/tokens";
-
-function previewTitle(preview: OCRTextFraudPreview): string {
-  if (preview.class === "FRAUDULENT") return "High fraud risk";
-  if (preview.class === "SUSPICIOUS") return "Suspicious message";
-  if (preview.status === "UNAVAILABLE") return "Text assessment unavailable";
-  return "No decisive text signal";
-}
-
-function previewTone(
-  preview: OCRTextFraudPreview,
-): "error" | "info" | "warning" {
-  if (preview.class === "FRAUDULENT") return "error";
-  if (preview.class === "SUSPICIOUS") return "warning";
-  return "info";
-}
-
-function safetyMessage(preview: OCRTextFraudPreview): string | null {
-  if (preview.class === "FRAUDULENT") {
-    return "Do not share a PIN, OTP or security code, and do not send money based only on this message. Verify through an official provider channel.";
-  }
-  if (preview.class === "SUSPICIOUS") {
-    return "Pause before acting. Confirm the message through an official provider channel or a contact you already trust.";
-  }
-  return null;
-}
 
 export function TextFraudRiskCard({
   preview,
@@ -37,65 +16,114 @@ export function TextFraudRiskCard({
   preview: OCRTextFraudPreview;
   footer?: ReactNode;
 }) {
-  const safety = safetyMessage(preview);
-  const title = previewTitle(preview);
+  const presentation = riskPresentation(preview);
+  const evidenceRows = evidenceRowsForPreview(preview);
 
   return (
     <AppCard>
       <View
         accessible
-        accessibilityLabel={`Preliminary message-risk preview. ${title}. ${preview.summary}`}
-        accessibilityLiveRegion="polite"
+        accessibilityLabel={`Preliminary message-risk preview. ${presentation.title}. ${presentation.subtitle}`}
+        accessibilityLiveRegion={
+          preview.class === "FRAUDULENT" ? "assertive" : "polite"
+        }
+        accessibilityRole={preview.class === "FRAUDULENT" ? "alert" : undefined}
         style={styles.heading}
       >
         <Text accessibilityRole="header" style={uiStyles.cardTitle}>
           Message-risk preview
         </Text>
-        <StatusBadge label={title} tone={previewTone(preview)} />
+        <StatusBadge label={presentation.title} tone={presentation.tone} />
       </View>
 
-      <Text style={uiStyles.body}>{preview.summary}</Text>
+      <Text selectable style={styles.subtitle}>
+        {presentation.subtitle}
+      </Text>
+      {presentation.guidance ? (
+        <InlineAlert
+          tone={presentation.tone}
+          title="What to do now"
+          message={presentation.guidance}
+        />
+      ) : null}
       {preview.score !== null ? (
-        <Text style={styles.score}>
+        <Text selectable style={styles.score}>
           Policy score {Math.round(preview.score)}/100 — not a probability
         </Text>
       ) : null}
-
-      {safety ? (
-        <InlineAlert
-          tone={previewTone(preview)}
-          title="What to do now"
-          message={safety}
-        />
-      ) : null}
       {footer ? <View style={styles.footer}>{footer}</View> : null}
+
+      <View style={styles.evidence}>
+        <Text style={styles.sectionTitle}>Evidence summary</Text>
+        {evidenceRows.map((row) => (
+          <View key={row.label} style={styles.evidenceRow}>
+            <Text selectable style={styles.evidenceLabel}>
+              {row.label}
+            </Text>
+            <Text selectable style={styles.evidenceValue}>
+              {row.value}
+            </Text>
+          </View>
+        ))}
+      </View>
 
       {preview.reasons.length > 0 ? (
         <View style={styles.reasons}>
           <Text style={styles.sectionTitle}>Why this appeared</Text>
           {preview.reasons.map((reason) => (
             <View key={reason.code} style={styles.reason}>
-              <Text style={styles.reasonTitle}>
+              <Text selectable style={styles.reasonTitle}>
                 {reason.severity} · {reason.title}
               </Text>
-              <Text style={styles.reasonSummary}>{reason.summary}</Text>
+              <Text selectable style={styles.reasonSummary}>
+                {reason.summary}
+              </Text>
             </View>
           ))}
         </View>
       ) : null}
-      <Text style={styles.disclaimer}>{preview.disclaimer}</Text>
+      <Text selectable style={styles.disclaimer}>
+        {preview.disclaimer}
+      </Text>
     </AppCard>
   );
 }
 
 const styles = StyleSheet.create({
   heading: { gap: spacing.sm, alignItems: "flex-start" },
+  subtitle: {
+    color: palette.ink,
+    fontSize: typeScale.body,
+    lineHeight: 24,
+    fontWeight: "700",
+  },
   score: {
     color: palette.ink,
     fontSize: typeScale.caption,
     fontWeight: "700",
   },
   reasons: { gap: spacing.md },
+  evidence: { gap: spacing.sm },
+  evidenceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+    paddingBottom: spacing.sm,
+  },
+  evidenceLabel: {
+    color: palette.muted,
+    fontSize: typeScale.caption,
+    fontWeight: "700",
+  },
+  evidenceValue: {
+    flex: 1,
+    color: palette.ink,
+    fontSize: typeScale.caption,
+    fontWeight: "700",
+    textAlign: "right",
+  },
   sectionTitle: {
     color: palette.ink,
     fontSize: typeScale.body,

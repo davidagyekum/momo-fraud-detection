@@ -25,6 +25,7 @@ import {
   uiStyles,
 } from "@/components/ui";
 import { OCRAnalysisChoices } from "@/components/ocr-analysis-choices";
+import { CompactOcrQualityBanner } from "@/components/ocr-quality-banner";
 import { ApiError } from "@/lib/api";
 import {
   createAnalysisIdempotencyKey,
@@ -77,24 +78,6 @@ function readableError(error: unknown): string {
   return error instanceof Error
     ? error.message
     : "The OCR review could not be loaded. Please retry.";
-}
-
-function warningMessage(code: string): string {
-  const labels: Record<string, string> = {
-    OCR_ENGINE_UNAVAILABLE:
-      "Automatic text reading is unavailable. Inspect the private image and retry if needed; any saved risk result will state this limitation.",
-    OCR_ENGINE_TIMEOUT:
-      "Automatic text reading took too long. Retry if needed; any saved risk result will state this limitation.",
-    OCR_ENGINE_FAILED:
-      "Automatic text reading could not finish. The original private image is unchanged.",
-    CRITICAL_OCR_FIELDS_MISSING:
-      "Some transaction details were not detected. They are required only if you choose reference comparison.",
-    UNKNOWN_TEMPLATE_GENERIC_FALLBACK:
-      "This layout is not recognised, so a generic parser was used.",
-  };
-  return (
-    labels[code] ?? "Review this note and the private image before acting."
-  );
 }
 
 function originalField(review: OCRReviewData, name: OCRFieldName) {
@@ -208,7 +191,7 @@ export default function OCRReviewScreen() {
     mutationFn: () => {
       if (!confirmation.data)
         throw new Error(
-          "Confirm the receipt details before checking a reference.",
+          "Confirm the screenshot details before checking a reference.",
         );
       return startAnalysis(
         request,
@@ -235,14 +218,14 @@ export default function OCRReviewScreen() {
   }
   if (status !== "authenticated") return <Redirect href="/(auth)/login" />;
 
-  const receiptPanel = (
+  const screenshotPanel = (
     <AppCard>
       <View style={uiStyles.row}>
-        <Text style={uiStyles.cardTitle}>Private receipt</Text>
+        <Text style={uiStyles.cardTitle}>Private screenshot</Text>
         <StatusBadge label="Owner only" tone="success" />
       </View>
       {preview.isPending ? (
-        <SkeletonBlock label="Loading private receipt" />
+        <SkeletonBlock label="Loading private screenshot" />
       ) : preview.isError ? (
         <RetryState
           message={readableError(preview.error)}
@@ -251,13 +234,13 @@ export default function OCRReviewScreen() {
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open zoomable receipt"
-          accessibilityHint="Opens the private receipt in a zoomable view"
+          accessibilityLabel="Open zoomable screenshot"
+          accessibilityHint="Opens the private screenshot in a zoomable view"
           onPress={() => setZoomVisible(true)}
         >
           <Image
             source={{ uri: preview.data }}
-            accessibilityLabel="Private receipt for OCR review"
+            accessibilityLabel="Private screenshot for OCR review"
             style={[
               styles.preview,
               {
@@ -340,19 +323,19 @@ export default function OCRReviewScreen() {
       {!validId ? (
         <InlineAlert
           tone="error"
-          title="Receipt unavailable"
-          message="The receipt link is invalid. Return to uploads and try again."
+          title="Screenshot unavailable"
+          message="The screenshot link is invalid. Return to uploads and try again."
         />
       ) : !online ? (
         <AppCard>
           <Text style={uiStyles.cardTitle}>Review paused</Text>
           <Text style={uiStyles.muted}>
-            Reconnect to load the private receipt and OCR evidence.
+            Reconnect to load the private screenshot and OCR evidence.
           </Text>
         </AppCard>
       ) : review.isPending ? (
         <AppCard>
-          <SkeletonBlock label="Reading receipt text" />
+          <SkeletonBlock label="Reading screenshot text" />
           <Text selectable style={uiStyles.muted}>
             Creating protected image variants and reading visible text…
           </Text>
@@ -364,23 +347,16 @@ export default function OCRReviewScreen() {
         />
       ) : review.data && activeFields ? (
         <>
-          {review.data.status === "OCR_PARTIAL" ? (
-            <InlineAlert
-              tone="warning"
-              title="Automatic reading is partial"
-              message="Some visible text could not be read. You can still save the screenshot-risk result, or open the optional transaction comparison and enter only values shown in the image."
-            />
-          ) : (
+          <CompactOcrQualityBanner
+            status={review.data.status}
+            evidenceQuality={review.data.fraud_preview.evidence_quality}
+            warnings={review.data.warnings}
+          />
+          {review.data.status === "OCR_READY" &&
+          review.data.fraud_preview.evidence_quality === "HIGH" &&
+          review.data.warnings.length === 0 ? (
             <StatusBadge label="Ready for your review" tone="success" />
-          )}
-          {review.data.warnings.map((warning) => (
-            <InlineAlert
-              key={warning}
-              tone="warning"
-              title="Review note"
-              message={warningMessage(warning)}
-            />
-          ))}
+          ) : null}
           <OCRAnalysisChoices
             preview={review.data.fraud_preview}
             online={online}
@@ -409,11 +385,11 @@ export default function OCRReviewScreen() {
               style={[
                 styles.panel,
                 !comparisonVisible && width >= 820
-                  ? styles.receiptPanelSolo
+                  ? styles.screenshotPanelSolo
                   : null,
               ]}
             >
-              {receiptPanel}
+              {screenshotPanel}
             </View>
             {comparisonVisible ? (
               <View style={styles.panel}>
@@ -479,14 +455,16 @@ export default function OCRReviewScreen() {
           </View>
           {review.data.raw_text ? (
             <AppCard>
-              <Text style={uiStyles.cardTitle}>Technical OCR text</Text>
+              <Text style={uiStyles.cardTitle}>Technical OCR details</Text>
               <Text style={uiStyles.muted}>
                 Optional technical evidence. The risk result above already uses
                 the stored OCR assessment.
               </Text>
               <AppButton
                 label={
-                  rawTextVisible ? "Hide raw OCR text" : "Show raw OCR text"
+                  rawTextVisible
+                    ? "Hide technical OCR details"
+                    : "Show technical OCR details"
                 }
                 onPress={() => setRawTextVisible((current) => !current)}
                 variant="secondary"
@@ -546,7 +524,7 @@ export default function OCRReviewScreen() {
 
       <ConfirmationDialog
         visible={confirmVisible}
-        title="Confirm these receipt details?"
+        title="Confirm these screenshot details?"
         message={`This saves an immutable reviewed snapshot. ${enteredFields.length} manual entr${enteredFields.length === 1 ? "y" : "ies"} and ${correctedFields.length} correction${correctedFields.length === 1 ? "" : "s"} will be documented automatically. Check the private image first.`}
         confirmLabel="Save reviewed details"
         onConfirm={() => confirmation.mutate()}
@@ -566,14 +544,14 @@ export default function OCRReviewScreen() {
           >
             <Image
               source={preview.data ? { uri: preview.data } : null}
-              accessibilityLabel="Zoomable private receipt"
+              accessibilityLabel="Zoomable private screenshot"
               style={styles.zoomImage}
               contentFit="contain"
             />
           </ScrollView>
           <View style={styles.zoomActions}>
             <AppButton
-              label="Close receipt"
+              label="Close screenshot"
               onPress={() => setZoomVisible(false)}
               variant="secondary"
             />
@@ -588,7 +566,7 @@ const styles = StyleSheet.create({
   reviewLayout: { gap: spacing.md },
   reviewLayoutWide: { flexDirection: "row", alignItems: "flex-start" },
   panel: { flex: 1, minWidth: 0 },
-  receiptPanelSolo: { width: "100%", maxWidth: 720, alignSelf: "center" },
+  screenshotPanelSolo: { width: "100%", maxWidth: 720, alignSelf: "center" },
   formSection: { gap: spacing.md },
   fieldGroup: { gap: spacing.sm },
   sectionTitle: {

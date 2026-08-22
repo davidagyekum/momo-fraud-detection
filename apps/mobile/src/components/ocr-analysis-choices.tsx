@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 
 import { TextFraudRiskCard } from "@/components/text-fraud-risk-card";
 import { AppButton, InlineAlert, uiStyles } from "@/components/ui";
+import { riskPresentation } from "@/lib/fraud-risk-presentation";
 import type { OCRTextFraudPreview } from "@/lib/ocr-client";
 import { spacing } from "@/theme/tokens";
 
@@ -22,6 +23,8 @@ export function OCRAnalysisChoices({
   onSave: () => void;
   onToggleComparison: () => void;
 }) {
+  const presentation = riskPresentation(preview);
+
   return (
     <TextFraudRiskCard
       preview={preview}
@@ -42,7 +45,7 @@ export function OCRAnalysisChoices({
             />
           ) : null}
           <AppButton
-            label="Save screenshot risk result"
+            label={presentation.saveLabel}
             onPress={onSave}
             loading={saving}
             disabled={!online}

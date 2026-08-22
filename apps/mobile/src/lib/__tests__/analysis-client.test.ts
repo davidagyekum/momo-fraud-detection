@@ -71,6 +71,26 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
           evidence_quality: "HIGH",
           ruleset_version: "ghana-momo-obvious-scam-rules-v1",
           limitations: ["ABSENCE_OF_RULE_MATCH_IS_NOT_PROOF_OF_GENUINENESS"],
+          evidence: {
+            sender: {
+              sender_kind: "NUMERIC",
+              sender_confidence: 0.91,
+              header_phone_present: true,
+              header_provider_label_present: false,
+              source: "SCREENSHOT_HEADER",
+            },
+            consensus: {
+              accepted_reason_codes: ["NUMERIC_SENDER_TRANSACTION_CLAIM"],
+              vote_counts: { NUMERIC_SENDER_TRANSACTION_CLAIM: 3 },
+              candidate_count: 4,
+              limitations: [],
+            },
+            format_profile: {
+              status: "AVAILABLE",
+              version: "mtn-genuine-format-profile-v1",
+              sha256: "b".repeat(64),
+            },
+          },
         },
         automated_evidence_immutable: true,
       },
@@ -172,6 +192,19 @@ test("rejects an incompatible risk enum", async () => {
   await expect(getAnalysis(request, "analysis-id")).rejects.toThrow(
     "Analysis response is incompatible",
   );
+});
+
+test("accepts privacy-safe hybrid evidence without raw sender or OCR values", async () => {
+  const request = jest.fn().mockResolvedValue(envelope());
+
+  const result = await getAnalysis(request, "analysis-id");
+
+  expect(result.evidence_summary.text_fraud.evidence?.sender).toEqual(
+    expect.objectContaining({ sender_kind: "NUMERIC" }),
+  );
+  expect(
+    JSON.stringify(result.evidence_summary.text_fraud.evidence),
+  ).not.toMatch(/sender_value|raw_text|candidate_id/i);
 });
 
 test("polls with capped delays until a terminal partial result", async () => {
