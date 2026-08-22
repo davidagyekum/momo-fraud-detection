@@ -102,8 +102,8 @@ def _text_signal(predicted_class: str | None) -> TextPolicySignal:
             (reason_code,) if predicted_class is not None else ("NO_DECISIVE_TEXT_FRAUD_SIGNAL",)
         ),
         reasons=reasons,
-        ruleset_version="ghana-momo-obvious-scam-rules-v2",
-        schema_version="momo-text-fraud-assessment-v1",
+        ruleset_version="ghana-momo-hybrid-text-risk-v3",
+        schema_version="momo-hybrid-text-risk-assessment-v1",
         evidence_quality="HIGH",
     )
 
@@ -201,6 +201,40 @@ def test_text_rules_can_drive_categorical_risk_without_inventing_probability(
     assert result.legacy_risk_class == legacy_class
     assert result.score is None
     assert result.reasons
+    assert result.policy_version == "analysis-risk-policy-demo-v4"
+
+
+def test_policy_v4_keeps_historical_v2_assessment_compatible() -> None:
+    policy = load_risk_policy(POLICY_PATH)
+    source = _unavailable_input()
+    historical = TextPolicySignal(
+        status="SUCCESS",
+        predicted_class="FRAUDULENT",
+        policy_score=94,
+        score_is_probability=False,
+        reason_codes=("PIN_OR_OTP_REQUEST",),
+        reasons=(PolicyReason("PIN_OR_OTP_REQUEST", "Secret code requested", "CRITICAL"),),
+        ruleset_version="ghana-momo-obvious-scam-rules-v2",
+        schema_version="momo-text-fraud-assessment-v1",
+        evidence_quality="HIGH",
+    )
+    value = AnalysisPolicyInput(
+        mode=source.mode,
+        verification_status=source.verification_status,
+        critical_verification_mismatches=(),
+        confirmed_critical_fields_complete=True,
+        corrected_low_confidence_fields=(),
+        deterministic_image_reasons=(),
+        image_model=source.image_model,
+        structured_model=source.structured_model,
+        semantic_reasons=(),
+        text_signal=historical,
+    )
+
+    result = evaluate_risk_policy(policy, value)
+
+    assert result.band is RiskBand.HIGH
+    assert result.legacy_risk_class == "FRAUDULENT"
 
 
 @pytest.mark.parametrize("predicted_class", ["SUSPICIOUS", "FRAUDULENT"])

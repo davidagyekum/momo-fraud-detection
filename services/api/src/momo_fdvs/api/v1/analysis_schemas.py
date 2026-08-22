@@ -2,6 +2,7 @@
 
 from marshmallow import Schema, fields, validate
 
+from momo_fdvs.api.v1.ocr_schemas import OCRTextFraudEvidenceSchema
 from momo_fdvs.api.v1.schemas import MetaSchema
 
 
@@ -64,6 +65,7 @@ class TextFraudComponentSchema(Schema):
     evidence_quality = fields.String(required=True)
     ruleset_version = fields.String(allow_none=True, required=True)
     limitations = fields.List(fields.String(), required=True)
+    evidence = fields.Nested(OCRTextFraudEvidenceSchema, allow_none=True, required=True)
 
 
 class AnalysisStageSchema(Schema):

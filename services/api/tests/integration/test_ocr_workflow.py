@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -13,6 +14,7 @@ from sqlalchemy import func, select
 from momo_fdvs.extensions import db
 from momo_fdvs.models import (
     AuditLog,
+    FraudRuleSet,
     OCRConfirmation,
     OCRResult,
     ReceiptDerivative,
@@ -71,6 +73,27 @@ def _headers(session: dict[str, Any], key: str | None = None) -> dict[str, str]:
     if key:
         result["Idempotency-Key"] = key
     return result
+
+
+def _seed_active_rule_set(app: Flask, owner: dict[str, Any]) -> None:
+    owner_id = uuid.UUID(owner["user"]["id"])
+    with app.app_context():
+        active = db.session.scalar(select(FraudRuleSet).where(FraudRuleSet.status == "ACTIVE"))
+        if active is None:
+            db.session.add(
+                FraudRuleSet(
+                    version=f"ocr-workflow-{uuid.uuid4().hex}",
+                    status="ACTIVE",
+                    risk_weights={},
+                    thresholds={},
+                    description="Controlled OCR workflow rule set.",
+                    created_by=owner_id,
+                    activated_by=owner_id,
+                    activated_at=datetime.now(UTC),
+                    row_version=1,
+                )
+            )
+            db.session.commit()
 
 
 def _upload(client: Any, session: dict[str, Any]) -> str:
@@ -172,6 +195,9 @@ def test_ocr_run_replay_review_and_owner_isolation(
     assert data["selected_variant"] == "GRAY_CLAHE"
     assert data["fraud_preview"]["score_is_probability"] is False
     assert data["fraud_preview"]["class"] is None
+    assert data["fraud_preview"]["evidence"]["format_profile"]["status"] == "AVAILABLE"
+    assert data["fraud_preview"]["evidence"]["consensus"]["candidate_count"] == 0
+    assert "bbox" not in str(data["fraud_preview"]["evidence"])
     assert "token_data" not in created.get_data(as_text=True)
 
     replay = client.post(f"/api/v1/transactions/{transaction_id}/ocr", headers=_headers(owner, key))
@@ -285,6 +311,7 @@ def test_confirmation_preserves_original_and_enforces_analysis_guard(
 ) -> None:
     client = app.test_client()
     owner = _register(client)
+    _seed_active_rule_set(app, owner)
     transaction_id = _upload(client, owner)
     pipeline = _pipeline(app)
     monkeypatch.setattr("momo_fdvs.services.ocr.execute_ocr", lambda *_args: pipeline)
@@ -336,7 +363,7 @@ def test_confirmation_preserves_original_and_enforces_analysis_guard(
         f"/api/v1/transactions/{transaction_id}/analyses",
         headers=_headers(owner, f"analysis-{uuid.uuid4()}"),
     )
-    assert partial.status_code == 202
+    assert partial.status_code == 202, partial.get_data(as_text=True)
     assert partial.json["data"]["status"] == "PARTIAL"
     analysis = client.get(partial.json["data"]["poll_url"], headers=_headers(owner))
     assert analysis.status_code == 200

@@ -1687,6 +1687,81 @@
         ],
         "type": "object"
       },
+      "OCRTextFraudConsensusEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted_reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "candidate_count": {
+            "type": "integer"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "vote_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "accepted_reason_codes",
+          "candidate_count",
+          "limitations",
+          "vote_counts"
+        ],
+        "type": "object"
+      },
+      "OCRTextFraudEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "consensus": {
+            "$ref": "#/components/schemas/OCRTextFraudConsensusEvidence"
+          },
+          "format_profile": {
+            "$ref": "#/components/schemas/OCRTextFraudFormatProfileEvidence"
+          },
+          "sender": {
+            "$ref": "#/components/schemas/OCRTextFraudSenderEvidence"
+          }
+        },
+        "required": [
+          "consensus",
+          "format_profile",
+          "sender"
+        ],
+        "type": "object"
+      },
+      "OCRTextFraudFormatProfileEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "sha256",
+          "status",
+          "version"
+        ],
+        "type": "object"
+      },
       "OCRTextFraudPreview": {
         "additionalProperties": false,
         "properties": {
@@ -1696,6 +1771,17 @@
           },
           "disclaimer": {
             "type": "string"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/OCRTextFraudEvidence"
+              }
+            ]
           },
           "evidence_quality": {
             "type": "string"
@@ -1779,6 +1865,34 @@
           "severity",
           "summary",
           "title"
+        ],
+        "type": "object"
+      },
+      "OCRTextFraudSenderEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "header_phone_present": {
+            "type": "boolean"
+          },
+          "header_provider_label_present": {
+            "type": "boolean"
+          },
+          "sender_confidence": {
+            "type": "number"
+          },
+          "sender_kind": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "header_phone_present",
+          "header_provider_label_present",
+          "sender_confidence",
+          "sender_kind",
+          "source"
         ],
         "type": "object"
       },
@@ -2574,6 +2688,17 @@
             "nullable": true,
             "type": "string"
           },
+          "evidence": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/OCRTextFraudEvidence"
+              }
+            ]
+          },
           "evidence_quality": {
             "type": "string"
           },
@@ -2606,6 +2731,7 @@
         },
         "required": [
           "class",
+          "evidence",
           "evidence_quality",
           "limitations",
           "policy_score",

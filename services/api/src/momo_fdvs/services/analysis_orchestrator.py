@@ -44,9 +44,7 @@ from momo_fdvs.services.risk_policy import (
     evaluate_risk_policy,
     load_risk_policy,
 )
-from momo_fdvs.services.text_fraud import (
-    stored_text_assessment,
-)
+from momo_fdvs.services.text_fraud import stored_text_assessment_projection
 from momo_fdvs.services.verification import (
     VerificationFailure,
     VerificationOutcome,
@@ -183,25 +181,48 @@ def _model_projection(signal: ModelPolicySignal) -> dict[str, Any]:
 def _text_policy_signal(
     ocr_result: OCRResult,
 ) -> tuple[TextPolicySignal, dict[str, object]]:
-    assessment = stored_text_assessment(ocr_result.extracted_fields.get("_text_fraud"))
-    projection = assessment.as_public_dict()
-    if assessment.status == "UNAVAILABLE":
-        return TextPolicySignal.unavailable(assessment.reason_code), projection
+    projection = stored_text_assessment_projection(ocr_result.extracted_fields.get("_text_fraud"))
+    status = str(projection.get("status", "UNAVAILABLE"))
+    reason_code = str(projection.get("reason_code", "OCR_TEXT_RISK_UNAVAILABLE"))
+    if status == "UNAVAILABLE":
+        return TextPolicySignal.unavailable(reason_code), projection
+    reason_values = projection.get("reasons")
+    reason_rows = reason_values if isinstance(reason_values, list) else []
     reasons = tuple(
-        PolicyReason(reason.code, reason.title, reason.severity) for reason in assessment.reasons
+        PolicyReason(
+            str(value["code"]),
+            str(value["title"]),
+            cast(Any, value["severity"]),
+        )
+        for value in reason_rows
+        if isinstance(value, dict)
+        and value.get("code")
+        and value.get("title")
+        and value.get("severity") in _SEVERITIES
     )
+    reason_codes_value = projection.get("reason_codes")
+    reason_codes = (
+        tuple(str(code) for code in reason_codes_value)
+        if isinstance(reason_codes_value, list) and reason_codes_value
+        else (reason_code,)
+    )
+    limitations_value = projection.get("limitations")
     return (
         TextPolicySignal(
             status="SUCCESS",
-            predicted_class=assessment.risk_class,
-            policy_score=assessment.risk_score,
-            score_is_probability=assessment.score_is_probability,
-            reason_codes=assessment.reason_codes or (assessment.reason_code,),
+            predicted_class=cast(Any, projection.get("class")),
+            policy_score=cast(int | None, projection.get("score")),
+            score_is_probability=False,
+            reason_codes=reason_codes,
             reasons=reasons,
-            ruleset_version=assessment.ruleset_version,
-            schema_version=assessment.schema_version,
-            evidence_quality=assessment.evidence_quality,
-            limitations=assessment.limitations,
+            ruleset_version=str(projection.get("ruleset_version")),
+            schema_version=str(projection.get("schema_version")),
+            evidence_quality=str(projection.get("evidence_quality")),
+            limitations=(
+                tuple(str(item) for item in limitations_value)
+                if isinstance(limitations_value, list)
+                else ()
+            ),
         ),
         projection,
     )
@@ -631,10 +652,22 @@ def run_analysis(
         started_at, counter = _stage_start(run, "SEMANTIC_RULES")
         deterministic_reasons = _deterministic_reasons(image_analysis)
         text_signal, text_projection = _text_policy_signal(ocr_result)
+        text_evidence = text_projection.get("evidence")
+        text_evidence = text_evidence if isinstance(text_evidence, dict) else {}
+        format_profile = text_evidence.get("format_profile")
+        format_profile = format_profile if isinstance(format_profile, dict) else {}
+        sender_evidence = text_evidence.get("sender")
+        sender_evidence = sender_evidence if isinstance(sender_evidence, dict) else {}
+        consensus_evidence = text_evidence.get("consensus")
+        consensus_evidence = consensus_evidence if isinstance(consensus_evidence, dict) else {}
         run.configuration_snapshot = {
             **run.configuration_snapshot,
             "text_fraud_schema_version": text_projection["schema_version"],
             "text_fraud_ruleset_version": text_projection["ruleset_version"],
+            "text_fraud_profile_version": format_profile.get("version"),
+            "text_fraud_profile_sha256": format_profile.get("sha256"),
+            "text_fraud_sender_kind": sender_evidence.get("sender_kind"),
+            "text_fraud_candidate_count": consensus_evidence.get("candidate_count"),
         }
         stages.append(
             _record_stage(

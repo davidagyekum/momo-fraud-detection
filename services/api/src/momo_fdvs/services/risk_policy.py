@@ -39,6 +39,11 @@ _TEXT_CLASSES = {"SUSPICIOUS", "FRAUDULENT"}
 _IMAGE_CLASSES = {"unaltered", "tampered"}
 _VERIFICATION_STATUSES = {"VERIFIED", "MISMATCH", "UNVERIFIED", "NOT_ATTEMPTED"}
 _SEVERITIES = {"INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"}
+_SUPPORTED_TEXT_RULESETS = {
+    "ghana-momo-obvious-scam-rules-v1",
+    "ghana-momo-obvious-scam-rules-v2",
+    "ghana-momo-hybrid-text-risk-v3",
+}
 
 
 class PolicyFailure(ValueError):
@@ -597,7 +602,7 @@ def evaluate_risk_policy(
         )
     if (
         value.text_signal.status == "SUCCESS"
-        and value.text_signal.ruleset_version != policy.text_fraud_ruleset_version
+        and value.text_signal.ruleset_version not in _SUPPORTED_TEXT_RULESETS
     ):
         raise PolicyFailure(
             "RISK_POLICY_INPUT_INVALID", "The text evidence ruleset is incompatible."

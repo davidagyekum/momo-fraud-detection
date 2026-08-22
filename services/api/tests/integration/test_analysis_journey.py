@@ -163,6 +163,26 @@ def _seed_reference(app: Flask, owner_id: uuid.UUID, fields: dict[str, Any]) -> 
         db.session.commit()
 
 
+def _seed_active_rule_set(app: Flask, owner_id: uuid.UUID) -> None:
+    with app.app_context():
+        active = db.session.scalar(select(FraudRuleSet).where(FraudRuleSet.status == "ACTIVE"))
+        if active is None:
+            db.session.add(
+                FraudRuleSet(
+                    version=f"journey-active-{uuid.uuid4().hex}",
+                    status="ACTIVE",
+                    risk_weights={},
+                    thresholds={},
+                    description="Controlled screenshot journey rule set.",
+                    created_by=owner_id,
+                    activated_by=owner_id,
+                    activated_at=datetime.now(UTC),
+                    row_version=1,
+                )
+            )
+            db.session.commit()
+
+
 def _staff_session(app: Flask, client: Any, role: str) -> dict[str, Any]:
     email = f"journey-{role.lower()}-{uuid.uuid4()}@example.test"
     with app.app_context():
@@ -204,6 +224,7 @@ def test_controlled_screenshot_analysis_journey(
     )
     assert login.status_code == 200
     session = login.json["data"]
+    _seed_active_rule_set(app, uuid.UUID(session["user"]["id"]))
 
     message_upload = client.post(
         "/api/v1/transactions",
@@ -232,7 +253,7 @@ def test_controlled_screenshot_analysis_journey(
         json={"mode": "screenshot_only", "ocr_result_id": message_result_id},
         headers=_headers(session, f"analysis-{uuid.uuid4()}"),
     )
-    assert message_started.status_code == 202
+    assert message_started.status_code == 202, message_started.get_data(as_text=True)
     message_analysis = client.get(
         f"/api/v1/analyses/{message_started.json['data']['analysis_run_id']}",
         headers=_headers(session),
@@ -242,6 +263,12 @@ def test_controlled_screenshot_analysis_journey(
     assert message_analysis.json["data"]["risk"]["band"] == "high_risk"
     assert message_analysis.json["data"]["risk"]["conclusion_status"] == "CONCLUSIVE"
     assert message_analysis.json["data"]["verification"]["status"] == "NOT_ATTEMPTED"
+    assert message_analysis.json["data"]["risk"]["policy_version"] == (
+        "analysis-risk-policy-demo-v4"
+    )
+    assert message_analysis.json["data"]["versions"]["text_fraud_ruleset_version"] == (
+        "ghana-momo-hybrid-text-risk-v3"
+    )
 
     upload = client.post(
         "/api/v1/transactions",

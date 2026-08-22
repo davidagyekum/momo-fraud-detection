@@ -31,6 +31,33 @@ class OCRTextFraudReasonSchema(Schema):
     severity = fields.String(required=True)
 
 
+class OCRTextFraudSenderEvidenceSchema(Schema):
+    sender_kind = fields.String(required=True)
+    sender_confidence = fields.Float(required=True)
+    header_phone_present = fields.Boolean(required=True)
+    header_provider_label_present = fields.Boolean(required=True)
+    source = fields.String(required=True)
+
+
+class OCRTextFraudConsensusEvidenceSchema(Schema):
+    accepted_reason_codes = fields.List(fields.String(), required=True)
+    vote_counts = fields.Dict(keys=fields.String(), values=fields.Integer(), required=True)
+    candidate_count = fields.Integer(required=True)
+    limitations = fields.List(fields.String(), required=True)
+
+
+class OCRTextFraudFormatProfileEvidenceSchema(Schema):
+    status = fields.String(required=True)
+    version = fields.String(allow_none=True, required=True)
+    sha256 = fields.String(allow_none=True, required=True)
+
+
+class OCRTextFraudEvidenceSchema(Schema):
+    sender = fields.Nested(OCRTextFraudSenderEvidenceSchema, required=True)
+    consensus = fields.Nested(OCRTextFraudConsensusEvidenceSchema, required=True)
+    format_profile = fields.Nested(OCRTextFraudFormatProfileEvidenceSchema, required=True)
+
+
 class OCRTextFraudPreviewSchema(Schema):
     schema_version = fields.String(required=True)
     ruleset_version = fields.String(required=True)
@@ -45,6 +72,7 @@ class OCRTextFraudPreviewSchema(Schema):
     limitations = fields.List(fields.String(), required=True)
     summary = fields.String(required=True)
     disclaimer = fields.String(required=True)
+    evidence = fields.Nested(OCRTextFraudEvidenceSchema, allow_none=True)
 
 
 class OCRReviewDataSchema(Schema):

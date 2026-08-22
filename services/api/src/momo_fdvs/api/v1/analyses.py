@@ -174,6 +174,7 @@ def _text_fraud_projection(value: object) -> dict[str, Any]:
     component = _as_dict(value)
     reason_codes = component.get("reason_codes")
     limitations = component.get("limitations")
+    evidence = component.get("evidence")
     return {
         "status": str(component.get("status", "UNAVAILABLE")),
         "class": component.get("class"),
@@ -183,6 +184,7 @@ def _text_fraud_projection(value: object) -> dict[str, Any]:
         "evidence_quality": str(component.get("evidence_quality", "UNAVAILABLE")),
         "ruleset_version": component.get("ruleset_version"),
         "limitations": limitations if isinstance(limitations, list) else [],
+        "evidence": evidence if isinstance(evidence, dict) else None,
     }
 
 

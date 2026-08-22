@@ -89,3 +89,7 @@ def test_real_ocr_passive_counterfeit_becomes_high_risk(app: Flask) -> None:
         "NUMERIC_SENDER_TRANSACTION_CLAIM",
         "GENUINE_TEMPLATE_ANOMALY",
     } <= set(preview["reason_codes"])
+    assert preview["evidence"]["sender"]["sender_kind"] == "phone_number"
+    assert preview["evidence"]["consensus"]["candidate_count"] > 1
+    assert preview["evidence"]["format_profile"]["status"] == "AVAILABLE"
+    assert "bbox" not in str(preview["evidence"])
