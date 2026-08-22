@@ -758,6 +758,15 @@ def stored_text_assessment(value: object) -> TextFraudAssessment:
 def stored_text_assessment_projection(value: object) -> dict[str, object]:
     """Allowlist persisted assessment without recomputing historical OCR evidence."""
 
+    if (
+        isinstance(value, dict)
+        and value.get("schema_version") == "momo-hybrid-text-risk-assessment-v1"
+    ):
+        from momo_fdvs.services.hybrid_text_risk import (
+            stored_hybrid_assessment_projection,
+        )
+
+        return stored_hybrid_assessment_projection(value)
     return stored_text_assessment(value).as_public_dict()
 
 

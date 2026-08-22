@@ -209,7 +209,7 @@ def test_ocr_run_replay_review_and_owner_isolation(
         assert result.extracted_fields["_evidence"]["parser_version"] == "generic-parser-v1"
         assert (
             result.extracted_fields["_text_fraud"]["ruleset_version"]
-            == "ghana-momo-obvious-scam-rules-v2"
+            == "ghana-momo-hybrid-text-risk-v3"
         )
 
 

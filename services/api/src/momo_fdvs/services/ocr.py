@@ -37,14 +37,12 @@ from momo_fdvs.models import (
     User,
 )
 from momo_fdvs.services.audit import audit_event
-from momo_fdvs.services.ocr_regions import ImageRegion, discover_ocr_regions
-from momo_fdvs.services.text_fraud import (
-    TEXT_FRAUD_RULESET_VERSION,
-    TEXT_FRAUD_SCHEMA_VERSION,
-    TextFraudContext,
-    assess_ocr_text,
-    confidence_from_ocr_tokens,
+from momo_fdvs.services.hybrid_text_risk import (
+    HYBRID_RULESET_VERSION,
+    HYBRID_SCHEMA_VERSION,
+    assess_hybrid_ocr,
 )
+from momo_fdvs.services.ocr_regions import ImageRegion, discover_ocr_regions
 from momo_fdvs.storage.base import ObjectStorage, generated_key, sha256_bytes
 
 cv2.setNumThreads(1)
@@ -784,10 +782,12 @@ def execute_ocr(content: bytes, expected_sha256: str) -> OCRPipelineResult:
         }
         for candidate in candidates
     ]
-    fraud_preview = assess_ocr_text(
-        raw_text,
-        ocr_confidence=confidence_from_ocr_tokens(tokens),
-        context=TextFraudContext(claimed_provider=str(provider["value"])),
+    fraud_preview = assess_hybrid_ocr(
+        selected_raw_text=raw_text,
+        selected_tokens=tokens,
+        provider_code=str(provider["value"]),
+        fraud_candidates=fraud_candidates,
+        image_height=int(variants["BASE_RESIZED"].shape[0]),
     ).as_public_dict()
     return OCRPipelineResult(
         engine_version=engine_version,
@@ -976,10 +976,12 @@ def run_and_store_ocr(
         )
         fraud_preview = (
             pipeline.fraud_preview
-            or assess_ocr_text(
-                pipeline.raw_text,
-                ocr_confidence=confidence_from_ocr_tokens(pipeline.tokens),
-                context=TextFraudContext(claimed_provider=str(pipeline.provider["value"])),
+            or assess_hybrid_ocr(
+                selected_raw_text=pipeline.raw_text,
+                selected_tokens=pipeline.tokens,
+                provider_code=str(pipeline.provider["value"]),
+                fraud_candidates=pipeline.fraud_candidates,
+                image_height=int(pipeline.quality_features.get("height_px", 0)),
             ).as_public_dict()
         )
         ocr_result = OCRResult(
@@ -998,8 +1000,8 @@ def run_and_store_ocr(
                     "parser_version": current_app.config["OCR_PARSER_VERSION"],
                     "field_schema_version": current_app.config["OCR_FIELD_SCHEMA_VERSION"],
                     "template_version": template.version if template else "generic-v1",
-                    "text_fraud_schema_version": TEXT_FRAUD_SCHEMA_VERSION,
-                    "text_fraud_ruleset_version": TEXT_FRAUD_RULESET_VERSION,
+                    "text_fraud_schema_version": HYBRID_SCHEMA_VERSION,
+                    "text_fraud_ruleset_version": HYBRID_RULESET_VERSION,
                 },
             },
             field_confidences=field_confidences,
@@ -1030,7 +1032,7 @@ def run_and_store_ocr(
                 "text_fraud_status": fraud_preview["status"],
                 "text_fraud_class": fraud_preview["class"],
                 "text_fraud_reason_codes": fraud_preview["reason_codes"],
-                "text_fraud_ruleset_version": TEXT_FRAUD_RULESET_VERSION,
+                "text_fraud_ruleset_version": HYBRID_RULESET_VERSION,
             },
         )
         db.session.commit()
