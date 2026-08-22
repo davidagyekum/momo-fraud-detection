@@ -1,0 +1,829 @@
+{
+  "builder_version": "mtn-format-profiler-v1",
+  "family_profiles": [
+    {
+      "common_features": [
+        "airtime",
+        "fee_precision_none",
+        "from_marker",
+        "money_count_1"
+      ],
+      "family": "AIRTIME",
+      "record_count": 82,
+      "required_features": [
+        "airtime",
+        "fee_precision_none"
+      ],
+      "signature_count": 5,
+      "signatures": [
+        {
+          "anchor_order": [
+            "money",
+            "from",
+            "reference"
+          ],
+          "count": 34,
+          "feature_codes": [
+            "airtime",
+            "fee_precision_none",
+            "from_marker",
+            "money_count_1",
+            "ref_label",
+            "successful"
+          ],
+          "signature_id": "aaeebdff82a4fd640411"
+        },
+        {
+          "anchor_order": [
+            "money",
+            "from"
+          ],
+          "count": 33,
+          "feature_codes": [
+            "airtime",
+            "fee_precision_none",
+            "from_marker",
+            "money_count_1"
+          ],
+          "signature_id": "7c9f47c9fa867b64d01a"
+        },
+        {
+          "anchor_order": [
+            "money",
+            "to"
+          ],
+          "count": 9,
+          "feature_codes": [
+            "airtime",
+            "fee_precision_none",
+            "money_count_1",
+            "to_marker"
+          ],
+          "signature_id": "70efc71ad85c20ddd04b"
+        },
+        {
+          "anchor_order": [
+            "to"
+          ],
+          "count": 5,
+          "feature_codes": [
+            "airtime",
+            "fee_precision_none",
+            "money_count_0",
+            "to_marker"
+          ],
+          "signature_id": "a805fe229eb5c11f7a9e"
+        },
+        {
+          "anchor_order": [],
+          "count": 1,
+          "feature_codes": [
+            "airtime",
+            "fee_precision_none",
+            "money_count_0"
+          ],
+          "signature_id": "ed03069a035b94693e23"
+        }
+      ],
+      "similarity_threshold": 0.62
+    },
+    {
+      "common_features": [
+        "available_balance",
+        "cash_in",
+        "cash_in_free_disclaimer",
+        "cash_in_received_for",
+        "current_balance",
+        "fee_charged",
+        "fee_precision_0",
+        "from_marker",
+        "money_count_3_plus",
+        "mtn_mobilemoney",
+        "transaction_id"
+      ],
+      "family": "CASH_IN",
+      "record_count": 22,
+      "required_features": [
+        "available_balance",
+        "cash_in",
+        "cash_in_free_disclaimer",
+        "cash_in_received_for",
+        "current_balance",
+        "fee_charged",
+        "fee_precision_0",
+        "from_marker",
+        "money_count_3_plus",
+        "mtn_mobilemoney",
+        "transaction_id"
+      ],
+      "signature_count": 1,
+      "signatures": [
+        {
+          "anchor_order": [
+            "cash_in",
+            "money",
+            "from",
+            "current_balance",
+            "available_balance",
+            "transaction_id",
+            "fee"
+          ],
+          "count": 22,
+          "feature_codes": [
+            "available_balance",
+            "cash_in",
+            "cash_in_free_disclaimer",
+            "cash_in_received_for",
+            "current_balance",
+            "fee_charged",
+            "fee_precision_0",
+            "from_marker",
+            "money_count_3_plus",
+            "mtn_mobilemoney",
+            "transaction_id"
+          ],
+          "signature_id": "dd033fb4ae62696bac5c"
+        }
+      ],
+      "similarity_threshold": 0.68
+    },
+    {
+      "common_features": [
+        "cash_out",
+        "cash_out_fee_disclaimer",
+        "cash_out_made_for",
+        "current_balance",
+        "fee_charged",
+        "fee_precision_2",
+        "financial_transaction_id",
+        "from_marker",
+        "money_count_3_plus",
+        "mtn_mobilemoney",
+        "to_marker",
+        "transaction_id"
+      ],
+      "family": "CASH_OUT",
+      "record_count": 286,
+      "required_features": [
+        "cash_out",
+        "cash_out_fee_disclaimer",
+        "cash_out_made_for",
+        "current_balance",
+        "fee_charged",
+        "fee_precision_2",
+        "financial_transaction_id",
+        "from_marker",
+        "money_count_3_plus",
+        "mtn_mobilemoney",
+        "to_marker",
+        "transaction_id"
+      ],
+      "signature_count": 1,
+      "signatures": [
+        {
+          "anchor_order": [
+            "cash_out",
+            "money",
+            "to",
+            "current_balance",
+            "financial_transaction_id",
+            "transaction_id",
+            "from",
+            "fee"
+          ],
+          "count": 286,
+          "feature_codes": [
+            "cash_out",
+            "cash_out_fee_disclaimer",
+            "cash_out_made_for",
+            "current_balance",
+            "fee_charged",
+            "fee_precision_2",
+            "financial_transaction_id",
+            "from_marker",
+            "money_count_3_plus",
+            "mtn_mobilemoney",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "837c64b8cd2cf95ca5e9"
+        }
+      ],
+      "similarity_threshold": 0.68
+    },
+    {
+      "common_features": [
+        "current_balance",
+        "fee_charged",
+        "fee_precision_2",
+        "momo_app_link",
+        "money_count_3_plus",
+        "payment_for",
+        "to_marker",
+        "transaction_id"
+      ],
+      "family": "PAYMENT_FOR",
+      "record_count": 294,
+      "required_features": [
+        "current_balance",
+        "fee_charged",
+        "fee_precision_2",
+        "momo_app_link",
+        "money_count_3_plus",
+        "payment_for",
+        "to_marker",
+        "transaction_id"
+      ],
+      "signature_count": 2,
+      "signatures": [
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "transaction_id",
+            "fee"
+          ],
+          "count": 293,
+          "feature_codes": [
+            "current_balance",
+            "fee_charged",
+            "fee_precision_2",
+            "momo_app_link",
+            "money_count_3_plus",
+            "payment_for",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "c13d467d425798935371"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "transaction_id",
+            "fee",
+            "financial_transaction_id",
+            "external_transaction_id"
+          ],
+          "count": 1,
+          "feature_codes": [
+            "current_balance",
+            "external_transaction_id",
+            "fee_charged",
+            "fee_precision_2",
+            "financial_transaction_id",
+            "momo_app_link",
+            "money_count_3_plus",
+            "payment_for",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "b18cd8ae638e43b0b51e"
+        }
+      ],
+      "similarity_threshold": 0.66
+    },
+    {
+      "common_features": [
+        "available_balance",
+        "current_balance",
+        "fee_charged",
+        "fee_precision_2",
+        "momo_app_link",
+        "money_count_3_plus",
+        "payment_made_for",
+        "reference_label",
+        "tax_charged",
+        "to_marker",
+        "transaction_id"
+      ],
+      "family": "PAYMENT_MADE",
+      "record_count": 1186,
+      "required_features": [
+        "available_balance",
+        "current_balance",
+        "fee_charged",
+        "fee_precision_2",
+        "money_count_3_plus",
+        "payment_made_for",
+        "reference_label",
+        "tax_charged",
+        "to_marker",
+        "transaction_id"
+      ],
+      "signature_count": 5,
+      "signatures": [
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "fee",
+            "tax"
+          ],
+          "count": 606,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_charged",
+            "fee_precision_2",
+            "momo_app_link",
+            "money_count_3_plus",
+            "payment_made_for",
+            "reference_label",
+            "tax_charged",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "300b414a737f9f16683a"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "fee",
+            "tax"
+          ],
+          "count": 575,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_charged",
+            "fee_precision_2",
+            "money_count_3_plus",
+            "payment_made_for",
+            "reference_label",
+            "tax_charged",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "878f2ff3a92528f323c0"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "tax"
+          ],
+          "count": 2,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_precision_none",
+            "momo_app_link",
+            "money_count_3_plus",
+            "payment_made_for",
+            "reference_label",
+            "tax_charged",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "f518818de00261ea778f"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "tax"
+          ],
+          "count": 2,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_precision_none",
+            "money_count_3_plus",
+            "payment_made_for",
+            "reference_label",
+            "tax_charged",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "33b9398c0ce42bc845d9"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "from",
+            "fee"
+          ],
+          "count": 1,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_charged",
+            "fee_precision_2",
+            "from_marker",
+            "money_count_3_plus",
+            "mtn_mobilemoney",
+            "payment_made_for",
+            "reference_label",
+            "to_marker"
+          ],
+          "signature_id": "88abf27a767e58989bf5"
+        }
+      ],
+      "similarity_threshold": 0.62
+    },
+    {
+      "common_features": [
+        "available_balance",
+        "current_balance",
+        "fee_precision_2",
+        "from_marker",
+        "money_count_3_plus",
+        "payment_received_for",
+        "reference_label",
+        "transaction_fee",
+        "transaction_id"
+      ],
+      "family": "PAYMENT_RECEIVED",
+      "record_count": 198,
+      "required_features": [
+        "available_balance",
+        "current_balance",
+        "fee_precision_2",
+        "from_marker",
+        "money_count_3_plus",
+        "payment_received_for",
+        "reference_label",
+        "transaction_fee",
+        "transaction_id"
+      ],
+      "signature_count": 4,
+      "signatures": [
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "from",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "fee"
+          ],
+          "count": 187,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_precision_2",
+            "from_marker",
+            "money_count_3_plus",
+            "payment_received_for",
+            "reference_label",
+            "transaction_fee",
+            "transaction_id"
+          ],
+          "signature_id": "0966b36ca8aca074ae35"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "from",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "fee"
+          ],
+          "count": 7,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_precision_2",
+            "from_marker",
+            "money_count_3_plus",
+            "payment_received_for",
+            "reference_label",
+            "reversal",
+            "transaction_fee",
+            "transaction_id"
+          ],
+          "signature_id": "542d902c499246e294db"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "from",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "transaction_id",
+            "fee"
+          ],
+          "count": 3,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_precision_2",
+            "from_marker",
+            "money_count_3_plus",
+            "payment_received_for",
+            "ref_label",
+            "reference_label",
+            "transaction_fee",
+            "transaction_id"
+          ],
+          "signature_id": "d23886edf2ab9378d9c2"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "from",
+            "current_balance",
+            "available_balance",
+            "reference",
+            "to",
+            "transaction_id",
+            "fee"
+          ],
+          "count": 1,
+          "feature_codes": [
+            "available_balance",
+            "current_balance",
+            "fee_precision_2",
+            "from_marker",
+            "money_count_3_plus",
+            "payment_received_for",
+            "reference_label",
+            "to_marker",
+            "transaction_fee",
+            "transaction_id"
+          ],
+          "signature_id": "7765c1197c683d378855"
+        }
+      ],
+      "similarity_threshold": 0.62
+    },
+    {
+      "common_features": [
+        "fee_precision_none",
+        "financial_transaction_id",
+        "money_count_2",
+        "new_balance",
+        "reversal",
+        "to_marker",
+        "transaction_id"
+      ],
+      "family": "REVERSAL",
+      "record_count": 5,
+      "required_features": [
+        "fee_precision_none",
+        "reversal",
+        "to_marker"
+      ],
+      "signature_count": 2,
+      "signatures": [
+        {
+          "anchor_order": [
+            "money",
+            "to",
+            "new_balance",
+            "financial_transaction_id",
+            "transaction_id"
+          ],
+          "count": 3,
+          "feature_codes": [
+            "fee_precision_none",
+            "financial_transaction_id",
+            "money_count_2",
+            "new_balance",
+            "reversal",
+            "to_marker",
+            "transaction_id"
+          ],
+          "signature_id": "be3a4987c8748346a977"
+        },
+        {
+          "anchor_order": [
+            "to"
+          ],
+          "count": 2,
+          "feature_codes": [
+            "fee_precision_none",
+            "money_count_0",
+            "reversal",
+            "to_marker"
+          ],
+          "signature_id": "3033a4e2d5da85c95370"
+        }
+      ],
+      "similarity_threshold": 0.66
+    },
+    {
+      "common_features": [
+        "airtime",
+        "external_transaction_id",
+        "fee_precision_none",
+        "fee_was",
+        "financial_transaction_id",
+        "momo_app_link",
+        "money_count_3_plus",
+        "new_balance",
+        "reference_label",
+        "to_marker",
+        "transaction_id",
+        "your_payment_of"
+      ],
+      "family": "YOUR_PAYMENT",
+      "record_count": 363,
+      "required_features": [
+        "external_transaction_id",
+        "fee_precision_none",
+        "fee_was",
+        "financial_transaction_id",
+        "momo_app_link",
+        "money_count_3_plus",
+        "new_balance",
+        "reference_label",
+        "to_marker",
+        "transaction_id",
+        "your_payment_of"
+      ],
+      "signature_count": 5,
+      "signatures": [
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "new_balance",
+            "fee",
+            "reference",
+            "financial_transaction_id",
+            "transaction_id",
+            "external_transaction_id"
+          ],
+          "count": 310,
+          "feature_codes": [
+            "airtime",
+            "external_transaction_id",
+            "fee_precision_none",
+            "fee_was",
+            "financial_transaction_id",
+            "momo_app_link",
+            "money_count_3_plus",
+            "new_balance",
+            "reference_label",
+            "to_marker",
+            "transaction_id",
+            "your_payment_of"
+          ],
+          "signature_id": "063acf62a54eab478c28"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "new_balance",
+            "fee",
+            "reference",
+            "financial_transaction_id",
+            "transaction_id",
+            "external_transaction_id"
+          ],
+          "count": 45,
+          "feature_codes": [
+            "external_transaction_id",
+            "fee_precision_none",
+            "fee_was",
+            "financial_transaction_id",
+            "momo_app_link",
+            "money_count_3_plus",
+            "new_balance",
+            "reference_label",
+            "to_marker",
+            "transaction_id",
+            "your_payment_of"
+          ],
+          "signature_id": "846e9774d3eb2c91666f"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "reference",
+            "new_balance",
+            "fee",
+            "tax",
+            "financial_transaction_id",
+            "transaction_id",
+            "external_transaction_id"
+          ],
+          "count": 6,
+          "feature_codes": [
+            "external_transaction_id",
+            "fee_precision_none",
+            "fee_was",
+            "financial_transaction_id",
+            "momo_app_link",
+            "money_count_3_plus",
+            "new_balance",
+            "reference_label",
+            "tax_charged",
+            "to_marker",
+            "transaction_id",
+            "your_payment_of"
+          ],
+          "signature_id": "5e8068304469268fb5e5"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "new_balance",
+            "fee",
+            "financial_transaction_id",
+            "transaction_id",
+            "external_transaction_id"
+          ],
+          "count": 1,
+          "feature_codes": [
+            "airtime",
+            "external_transaction_id",
+            "fee_precision_none",
+            "fee_was",
+            "financial_transaction_id",
+            "momo_app_link",
+            "money_count_3_plus",
+            "new_balance",
+            "to_marker",
+            "transaction_id",
+            "your_payment_of"
+          ],
+          "signature_id": "5dae967df6abbf709717"
+        },
+        {
+          "anchor_order": [
+            "payment",
+            "money",
+            "to",
+            "reference",
+            "financial_transaction_id",
+            "transaction_id",
+            "external_transaction_id",
+            "fee"
+          ],
+          "count": 1,
+          "feature_codes": [
+            "external_transaction_id",
+            "fee_precision_none",
+            "financial_transaction_id",
+            "money_count_1",
+            "reference_label",
+            "to_marker",
+            "transaction_id",
+            "your_payment_of"
+          ],
+          "signature_id": "f3ef0bcce9453983aabb"
+        }
+      ],
+      "similarity_threshold": 0.62
+    }
+  ],
+  "privacy": {
+    "direct_identifiers_included": false,
+    "locked_test_accessed": false,
+    "raw_text_included": false,
+    "training_executed": false
+  },
+  "provider": "MTN_MOMO",
+  "schema_version": "mtn-genuine-format-profile-v1",
+  "source_row_count": 2654,
+  "source_sha256": "9a9adb3a514b2472d46f6c7cf35aa4fe5bbc466223f28156016163689ca6a7fa",
+  "transaction_row_count": 2436
+}
