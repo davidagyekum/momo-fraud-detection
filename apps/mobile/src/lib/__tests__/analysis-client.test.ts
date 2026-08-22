@@ -73,7 +73,7 @@ function envelope(status: "QUEUED" | "PROCESSING" | "PARTIAL" = "PARTIAL") {
           limitations: ["ABSENCE_OF_RULE_MATCH_IS_NOT_PROOF_OF_GENUINENESS"],
           evidence: {
             sender: {
-              sender_kind: "NUMERIC",
+              sender_kind: "phone_number",
               sender_confidence: 0.91,
               header_phone_present: true,
               header_provider_label_present: false,
@@ -200,11 +200,29 @@ test("accepts privacy-safe hybrid evidence without raw sender or OCR values", as
   const result = await getAnalysis(request, "analysis-id");
 
   expect(result.evidence_summary.text_fraud.evidence?.sender).toEqual(
-    expect.objectContaining({ sender_kind: "NUMERIC" }),
+    expect.objectContaining({ sender_kind: "phone_number" }),
   );
   expect(
     JSON.stringify(result.evidence_summary.text_fraud.evidence),
   ).not.toMatch(/sender_value|raw_text|candidate_id/i);
+});
+
+test("accepts an unavailable format profile with null version metadata", async () => {
+  const response = envelope();
+  response.data.evidence_summary.text_fraud.evidence.format_profile = {
+    status: "UNAVAILABLE",
+    version: null,
+    sha256: null,
+  } as never;
+  const request = jest.fn().mockResolvedValue(response);
+
+  const result = await getAnalysis(request, "analysis-id");
+
+  expect(result.evidence_summary.text_fraud.evidence?.format_profile).toEqual({
+    status: "UNAVAILABLE",
+    version: null,
+    sha256: null,
+  });
 });
 
 test("polls with capped delays until a terminal partial result", async () => {

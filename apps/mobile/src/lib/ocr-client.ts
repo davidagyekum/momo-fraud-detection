@@ -60,23 +60,24 @@ export type OCRTextFraudPreview = {
   summary: string;
   disclaimer: string;
   evidence?: {
-    sender?: {
-      sender_kind: "NUMERIC" | "ALPHANUMERIC" | "MIXED" | "UNKNOWN";
+    sender: {
+      sender_kind:
+        "phone_number" | "alphanumeric_provider" | "mixed" | "unknown";
       sender_confidence: number;
       header_phone_present: boolean;
       header_provider_label_present: boolean;
       source: string;
     };
-    consensus?: {
+    consensus: {
       accepted_reason_codes: string[];
       vote_counts: Record<string, number>;
       candidate_count: number;
       limitations: string[];
     };
-    format_profile?: {
+    format_profile: {
       status: string;
-      version: string;
-      sha256: string;
+      version: string | null;
+      sha256: string | null;
     };
   };
 };

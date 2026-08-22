@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
+import pytest
+
 from momo_fdvs.services.hybrid_text_risk import (
     HYBRID_RULESET_VERSION,
     HYBRID_SCHEMA_VERSION,
@@ -10,6 +12,7 @@ from momo_fdvs.services.hybrid_text_risk import (
     finalize_hybrid_assessment,
     stored_hybrid_assessment_projection,
 )
+from momo_fdvs.services.mtn_format_profile import MtnFormatProfileError
 from momo_fdvs.services.ocr_evidence_consensus import ConsensusEvidence
 from momo_fdvs.services.sender_context import SenderContext
 from momo_fdvs.services.text_fraud import stored_text_assessment_projection
@@ -56,6 +59,67 @@ def test_two_medium_anomaly_families_are_suspicious_not_fraudulent() -> None:
 
     assert result.risk_class == "SUSPICIOUS"
     assert result.risk_score == 56
+
+
+def test_low_quality_single_format_anomaly_is_not_fraudulent() -> None:
+    result = finalize_hybrid_assessment(
+        _consensus("GENUINE_TEMPLATE_ANOMALY"),
+        evidence_quality="LOW",
+    )
+
+    assert result.risk_class == "SUSPICIOUS"
+    assert result.risk_score is not None and result.risk_score < 90
+
+
+def test_profile_integrity_failure_cannot_create_a_counterfeit_verdict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_profile_load() -> None:
+        raise MtnFormatProfileError("PROFILE_INTEGRITY_FAILURE", "controlled failure")
+
+    monkeypatch.setattr(
+        "momo_fdvs.services.hybrid_text_risk.load_bundled_mtn_profile",
+        fail_profile_load,
+    )
+    candidate = SimpleNamespace(
+        candidate_id="BODY:GRAY:6",
+        region_kind="BODY",
+        variant="GRAY",
+        psm=6,
+        raw_text="Cash In received for GHS 10.00 from SAMPLE SHOP.",
+        tokens=({"text": "Cash", "confidence": 95, "y": 600, "height": 30},),
+        mean_confidence=0.9,
+    )
+    second_candidate = SimpleNamespace(
+        **{
+            **vars(candidate),
+            "candidate_id": "MESSAGE_BUBBLE:GRAY:11",
+            "region_kind": "MESSAGE_BUBBLE",
+            "psm": 11,
+        }
+    )
+
+    result = assess_hybrid_ocr(
+        selected_raw_text="+2335500...",
+        selected_tokens=(
+            {
+                "text": "+2335500...",
+                "confidence": 95,
+                "x": 100,
+                "y": 55,
+                "width": 240,
+                "height": 40,
+                "line_id": "header",
+            },
+        ),
+        provider_code="GENERIC_MOMO",
+        fraud_candidates=(candidate, second_candidate),
+        image_height=1280,
+    )
+
+    assert result.risk_class == "SUSPICIOUS"
+    assert result.profile_status == "UNAVAILABLE"
+    assert "MTN_FORMAT_PROFILE_INTEGRITY_FAILURE" in result.limitations
 
 
 def test_existing_pin_request_remains_decisive_without_regional_candidates() -> None:

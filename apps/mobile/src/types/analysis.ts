@@ -139,18 +139,17 @@ export const analysisSchema = z
                 sender: z
                   .object({
                     sender_kind: z.enum([
-                      "NUMERIC",
-                      "ALPHANUMERIC",
-                      "MIXED",
-                      "UNKNOWN",
+                      "phone_number",
+                      "alphanumeric_provider",
+                      "mixed",
+                      "unknown",
                     ]),
                     sender_confidence: z.number().min(0).max(1),
                     header_phone_present: z.boolean(),
                     header_provider_label_present: z.boolean(),
                     source: z.string(),
                   })
-                  .strict()
-                  .optional(),
+                  .strict(),
                 consensus: z
                   .object({
                     accepted_reason_codes: z.array(z.string()),
@@ -161,16 +160,14 @@ export const analysisSchema = z
                     candidate_count: z.number().int().nonnegative(),
                     limitations: z.array(z.string()),
                   })
-                  .strict()
-                  .optional(),
+                  .strict(),
                 format_profile: z
                   .object({
                     status: z.string(),
-                    version: z.string(),
-                    sha256: z.string(),
+                    version: z.string().nullable(),
+                    sha256: z.string().nullable(),
                   })
-                  .strict()
-                  .optional(),
+                  .strict(),
               })
               .strict()
               .optional(),
