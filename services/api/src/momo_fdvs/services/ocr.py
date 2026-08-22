@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 import statistics
+import time
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -36,6 +37,7 @@ from momo_fdvs.models import (
     User,
 )
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.ocr_regions import ImageRegion, discover_ocr_regions
 from momo_fdvs.services.text_fraud import (
     TEXT_FRAUD_RULESET_VERSION,
     TEXT_FRAUD_SCHEMA_VERSION,
@@ -54,6 +56,7 @@ PIPELINE_VARIANTS = (
     "OTSU_BINARY",
     "ADAPTIVE_BINARY",
 )
+FRAUD_OCR_MAX_CANDIDATES = 32
 REQUIRED_FIELDS = ("transaction_reference", "amount", "currency", "occurred_at")
 FIELD_NAMES = (
     "provider_code",
@@ -107,6 +110,17 @@ class OCRCandidate:
 
 
 @dataclass(frozen=True)
+class FraudOcrCandidate:
+    candidate_id: str
+    region_kind: str
+    variant: str
+    psm: int
+    raw_text: str
+    tokens: tuple[dict[str, Any], ...]
+    mean_confidence: float
+
+
+@dataclass(frozen=True)
 class OCRPipelineResult:
     engine_version: str
     selected_variant: str
@@ -120,6 +134,7 @@ class OCRPipelineResult:
     quality_features: dict[str, Any]
     partial: bool
     fraud_preview: dict[str, object] = field(default_factory=dict)
+    fraud_candidates: tuple[FraudOcrCandidate, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -585,6 +600,115 @@ def _candidate(variant: str, image: np.ndarray, psm: int, threshold: float) -> O
     )
 
 
+def _fraud_candidate_variants(crop: np.ndarray) -> dict[str, np.ndarray]:
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)
+    _, high_text = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+    return {"RGB": crop, "GRAY": gray, "CLAHE": clahe, "HIGH_TEXT": high_text}
+
+
+def _fraud_variant_names(region: ImageRegion) -> tuple[str, ...]:
+    if region.kind in {"FULL_IMAGE", "HEADER"}:
+        return ("RGB", "CLAHE")
+    if region.kind == "BODY":
+        return ("RGB", "CLAHE", "HIGH_TEXT")
+    return ("RGB", "GRAY", "HIGH_TEXT")
+
+
+def _fraud_candidate(
+    region: ImageRegion,
+    variant_name: str,
+    image: np.ndarray,
+    psm: int,
+    timeout: float,
+) -> FraudOcrCandidate:
+    scale = max(1.0, 1200 / max(image.shape[1], 1))
+    if scale > 1:
+        image = cv2.resize(
+            image,
+            None,
+            fx=min(3.0, scale),
+            fy=min(3.0, scale),
+            interpolation=cv2.INTER_CUBIC,
+        )
+    applied_scale = image.shape[1] / max(region.width, 1)
+    data = cast(
+        dict[str, list[Any]],
+        pytesseract.image_to_data(
+            image,
+            lang=current_app.config["TESSERACT_LANG"],
+            config=f"--psm {psm}",
+            output_type=Output.DICT,
+            timeout=timeout,
+        ),
+    )
+    local_tokens = _tokens_from_tesseract(data)
+    tokens: list[dict[str, Any]] = []
+    for local in local_tokens:
+        token = dict(local)
+        token["x"] = region.x + round(int(local["x"]) / applied_scale)
+        token["y"] = region.y + round(int(local["y"]) / applied_scale)
+        token["width"] = max(1, round(int(local["width"]) / applied_scale))
+        token["height"] = max(1, round(int(local["height"]) / applied_scale))
+        token["line_id"] = f"{region.kind}:{variant_name}:{psm}:{local['line_id']}"
+        tokens.append(token)
+    confidences = [float(token["confidence"]) / 100 for token in tokens]
+    return FraudOcrCandidate(
+        candidate_id=f"{region.kind}:{region.x}:{region.y}:{variant_name}:{psm}",
+        region_kind=region.kind,
+        variant=variant_name,
+        psm=psm,
+        raw_text=_raw_text(tokens),
+        tokens=tuple(tokens),
+        mean_confidence=round(statistics.fmean(confidences), 4) if confidences else 0.0,
+    )
+
+
+def _build_fraud_candidates(
+    image: np.ndarray,
+    *,
+    timeout_seconds: float,
+) -> tuple[list[FraudOcrCandidate], list[str]]:
+    started = time.monotonic()
+    candidates: list[FraudOcrCandidate] = []
+    warnings: list[str] = []
+    attempts = 0
+    regions = discover_ocr_regions(image)
+    bubble_count = 0
+    for region in regions:
+        if region.kind == "MESSAGE_BUBBLE":
+            bubble_count += 1
+            if bubble_count > 2:
+                continue
+        variants = _fraud_candidate_variants(region.crop(image))
+        for variant_name in _fraud_variant_names(region):
+            for psm in (6, 11):
+                if attempts >= FRAUD_OCR_MAX_CANDIDATES:
+                    return candidates, list(dict.fromkeys(warnings))
+                remaining = timeout_seconds - (time.monotonic() - started)
+                if remaining <= 0:
+                    warnings.append("OCR_FRAUD_CANDIDATE_BUDGET_EXHAUSTED")
+                    return candidates, list(dict.fromkeys(warnings))
+                attempts += 1
+                try:
+                    candidate = _fraud_candidate(
+                        region,
+                        variant_name,
+                        variants[variant_name],
+                        psm,
+                        max(0.1, remaining),
+                    )
+                except RuntimeError:
+                    warnings.append("OCR_FRAUD_CANDIDATE_TIMEOUT")
+                    continue
+                except pytesseract.TesseractError:
+                    warnings.append("OCR_FRAUD_CANDIDATE_FAILED")
+                    continue
+                if candidate.raw_text:
+                    candidates.append(candidate)
+    return candidates, list(dict.fromkeys(warnings))
+
+
 def _encode_png(image: np.ndarray) -> bytes:
     success, encoded = cv2.imencode(".png", image, [cv2.IMWRITE_PNG_COMPRESSION, 6])
     if not success:
@@ -603,6 +727,7 @@ def execute_ocr(content: bytes, expected_sha256: str) -> OCRPipelineResult:
     pytesseract.pytesseract.tesseract_cmd = current_app.config["TESSERACT_CMD"]
     warnings: list[str] = []
     candidates: list[OCRCandidate] = []
+    fraud_candidates: list[FraudOcrCandidate] = []
     engine_version = "unavailable"
     try:
         if shutil.which(current_app.config["TESSERACT_CMD"]) is None:
@@ -612,6 +737,11 @@ def execute_ocr(content: bytes, expected_sha256: str) -> OCRPipelineResult:
         for variant, image in variants.items():
             for psm in (6, 11):
                 candidates.append(_candidate(variant, image, psm, threshold))
+        fraud_candidates, fraud_warnings = _build_fraud_candidates(
+            variants["BASE_RESIZED"],
+            timeout_seconds=float(current_app.config["TESSERACT_TIMEOUT_SECONDS"]),
+        )
+        warnings.extend(fraud_warnings)
     except pytesseract.TesseractNotFoundError:
         warnings.append("OCR_ENGINE_UNAVAILABLE")
     except RuntimeError:
@@ -672,6 +802,7 @@ def execute_ocr(content: bytes, expected_sha256: str) -> OCRPipelineResult:
         quality_features=quality,
         partial=partial,
         fraud_preview=fraud_preview,
+        fraud_candidates=tuple(fraud_candidates),
     )
 
 
