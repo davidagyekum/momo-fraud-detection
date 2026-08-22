@@ -24,10 +24,16 @@ from tests.fixtures.generated_passive_counterfeit import (
 from momo_fdvs.extensions import db
 from momo_fdvs.models import Role
 
-pytestmark = pytest.mark.skipif(
-    not os.getenv("TEST_DATABASE_URL"),
-    reason="requires an isolated PostgreSQL test database",
-)
+pytestmark = [
+    pytest.mark.skipif(
+        not os.getenv("TEST_DATABASE_URL"),
+        reason="requires an isolated PostgreSQL test database",
+    ),
+    pytest.mark.skipif(
+        shutil.which(os.getenv("TESSERACT_CMD", "tesseract")) is None,
+        reason="requires a real Tesseract executable; covered by the Docker OCR gate",
+    ),
+]
 
 TEST_CREDENTIAL = "Correct-Horse-Battery-7"
 

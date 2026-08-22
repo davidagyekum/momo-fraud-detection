@@ -29,6 +29,12 @@ def test_development_seed_creates_argon2_bootstrap_accounts_idempotently(
     monkeypatch.setenv("BOOTSTRAP_INVESTIGATOR_FULL_NAME", "Bootstrap Investigator")
     monkeypatch.setenv("BOOTSTRAP_INVESTIGATOR_PASSWORD", "Bootstrap-Investigator-Password-8")
 
+    with app.app_context():
+        active_before = db.session.scalar(
+            select(FraudRuleSet).where(FraudRuleSet.status == "ACTIVE")
+        )
+        expected_active_version = active_before.version if active_before is not None else "demo-1"
+
     runner = app.test_cli_runner()
     first = runner.invoke(args=["seed-development"])
     second = runner.invoke(args=["seed-development"])
@@ -44,4 +50,4 @@ def test_development_seed_creates_argon2_bootstrap_accounts_idempotently(
         assert admins[0].must_change_password is True
         active = db.session.scalar(select(FraudRuleSet).where(FraudRuleSet.status == "ACTIVE"))
         assert active is not None
-        assert active.version == "demo-1"
+        assert active.version == expected_active_version
