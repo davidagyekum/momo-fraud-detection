@@ -36,6 +36,4 @@ def test_admin_non_high_summary_uses_fixed_stored_policy_copy() -> None:
         }
     )
 
-    assert _policy_summary(run) == (
-        "Configured risk indicators require caution and human review."
-    )
+    assert _policy_summary(run) == ("Configured risk indicators require caution and human review.")

@@ -88,9 +88,7 @@ def _policy_summary(run: AnalysisRun | None) -> str:
         "low_risk": "Supported model evidence indicates a low configured risk band.",
         "medium": "Configured risk indicators require caution and human review.",
         "medium_risk": "Configured risk indicators require caution and human review.",
-        "inconclusive": (
-            "The available evidence is insufficient for a fraud-risk conclusion."
-        ),
+        "inconclusive": ("The available evidence is insufficient for a fraud-risk conclusion."),
     }.get(band, "No fraud-risk analysis is available.")
 
 

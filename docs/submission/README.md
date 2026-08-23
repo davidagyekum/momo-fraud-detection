@@ -25,7 +25,7 @@ The ZIP is generated only after local `HEAD` equals its pushed upstream. It cont
 2. Use the [Chapter Four evidence index](CHAPTER4_EVIDENCE_INDEX.md) to distinguish implemented evidence from plans and wireframes.
 3. Inspect the machine-readable [evidence manifest](../evidence/EVIDENCE_MANIFEST.csv).
 4. Review the exact phase and requirement state in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md).
-5. Review measured local acceptance in the [MTN format-hybrid evidence](../evidence/MTN_HYBRID_ACCURACY_REPAIR.md), [P0.3 evidence](../evidence/P0_3_TEXT_RULE_HARDENING.md) and [PR19 acceptance](../qa/PR19_ACCEPTANCE.md).
+5. Review measured local acceptance in the [final hybrid accuracy and presentation evidence](../evidence/FINAL_HYBRID_ACCURACY_PRESENTATION.md), [MTN format-hybrid evidence](../evidence/MTN_HYBRID_ACCURACY_REPAIR.md), [P0.3 evidence](../evidence/P0_3_TEXT_RULE_HARDENING.md) and [PR19 acceptance](../qa/PR19_ACCEPTANCE.md).
 6. Follow [the local run guide](../LOCAL_RUN_GUIDE.md) for the controlled Docker demonstration.
 7. Follow the [artifact policy](SUBMISSION_ARTIFACT_POLICY.md) to rebuild or independently verify the ZIP.
 

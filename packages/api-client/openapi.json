@@ -3260,6 +3260,15 @@
           "build_commit": {
             "type": "string"
           },
+          "fraud_ruleset_version": {
+            "type": "string"
+          },
+          "ocr_pipeline_version": {
+            "type": "string"
+          },
+          "risk_policy_version": {
+            "type": "string"
+          },
           "version": {
             "type": "string"
           }
@@ -3268,6 +3277,9 @@
           "api_contract_version",
           "application",
           "build_commit",
+          "fraud_ruleset_version",
+          "ocr_pipeline_version",
+          "risk_policy_version",
           "version"
         ],
         "type": "object"

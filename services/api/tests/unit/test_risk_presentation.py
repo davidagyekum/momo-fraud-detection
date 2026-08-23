@@ -6,9 +6,10 @@ from momo_fdvs.services.risk_presentation import high_risk_summary, risk_tone
 
 
 def test_counterfeit_pair_has_specific_high_risk_copy() -> None:
-    assert high_risk_summary(
-        {"NUMERIC_SENDER_TRANSACTION_CLAIM", "GENUINE_TEMPLATE_ANOMALY"}
-    ) == "Likely counterfeit transaction notification"
+    assert (
+        high_risk_summary({"NUMERIC_SENDER_TRANSACTION_CLAIM", "GENUINE_TEMPLATE_ANOMALY"})
+        == "Likely counterfeit transaction notification"
+    )
 
 
 def test_active_scam_reason_has_active_scam_copy() -> None:
@@ -20,13 +21,16 @@ def test_other_high_risk_reasons_use_generic_copy() -> None:
 
 
 def test_counterfeit_pair_takes_precedence_over_active_scam_copy() -> None:
-    assert high_risk_summary(
-        {
-            "NUMERIC_SENDER_TRANSACTION_CLAIM",
-            "GENUINE_TEMPLATE_ANOMALY",
-            "URGENCY_PRESSURE",
-        }
-    ) == "Likely counterfeit transaction notification"
+    assert (
+        high_risk_summary(
+            {
+                "NUMERIC_SENDER_TRANSACTION_CLAIM",
+                "GENUINE_TEMPLATE_ANOMALY",
+                "URGENCY_PRESSURE",
+            }
+        )
+        == "Likely counterfeit transaction notification"
+    )
 
 
 def test_persisted_high_risk_policy_summary_uses_reason_codes() -> None:
