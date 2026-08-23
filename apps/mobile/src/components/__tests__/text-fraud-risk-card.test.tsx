@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
 
 import { TextFraudRiskCard } from "@/components/text-fraud-risk-card";
 import type { OCRTextFraudPreview } from "@/lib/ocr-client";
@@ -31,7 +31,7 @@ const fraudulent: OCRTextFraudPreview = {
   disclaimer: "Automated text assessment; not live provider verification.",
 };
 
-test("shows explicit fraud wording, safe action and a non-probability rule score", async () => {
+test("keeps compact evidence visible and collapses technical rule detail", async () => {
   const view = await render(<TextFraudRiskCard preview={fraudulent} />);
 
   expect(
@@ -39,9 +39,9 @@ test("shows explicit fraud wording, safe action and a non-probability rule score
   ).toBeTruthy();
   expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
   expect(
-    view.getByText("Policy score 95/100 — not a probability"),
-  ).toBeTruthy();
-  expect(view.getByText(/CRITICAL · Secret code requested/)).toBeTruthy();
+    view.queryByText("Policy score 95/100 — not a probability"),
+  ).toBeNull();
+  expect(view.queryByText(/CRITICAL · Secret code requested/)).toBeNull();
   expect(
     view.getByText(/Do not act on this message.*Do not send money/s),
   ).toBeTruthy();
@@ -52,6 +52,22 @@ test("shows explicit fraud wording, safe action and a non-probability rule score
   expect(view.getByText("Strong anomaly")).toBeTruthy();
   expect(view.getByText("Multiple financial misspellings")).toBeTruthy();
   expect(view.getByText("Multiple malformed fields")).toBeTruthy();
+
+  const whyButton = view.getByRole("button", { name: "Why this result?" });
+  expect(whyButton.props.accessibilityState).toEqual(
+    expect.objectContaining({ expanded: false }),
+  );
+  await act(async () => fireEvent.press(whyButton));
+
+  expect(
+    view.getByText("Policy score 95/100 — not a probability"),
+  ).toBeTruthy();
+  expect(view.getByText(/CRITICAL · Secret code requested/)).toBeTruthy();
+  expect(
+    view.getByText(
+      "Automated text assessment; not live provider verification.",
+    ),
+  ).toBeTruthy();
 });
 
 test("keeps unavailable evidence distinct from a safe or genuine result", async () => {

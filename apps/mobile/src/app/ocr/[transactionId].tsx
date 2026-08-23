@@ -63,7 +63,7 @@ const FIELD_ORDER: {
   { name: "receiver_name", label: "Receiver name" },
   { name: "receiver_phone", label: "Receiver phone", keyboard: "phone-pad" },
   { name: "occurred_at", label: "Date and time" },
-  { name: "status_text", label: "Receipt status" },
+  { name: "status_text", label: "Transaction status" },
 ];
 
 const REQUIRED_FIELD_ORDER = FIELD_ORDER.filter(({ name }) =>
@@ -253,11 +253,6 @@ export default function OCRReviewScreen() {
           <Text style={styles.zoomHint}>Tap to inspect and zoom</Text>
         </Pressable>
       )}
-      <InlineAlert
-        tone="info"
-        title="Private image evidence"
-        message="Automatic reading can make mistakes. Inspect the image before using any extracted value for the optional transaction comparison."
-      />
     </AppCard>
   );
 
@@ -352,11 +347,6 @@ export default function OCRReviewScreen() {
             evidenceQuality={review.data.fraud_preview.evidence_quality}
             warnings={review.data.warnings}
           />
-          {review.data.status === "OCR_READY" &&
-          review.data.fraud_preview.evidence_quality === "HIGH" &&
-          review.data.warnings.length === 0 ? (
-            <StatusBadge label="Ready for your review" tone="success" />
-          ) : null}
           <OCRAnalysisChoices
             preview={review.data.fraud_preview}
             online={online}

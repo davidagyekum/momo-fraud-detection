@@ -79,7 +79,7 @@ export default function HistoryScreen() {
         </View>
       ) : null}
       <AppButton
-        label="Start a receipt check"
+        label="Start a screenshot check"
         onPress={() => router.push("/(tabs)/upload")}
       />
     </ScreenShell>

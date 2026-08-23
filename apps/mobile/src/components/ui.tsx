@@ -340,7 +340,7 @@ export function SecureImagePreview({
     return (
       <EmptyState
         title="Private image unavailable"
-        message="The protected receipt preview could not be loaded."
+        message="The protected screenshot preview could not be loaded."
       />
     );
   return (

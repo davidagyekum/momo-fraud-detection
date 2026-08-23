@@ -16,7 +16,7 @@ export default function HomeScreen() {
   return (
     <ScreenShell
       title={`Hello, ${firstName}`}
-      subtitle="Check a receipt without confusing fraud risk with transaction verification."
+      subtitle="Check a screenshot without confusing fraud risk with transaction verification."
     >
       <AppCard>
         <Text style={uiStyles.cardTitle}>Two independent results</Text>
@@ -36,11 +36,11 @@ export default function HomeScreen() {
           </View>
         </View>
         <AppButton
-          label="Start a receipt check"
+          label="Start a screenshot check"
           onPress={() => router.push("/(tabs)/upload")}
         />
         <AppButton
-          label="View receipt history"
+          label="View check history"
           onPress={() => router.push("/(tabs)/history")}
           variant="secondary"
         />
@@ -48,7 +48,7 @@ export default function HomeScreen() {
       <AppCard>
         <Text style={uiStyles.cardTitle}>Private by design</Text>
         <Text style={uiStyles.muted}>
-          Raw receipt images use protected API access and are never exposed
+          Uploaded screenshots use protected API access and are never exposed
           through a public static URL.
         </Text>
       </AppCard>

@@ -134,18 +134,13 @@ test("keeps the owner result concise and separates risk from verification", asyn
 
 test("keeps technical evidence collapsed until the user requests it", async () => {
   const view = await render(<AnalysisDetailsView result={partialResult} />);
-  expect(view.getByText("Why this risk result")).toBeTruthy();
-  expect(
-    view.getByText(
-      "Detailed OCR, component, limitation, and version information is available when you need it.",
-    ),
-  ).toBeTruthy();
+  expect(view.getByText("Evidence summary")).toBeTruthy();
+  expect(view.queryByText("Why this risk result")).toBeNull();
+  expect(view.queryByText("Image model unavailable")).toBeNull();
   expect(view.queryByText("OCR evidence")).toBeNull();
   expect(view.queryByText("Evidence versions")).toBeNull();
 
-  const showButton = view.getByRole("button", {
-    name: "Show technical details",
-  });
+  const showButton = view.getByRole("button", { name: "Why this result?" });
   expect(showButton.props.accessibilityState).toEqual(
     expect.objectContaining({ expanded: false }),
   );
@@ -155,13 +150,14 @@ test("keeps technical evidence collapsed until the user requests it", async () =
   });
 
   expect(view.getByText("OCR evidence")).toBeTruthy();
+  expect(view.getByText("Why this risk result")).toBeTruthy();
   expect(view.getByText(/10 confirmed fields.*1 correction/i)).toBeTruthy();
   expect(view.getByText("Image evidence")).toBeTruthy();
   expect(view.getByText("Component availability")).toBeTruthy();
   expect(view.getByText("Limitations and missing signals")).toBeTruthy();
   expect(view.getByText("Evidence versions")).toBeTruthy();
   expect(
-    view.getByRole("button", { name: "Hide technical details" }).props
+    view.getByRole("button", { name: "Hide result details" }).props
       .accessibilityState,
   ).toEqual(expect.objectContaining({ expanded: true }));
 });
@@ -182,9 +178,7 @@ test("translates internal limitation codes when technical details are expanded",
   const view = await render(<AnalysisDetailsView result={codedResult} />);
 
   await act(async () => {
-    fireEvent.press(
-      view.getByRole("button", { name: "Show technical details" }),
-    );
+    fireEvent.press(view.getByRole("button", { name: "Why this result?" }));
   });
 
   expect(

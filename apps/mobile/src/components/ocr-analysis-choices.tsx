@@ -34,7 +34,7 @@ export function OCRAnalysisChoices({
             <Text style={uiStyles.cardTitle}>Save this assessment</Text>
             <Text style={uiStyles.body}>
               Save the screenshot-based fraud-risk result now. A transaction
-              reference, amount, date and receipt status are not required.
+              reference, amount, date and transaction status are not required.
             </Text>
           </View>
           {saveError ? (

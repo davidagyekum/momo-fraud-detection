@@ -36,21 +36,21 @@ export default function TransactionDetailScreen() {
   });
   if (status === "restoring")
     return (
-      <ScreenShell title="Receipt details">
+      <ScreenShell title="Check details">
         <SkeletonBlock label="Restoring secure session" />
       </ScreenShell>
     );
   if (status !== "authenticated") return <Redirect href="/(auth)/login" />;
   return (
     <ScreenShell
-      title="Receipt details"
+      title="Check details"
       subtitle="Only your persisted transaction and immutable analysis records are shown."
     >
       {!validId ? (
         <InlineAlert
           tone="error"
-          title="Receipt unavailable"
-          message="This receipt link is invalid."
+          title="Check unavailable"
+          message="This check link is invalid."
         />
       ) : !online ? (
         <AppCard>
@@ -60,7 +60,7 @@ export default function TransactionDetailScreen() {
           </Text>
         </AppCard>
       ) : detail.isPending ? (
-        <SkeletonBlock label="Loading receipt details" />
+        <SkeletonBlock label="Loading check details" />
       ) : detail.isError ? (
         <RetryState
           message={detail.error.message}
@@ -71,8 +71,8 @@ export default function TransactionDetailScreen() {
           <AppCard>
             <Text style={uiStyles.cardTitle}>
               {detail.data.provider_code
-                ? `${readableProviderName(detail.data.provider_code)} receipt`
-                : "Receipt"}
+                ? `${readableProviderName(detail.data.provider_code)} screenshot check`
+                : "Screenshot check"}
             </Text>
             <StatusBadge
               label={analysisRecordLabel(

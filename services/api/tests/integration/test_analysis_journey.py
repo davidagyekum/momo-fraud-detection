@@ -39,7 +39,19 @@ RECEIVER NAME: Demo Receiver
 RECEIVER PHONE: 0240000001
 DATE/TIME: 2026-08-15 12:30
 STATUS: Successful"""
-MESSAGE_TEXT = "MTN customer care: send your MoMo PIN and OTP now for verification."
+PRIVATE_RISK_MARKERS = (
+    "RAW_OCR_SENTINEL_6B1F",
+    "+233509876543",
+    "987654.32",
+    "PRIVATE-REF-6B1F",
+    "https://private-marker.invalid/6b1f",
+    "send your MoMo PIN and OTP now for verification",
+)
+MESSAGE_TEXT = (
+    "MTN customer care: send your MoMo PIN and OTP now for verification. "
+    "RAW_OCR_SENTINEL_6B1F +233509876543 GHS 987654.32 "
+    "PRIVATE-REF-6B1F https://private-marker.invalid/6b1f"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -269,6 +281,38 @@ def test_controlled_screenshot_analysis_journey(
     assert message_analysis.json["data"]["versions"]["text_fraud_ruleset_version"] == (
         "ghana-momo-hybrid-text-risk-v3"
     )
+    message_detail = client.get(
+        f"/api/v1/transactions/{message_transaction_id}", headers=_headers(session)
+    )
+    message_history = client.get("/api/v1/transactions", headers=_headers(session))
+    message_notifications = client.get("/api/v1/notifications", headers=_headers(session))
+    message_report = client.post(
+        f"/api/v1/transactions/{message_transaction_id}/reports",
+        json={"format": "HTML"},
+        headers=_headers(session, f"report-{uuid.uuid4()}"),
+    )
+    assert all(
+        response.status_code == 200
+        for response in (message_detail, message_history, message_notifications)
+    )
+    assert message_report.status_code == 201
+    message_report_download = client.get(
+        message_report.json["data"]["download_url"], headers=_headers(session)
+    )
+    assert message_report_download.status_code == 200
+    public_risk_text = " ".join(
+        response.get_data(as_text=True)
+        for response in (
+            message_analysis,
+            message_detail,
+            message_history,
+            message_notifications,
+            message_report_download,
+        )
+    )
+    for private_marker in PRIVATE_RISK_MARKERS:
+        assert private_marker not in public_risk_text
+        assert private_marker not in caplog.text
 
     upload = client.post(
         "/api/v1/transactions",

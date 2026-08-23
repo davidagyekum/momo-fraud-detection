@@ -133,34 +133,32 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
   return (
     <View style={uiStyles.stack}>
       <AppCard>
-        <Text style={uiStyles.cardTitle}>Why this risk result</Text>
-        {result.risk.reasons.length > 0 ? (
-          result.risk.reasons.map((reason) => (
-            <Text key={reason.code} style={uiStyles.body} selectable>
-              • {reason.title}
-            </Text>
-          ))
-        ) : (
-          <Text style={uiStyles.muted}>
-            No additional risk reasons were recorded.
-          </Text>
-        )}
+        <Text style={uiStyles.cardTitle}>Evidence summary</Text>
+        <StatusBadge
+          label={riskLabels[result.risk.band]}
+          tone={riskTone(result.risk.band)}
+        />
+        <Text style={uiStyles.body} selectable>
+          Message-risk rules:{" "}
+          {evidenceLabel(result.evidence_summary.text_fraud.status)}
+        </Text>
+        <Text style={uiStyles.body} selectable>
+          OCR quality:{" "}
+          {evidenceLabel(result.evidence_summary.text_fraud.evidence_quality)}
+        </Text>
         <Text style={uiStyles.muted} selectable>
-          {result.risk.disclaimer}
+          Component availability: {evidenceLabel(result.risk.component_status)}
         </Text>
       </AppCard>
 
       <AppCard>
-        <Text style={uiStyles.cardTitle}>Technical evidence and versions</Text>
         <Text style={uiStyles.muted}>
-          Detailed OCR, component, limitation, and version information is
-          available when you need it.
+          Detailed reasons, policy information, limitations and versions are
+          available when you need them.
         </Text>
         <AppButton
           label={
-            technicalDetailsVisible
-              ? "Hide technical details"
-              : "Show technical details"
+            technicalDetailsVisible ? "Hide result details" : "Why this result?"
           }
           accessibilityHint="Shows or hides the detailed evidence recorded for this analysis."
           accessibilityState={{ expanded: technicalDetailsVisible }}
@@ -171,6 +169,29 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
 
       {technicalDetailsVisible ? (
         <>
+          <AppCard>
+            <Text style={uiStyles.cardTitle}>Why this risk result</Text>
+            {result.risk.reasons.length > 0 ? (
+              result.risk.reasons.map((reason) => (
+                <Text key={reason.code} style={uiStyles.body} selectable>
+                  • {reason.title}
+                </Text>
+              ))
+            ) : (
+              <Text style={uiStyles.muted}>
+                No additional risk reasons were recorded.
+              </Text>
+            )}
+            {result.risk.score !== null ? (
+              <Text style={uiStyles.body} selectable>
+                Policy score {result.risk.score} — not a probability
+              </Text>
+            ) : null}
+            <Text style={uiStyles.muted} selectable>
+              {result.risk.disclaimer}
+            </Text>
+          </AppCard>
+
           <AppCard>
             <Text style={uiStyles.cardTitle}>OCR evidence</Text>
             {result.ocr_review.status === "NOT_REQUIRED" ? (

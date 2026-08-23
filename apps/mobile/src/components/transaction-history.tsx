@@ -40,13 +40,13 @@ export function TransactionHistoryView({
   onRetry?: () => void;
   onOpen: (transactionId: string) => void;
 }) {
-  if (pending) return <SkeletonBlock label="Loading receipt history" />;
+  if (pending) return <SkeletonBlock label="Loading check history" />;
   if (error && onRetry) return <RetryState message={error} onRetry={onRetry} />;
   if (items.length === 0) {
     return (
       <EmptyState
-        title="No receipt checks found"
-        message="Upload a screenshot to begin a receipt check."
+        title="No screenshot checks found"
+        message="Upload a screenshot to begin a check."
       />
     );
   }
@@ -56,8 +56,8 @@ export function TransactionHistoryView({
         <AppCard key={item.id}>
           <Text style={uiStyles.cardTitle}>
             {item.provider_code
-              ? `${item.provider_code} receipt`
-              : "Receipt check"}
+              ? `${item.provider_code} screenshot check`
+              : "Screenshot check"}
           </Text>
           <Text style={uiStyles.muted}>
             {new Date(item.created_at).toLocaleString()}
@@ -85,7 +85,7 @@ export function TransactionHistoryView({
           )}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Open receipt details"
+            accessibilityLabel="Open check details"
             onPress={() => onOpen(item.id)}
           >
             <Text style={uiStyles.link}>Open details</Text>

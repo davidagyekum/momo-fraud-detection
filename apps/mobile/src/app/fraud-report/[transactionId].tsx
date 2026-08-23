@@ -22,7 +22,7 @@ import { useIsOnline } from "@/state/network-context";
 const categories = [
   ["PAYMENT_NOT_RECEIVED", "Payment not received"],
   ["UNKNOWN_TRANSACTION", "Unknown transaction"],
-  ["ALTERED_RECEIPT", "Receipt may be altered"],
+  ["ALTERED_RECEIPT", "Screenshot may be altered"],
   ["OTHER", "Other concern"],
 ] as const;
 

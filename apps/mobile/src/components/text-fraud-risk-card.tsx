@@ -1,7 +1,13 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppCard, InlineAlert, StatusBadge, uiStyles } from "@/components/ui";
+import {
+  AppButton,
+  AppCard,
+  InlineAlert,
+  StatusBadge,
+  uiStyles,
+} from "@/components/ui";
 import {
   evidenceRowsForPreview,
   riskPresentation,
@@ -16,6 +22,7 @@ export function TextFraudRiskCard({
   preview: OCRTextFraudPreview;
   footer?: ReactNode;
 }) {
+  const [detailsVisible, setDetailsVisible] = useState(false);
   const presentation = riskPresentation(preview);
   const evidenceRows = evidenceRowsForPreview(preview);
 
@@ -46,11 +53,6 @@ export function TextFraudRiskCard({
           message={presentation.guidance}
         />
       ) : null}
-      {preview.score !== null ? (
-        <Text selectable style={styles.score}>
-          Policy score {Math.round(preview.score)}/100 — not a probability
-        </Text>
-      ) : null}
       {footer ? <View style={styles.footer}>{footer}</View> : null}
 
       <View style={styles.evidence}>
@@ -67,24 +69,46 @@ export function TextFraudRiskCard({
         ))}
       </View>
 
-      {preview.reasons.length > 0 ? (
+      <AppButton
+        label={detailsVisible ? "Hide result details" : "Why this result?"}
+        onPress={() => setDetailsVisible((visible) => !visible)}
+        variant="secondary"
+        accessibilityState={{ expanded: detailsVisible }}
+        accessibilityHint="Shows or hides detailed rule reasons, score, disclaimer and versions."
+      />
+      {detailsVisible ? (
         <View style={styles.reasons}>
-          <Text style={styles.sectionTitle}>Why this appeared</Text>
-          {preview.reasons.map((reason) => (
-            <View key={reason.code} style={styles.reason}>
-              <Text selectable style={styles.reasonTitle}>
-                {reason.severity} · {reason.title}
-              </Text>
-              <Text selectable style={styles.reasonSummary}>
-                {reason.summary}
-              </Text>
-            </View>
-          ))}
+          {preview.score !== null ? (
+            <Text selectable style={styles.score}>
+              Policy score {Math.round(preview.score)}/100 — not a probability
+            </Text>
+          ) : null}
+          {preview.reasons.length > 0 ? (
+            <>
+              <Text style={styles.sectionTitle}>Detailed rule reasons</Text>
+              {preview.reasons.map((reason) => (
+                <View key={reason.code} style={styles.reason}>
+                  <Text selectable style={styles.reasonTitle}>
+                    {reason.severity} · {reason.title}
+                  </Text>
+                  <Text selectable style={styles.reasonSummary}>
+                    {reason.summary}
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : null}
+          <Text selectable style={styles.disclaimer}>
+            {preview.disclaimer}
+          </Text>
+          <Text selectable style={styles.disclaimer}>
+            Assessment schema: {preview.schema_version}
+          </Text>
+          <Text selectable style={styles.disclaimer}>
+            Fraud ruleset: {preview.ruleset_version}
+          </Text>
         </View>
       ) : null}
-      <Text selectable style={styles.disclaimer}>
-        {preview.disclaimer}
-      </Text>
     </AppCard>
   );
 }

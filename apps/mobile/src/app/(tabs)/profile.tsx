@@ -19,6 +19,8 @@ import {
   uiStyles,
 } from "@/components/ui";
 import { profileSchema } from "@/lib/validation";
+import { MOBILE_APP_VERSION } from "@/lib/app-build";
+import { fetchBuildInfo, shortBuildSha } from "@/lib/build-info-client";
 import { useAuth } from "@/state/auth-context";
 import type { Envelope, User } from "@/types/api";
 
@@ -31,6 +33,11 @@ export default function ProfileScreen() {
   const profile = useQuery({
     queryKey: ["me"],
     queryFn: () => auth.request<Envelope<User>>("/api/v1/me"),
+  });
+  const buildInfo = useQuery({
+    queryKey: ["build-info"],
+    queryFn: () => fetchBuildInfo(auth.request),
+    staleTime: 60_000,
   });
   const { control, handleSubmit, reset, setError, formState } = useForm<Values>(
     {
@@ -102,9 +109,6 @@ export default function ProfileScreen() {
               <StatusBadge label={profile.data.data.status} tone="success" />
               <Text style={uiStyles.muted}>{profile.data.data.email}</Text>
             </View>
-            <Text style={uiStyles.muted}>
-              Roles: {profile.data.data.roles.join(", ")}
-            </Text>
           </AppCard>
           {formState.errors.root?.message ? (
             <InlineAlert
@@ -162,6 +166,44 @@ export default function ProfileScreen() {
           </AppCard>
         </>
       ) : null}
+      <AppCard>
+        <Text style={uiStyles.cardTitle}>About this build</Text>
+        {buildInfo.isPending ? (
+          <SkeletonBlock label="Loading build information" />
+        ) : buildInfo.isError ? (
+          <>
+            <Text style={uiStyles.muted}>
+              Build information is temporarily unavailable.
+            </Text>
+            <AppButton
+              label="Retry build information"
+              onPress={() => void buildInfo.refetch()}
+              variant="secondary"
+            />
+          </>
+        ) : buildInfo.data ? (
+          <View style={uiStyles.stack}>
+            <Text selectable style={uiStyles.body}>
+              App version: {MOBILE_APP_VERSION}
+            </Text>
+            <Text selectable style={uiStyles.body}>
+              Build SHA: {shortBuildSha(buildInfo.data.build_commit)}
+            </Text>
+            <Text selectable style={uiStyles.body}>
+              API contract: {buildInfo.data.api_contract_version}
+            </Text>
+            <Text selectable style={uiStyles.body}>
+              OCR pipeline: {buildInfo.data.ocr_pipeline_version}
+            </Text>
+            <Text selectable style={uiStyles.body}>
+              Fraud ruleset: {buildInfo.data.fraud_ruleset_version}
+            </Text>
+            <Text selectable style={uiStyles.body}>
+              Risk policy: {buildInfo.data.risk_policy_version}
+            </Text>
+          </View>
+        ) : null}
+      </AppCard>
       <AppButton
         label="Sign out"
         onPress={() => setConfirmLogout(true)}

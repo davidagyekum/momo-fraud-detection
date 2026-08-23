@@ -10,10 +10,18 @@ export function CompactOcrQualityBanner({
   evidenceQuality: OCRTextFraudPreview["evidence_quality"];
   warnings: readonly string[];
 }) {
+  const readabilityWarnings = new Set([
+    "OCR_ENGINE_UNAVAILABLE",
+    "OCR_ENGINE_TIMEOUT",
+    "OCR_ENGINE_FAILED",
+    "CRITICAL_OCR_FIELDS_MISSING",
+    "OCR_CONFIDENCE_LOW",
+    "OCR_TEXT_EMPTY",
+    "OCR_TEXT_SHORT",
+  ]);
   const needsReview =
     status === "OCR_PARTIAL" ||
-    evidenceQuality !== "HIGH" ||
-    warnings.length > 0;
+    warnings.some((warning) => readabilityWarnings.has(warning));
 
   if (!needsReview) return null;
 

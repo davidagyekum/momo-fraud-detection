@@ -49,6 +49,9 @@ class VersionDataSchema(Schema):
     version = fields.String(required=True)
     build_commit = fields.String(required=True)
     api_contract_version = fields.String(required=True)
+    ocr_pipeline_version = fields.String(required=True)
+    fraud_ruleset_version = fields.String(required=True)
+    risk_policy_version = fields.String(required=True)
 
 
 class VersionEnvelopeSchema(Schema):

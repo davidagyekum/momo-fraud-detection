@@ -31,7 +31,7 @@ export default function PrivateReceiptScreen() {
 
   if (status === "restoring") {
     return (
-      <ScreenShell title="Private receipt">
+      <ScreenShell title="Private screenshot">
         <SkeletonBlock label="Restoring secure session" />
       </ScreenShell>
     );
@@ -40,18 +40,18 @@ export default function PrivateReceiptScreen() {
 
   return (
     <ScreenShell
-      title="Private receipt"
+      title="Private screenshot"
       subtitle="This protected preview is fetched only after the API checks your session and ownership."
     >
       {!validId ? (
         <InlineAlert
           tone="error"
-          title="Receipt unavailable"
-          message="The receipt link is invalid. Return to uploads and try again."
+          title="Screenshot unavailable"
+          message="The screenshot link is invalid. Return to uploads and try again."
         />
       ) : preview.isPending ? (
         <AppCard>
-          <SkeletonBlock label="Loading private receipt" />
+          <SkeletonBlock label="Loading private screenshot" />
           <Text style={uiStyles.muted}>
             Authorising and loading the private preview…
           </Text>
@@ -66,7 +66,7 @@ export default function PrivateReceiptScreen() {
           <StatusBadge label="Private evidence" tone="success" />
           <SecureImagePreview
             authorizedUri={preview.data}
-            accessibilityLabel="Private uploaded receipt"
+            accessibilityLabel="Private uploaded screenshot"
           />
           <InlineAlert
             tone="info"

@@ -39,7 +39,7 @@ export default function RegisterScreen() {
   return (
     <ScreenShell
       title="Create account"
-      subtitle="Your receipts and reports remain visible only to your account."
+      subtitle="Your screenshots and reports remain visible only to your account."
     >
       {formState.errors.root?.message ? (
         <InlineAlert

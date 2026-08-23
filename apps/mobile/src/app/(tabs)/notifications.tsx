@@ -17,6 +17,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/engagement-client";
+import { riskTone } from "@/lib/fraud-risk-presentation";
 import { useAuth } from "@/state/auth-context";
 import { useIsOnline } from "@/state/network-context";
 import type { AppNotification } from "@/types/engagement";
@@ -106,7 +107,18 @@ export default function NotificationsScreen() {
               <AppCard key={item.id}>
                 <Text style={uiStyles.cardTitle}>{item.title}</Text>
                 {!item.read_at ? (
-                  <StatusBadge label="Unread" tone="warning" />
+                  <StatusBadge
+                    label={
+                      item.type === "HIGH_RISK_DETECTED"
+                        ? "High risk · unread"
+                        : "Unread"
+                    }
+                    tone={
+                      item.type === "HIGH_RISK_DETECTED"
+                        ? riskTone("high")
+                        : "warning"
+                    }
+                  />
                 ) : null}
                 <Text style={uiStyles.body} selectable>
                   {item.message}
@@ -114,14 +126,6 @@ export default function NotificationsScreen() {
                 <Text style={uiStyles.muted} selectable>
                   {new Date(item.created_at).toLocaleString()}
                 </Text>
-                {!item.read_at ? (
-                  <AppButton
-                    label="Mark as read"
-                    onPress={() => readOne.mutate(item.id)}
-                    loading={readOne.isPending && readOne.variables === item.id}
-                    variant="secondary"
-                  />
-                ) : null}
                 {href ? (
                   <AppButton
                     label="Open update"

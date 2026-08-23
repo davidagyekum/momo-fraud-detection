@@ -8,7 +8,7 @@ test("renders an honest empty state", async () => {
   const view = await render(
     <TransactionHistoryView items={[]} onOpen={jest.fn()} />,
   );
-  expect(view.getByText("No receipt checks found")).toBeTruthy();
+  expect(view.getByText("No screenshot checks found")).toBeTruthy();
 });
 
 test("renders persisted statuses and opens the selected owner transaction", async () => {
@@ -37,10 +37,10 @@ test("renders persisted statuses and opens the selected owner transaction", asyn
   const view = await render(
     <TransactionHistoryView items={[item]} onOpen={onOpen} />,
   );
-  expect(view.getByText("MTN receipt")).toBeTruthy();
+  expect(view.getByText("MTN screenshot check")).toBeTruthy();
   expect(view.getByLabelText("Status: Risk: Inconclusive")).toBeTruthy();
   expect(view.getByLabelText("Status: Verification: Mismatch")).toBeTruthy();
-  fireEvent.press(view.getByRole("button", { name: "Open receipt details" }));
+  fireEvent.press(view.getByRole("button", { name: "Open check details" }));
   expect(onOpen).toHaveBeenCalledWith("tx-1");
 });
 

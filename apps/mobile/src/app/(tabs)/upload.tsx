@@ -22,6 +22,7 @@ import {
   type SelectedReceipt,
   uploadReceipt,
 } from "@/lib/receipt-client";
+import { uploadQualityMessages } from "@/lib/upload-quality";
 import { useAuth } from "@/state/auth-context";
 import { useIsOnline } from "@/state/network-context";
 import { palette, radius } from "@/theme/tokens";
@@ -30,21 +31,7 @@ function readableError(error: unknown): string {
   if (error instanceof ApiError) return error.message;
   return error instanceof Error
     ? error.message
-    : "The receipt could not be secured. Please retry.";
-}
-
-function warningLabel(code: string): string {
-  const labels: Record<string, string> = {
-    IMAGE_TOO_SMALL: "The image is small; OCR may need your review.",
-    LOW_CONTRAST: "The receipt has low contrast.",
-    POSSIBLY_BLURRY: "The receipt may be blurry.",
-    TOO_DARK: "The receipt appears too dark.",
-    TOO_BRIGHT: "The receipt appears too bright.",
-    POSSIBLE_EXACT_DUPLICATE:
-      "This may be the same receipt as an earlier upload.",
-    POSSIBLE_NEAR_DUPLICATE: "This looks similar to an earlier receipt.",
-  };
-  return labels[code] ?? "The receipt may need review.";
+    : "The screenshot could not be secured. Please retry.";
 }
 
 export default function UploadScreen() {
@@ -82,7 +69,7 @@ export default function UploadScreen() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       setPermissionError(
-        "Camera access is denied. Enable it in device settings, or choose a receipt from your gallery.",
+        "Camera access is denied. Enable it in device settings, or choose a screenshot from your gallery.",
       );
       return;
     }
@@ -121,16 +108,22 @@ export default function UploadScreen() {
     upload.reset();
     setRemoveVisible(false);
   };
+  const uploadWarnings = uploaded
+    ? uploadQualityMessages(uploaded.receipt.quality.warnings, {
+        exactMatchFound: uploaded.receipt.duplicate_warning.exact_match_found,
+        nearMatchFound: uploaded.receipt.duplicate_warning.near_match_found,
+      })
+    : [];
 
   return (
     <ScreenShell
-      title="Secure a receipt"
+      title="Secure a screenshot"
       subtitle="Take a clear photo or choose an existing JPEG, PNG, or WebP image. Originals stay private."
     >
       <InlineAlert
         tone="info"
         title="Before you submit"
-        message="Maximum 10 MB. Keep the full receipt visible, avoid glare, and make the text readable. Quality warnings are not fraud decisions."
+        message="Maximum 10 MB. Keep the full message visible, avoid glare, and make the text readable. Quality warnings are not fraud decisions."
       />
 
       {permissionError ? (
@@ -150,13 +143,13 @@ export default function UploadScreen() {
 
       {!selected ? (
         <AppCard>
-          <Text style={uiStyles.cardTitle}>Add your receipt</Text>
+          <Text style={uiStyles.cardTitle}>Add your screenshot</Text>
           <Text style={uiStyles.muted}>
-            Only the receipt you select is sent. MoMo-FDVS does not browse your
-            gallery or claim live mobile-network verification.
+            Only the screenshot you select is sent. MoMo-FDVS does not browse
+            your gallery or claim live mobile-network verification.
           </Text>
           <AppButton
-            label="Take receipt photo"
+            label="Take screenshot photo"
             onPress={() => void chooseCamera()}
           />
           <AppButton
@@ -168,14 +161,14 @@ export default function UploadScreen() {
       ) : (
         <AppCard>
           <View style={uiStyles.row}>
-            <Text style={uiStyles.cardTitle}>Receipt preview</Text>
+            <Text style={uiStyles.cardTitle}>Screenshot preview</Text>
             <StatusBadge
               label={selected.source === "CAMERA" ? "Camera" : "Gallery"}
             />
           </View>
           <Image
             source={{ uri: selected.asset.uri }}
-            accessibilityLabel="Selected receipt preview"
+            accessibilityLabel="Selected screenshot preview"
             style={styles.preview}
             contentFit="contain"
           />
@@ -206,7 +199,7 @@ export default function UploadScreen() {
       {upload.isPending ? (
         <InlineAlert
           tone="info"
-          title="Securing receipt"
+          title="Securing screenshot"
           message="Validating the image, creating its evidence hashes, and saving it privately. Keep this screen open."
         />
       ) : null}
@@ -229,29 +222,22 @@ export default function UploadScreen() {
       {uploaded ? (
         <AppCard>
           <StatusBadge label="Uploaded securely" tone="success" />
-          <Text style={uiStyles.cardTitle}>Private receipt saved</Text>
+          <Text style={uiStyles.cardTitle}>Private screenshot saved</Text>
           <Text style={uiStyles.body}>
             The original is immutable evidence. The next step is OCR review; no
             fraud result has been produced yet.
           </Text>
-          {uploaded.receipt.quality.warnings.map((warning) => (
-            <InlineAlert
-              key={warning}
-              tone="warning"
-              title="Image review note"
-              message={warningLabel(warning)}
-            />
-          ))}
-          {(uploaded.receipt.duplicate_warning.exact_match_found ||
-            uploaded.receipt.duplicate_warning.near_match_found) && (
+          {uploadWarnings.length > 0 ? (
             <InlineAlert
               tone="warning"
-              title="Possible duplicate"
-              message="A matching or similar receipt may already exist. No other user's details are shown."
+              title="Image review notes"
+              message={uploadWarnings
+                .map((message) => `• ${message}`)
+                .join("\n")}
             />
-          )}
+          ) : null}
           <AppButton
-            label="Review extracted details"
+            label="Review screenshot"
             onPress={() =>
               router.push({
                 pathname: "/ocr/[transactionId]",
@@ -260,24 +246,14 @@ export default function UploadScreen() {
             }
           />
           <AppButton
-            label="Open private receipt"
-            onPress={() =>
-              router.push({
-                pathname: "/receipt/[transactionId]",
-                params: { transactionId: uploaded.transaction.id },
-              } as unknown as Href)
-            }
-            variant="secondary"
-          />
-          <AppButton
-            label="Secure another receipt"
+            label="Secure another screenshot"
             onPress={clearSelection}
             variant="secondary"
           />
         </AppCard>
       ) : selected ? (
         <AppButton
-          label="Securely upload receipt"
+          label="Securely upload screenshot"
           onPress={() => upload.mutate(selected)}
           loading={upload.isPending}
           disabled={!online}
@@ -287,7 +263,7 @@ export default function UploadScreen() {
       <ConfirmationDialog
         visible={removeVisible}
         title="Remove this selection?"
-        message="The local selection will be cleared. A receipt already uploaded as evidence is not deleted."
+        message="The local selection will be cleared. A screenshot already uploaded as evidence is not deleted."
         confirmLabel="Remove selection"
         destructive
         onConfirm={clearSelection}

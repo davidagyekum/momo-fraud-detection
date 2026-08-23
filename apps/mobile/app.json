@@ -30,8 +30,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow MoMo-FDVS to select a receipt you choose for private verification.",
-          "cameraPermission": "Allow MoMo-FDVS to photograph a receipt for private verification.",
+          "photosPermission": "Allow MoMo-FDVS to select a screenshot you choose for private checking.",
+          "cameraPermission": "Allow MoMo-FDVS to photograph a screenshot for private checking.",
           "microphonePermission": false
         }
       ],

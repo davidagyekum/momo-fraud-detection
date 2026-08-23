@@ -45,7 +45,8 @@ export class AppErrorBoundary extends Component<PropsWithChildren, State> {
             color: palette.muted,
           }}
         >
-          An unexpected app error occurred. Your receipt data was not submitted.
+          An unexpected app error occurred. Your screenshot data was not
+          submitted.
         </Text>
         <AppButton
           label="Try again"

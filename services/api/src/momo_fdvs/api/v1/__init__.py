@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from flask import current_app, g
@@ -14,6 +15,12 @@ from momo_fdvs.api.v1.schemas import (
     VersionEnvelopeSchema,
 )
 from momo_fdvs.readiness import probe_readiness
+from momo_fdvs.services.hybrid_text_risk import HYBRID_RULESET_VERSION
+from momo_fdvs.services.risk_policy import load_risk_policy
+
+_RISK_POLICY_PATH = (
+    Path(__file__).resolve().parents[2] / "policies" / "risk_policy_demo_v1.json"
+)
 
 api_v1 = Blueprint(
     "api-v1",
@@ -67,6 +74,11 @@ class VersionResource(MethodView):
                 "version": current_app.config["APP_VERSION"],
                 "build_commit": current_app.config["APP_BUILD_SHA"],
                 "api_contract_version": current_app.config["API_CONTRACT_VERSION"],
+                "ocr_pipeline_version": current_app.config["OCR_PIPELINE_VERSION"],
+                "fraud_ruleset_version": HYBRID_RULESET_VERSION,
+                "risk_policy_version": load_risk_policy(
+                    _RISK_POLICY_PATH
+                ).policy_version,
             },
             "meta": _meta(),
         }

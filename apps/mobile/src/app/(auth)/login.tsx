@@ -40,7 +40,7 @@ export default function LoginScreen() {
   return (
     <ScreenShell
       title="Welcome back"
-      subtitle="Sign in to review your own MoMo receipt checks."
+      subtitle="Sign in to review your own MoMo screenshot checks."
     >
       {restoreError ? (
         <InlineAlert

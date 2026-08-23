@@ -63,7 +63,7 @@ export default function AnalysisScreen() {
 
   if (status === "restoring") {
     return (
-      <ScreenShell title="Receipt analysis">
+      <ScreenShell title="Check analysis">
         <SkeletonBlock label="Restoring secure session" />
       </ScreenShell>
     );
@@ -71,7 +71,7 @@ export default function AnalysisScreen() {
   if (status !== "authenticated") return <Redirect href="/(auth)/login" />;
   return (
     <ScreenShell
-      title="Receipt analysis"
+      title="Check analysis"
       subtitle="Fraud risk and transaction verification are separate evidence results."
     >
       {!validId ? (
@@ -89,9 +89,9 @@ export default function AnalysisScreen() {
         </AppCard>
       ) : analysis.isPending ? (
         <AppCard>
-          <SkeletonBlock label="Running receipt analysis" />
+          <SkeletonBlock label="Running screenshot analysis" />
           <Text style={uiStyles.muted}>
-            Checking confirmed receipt evidence and stored reference data…
+            Checking screenshot evidence and stored reference data…
           </Text>
         </AppCard>
       ) : analysis.isError ? (
@@ -140,16 +140,6 @@ export default function AnalysisScreen() {
               message={reportMessage}
             />
           ) : null}
-          <AppButton
-            label="Open transaction history"
-            onPress={() =>
-              router.push({
-                pathname: "/transaction/[transactionId]",
-                params: { transactionId: analysis.data.transaction_id },
-              } as unknown as Href)
-            }
-            variant="secondary"
-          />
         </>
       ) : null}
       <AppButton

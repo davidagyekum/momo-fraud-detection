@@ -28,6 +28,25 @@ def test_valid_request_id_is_echoed(app: Flask) -> None:
     assert response.json["meta"]["request_id"] == request_id
 
 
+def test_version_exposes_safe_build_and_analysis_versions(app: Flask) -> None:
+    response = app.test_client().get("/api/v1/version")
+
+    assert response.status_code == 200
+    assert response.json["data"] == {
+        "application": "momo-fdvs-api",
+        "version": "0.1.0-test",
+        "build_commit": "local",
+        "api_contract_version": "1.0.0",
+        "ocr_pipeline_version": "ocr-pipeline-v1",
+        "fraud_ruleset_version": "ghana-momo-hybrid-text-risk-v3",
+        "risk_policy_version": "analysis-risk-policy-demo-v4",
+    }
+    serialized = response.get_data(as_text=True).lower()
+    assert "password" not in serialized
+    assert "private-storage" not in serialized
+    assert "database_url" not in serialized
+
+
 def test_invalid_request_id_is_replaced(app: Flask) -> None:
     response = app.test_client().get(
         "/api/v1/version", headers={"X-Request-ID": "not-a-valid-correlation-id"}

@@ -33,3 +33,16 @@ test("does not add a warning for a clean readable result", async () => {
 
   expect(view.queryByText("Automatic reading needs review")).toBeNull();
 });
+
+test("does not call a non-readability warning unreadable text", async () => {
+  const view = await render(
+    <CompactOcrQualityBanner
+      status="OCR_READY"
+      evidenceQuality="LOW"
+      warnings={["UNKNOWN_TEMPLATE_GENERIC_FALLBACK"]}
+    />,
+  );
+
+  expect(view.queryByText("Automatic reading needs review")).toBeNull();
+  expect(view.queryByText(/could not be read automatically/i)).toBeNull();
+});
