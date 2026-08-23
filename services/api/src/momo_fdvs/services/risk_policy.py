@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from momo_fdvs.contracts.evidence import EvidenceMode, RiskBand, legacy_risk_from_band
+from momo_fdvs.services.risk_presentation import high_risk_summary
 
 AnalysisStatus = Literal["COMPLETED", "PARTIAL"]
 ModelKind = Literal["IMAGE", "STRUCTURED"]
@@ -288,10 +289,11 @@ class AnalysisPolicyResult:
 
     @property
     def summary(self) -> str:
+        if self.band is RiskBand.HIGH:
+            return high_risk_summary(reason.code for reason in self.reasons)
         return {
             RiskBand.LOW: "Supported model evidence indicates a low configured risk band.",
             RiskBand.MEDIUM: "Configured risk indicators require caution and human review.",
-            RiskBand.HIGH: "Configured high-risk evidence requires human review.",
             RiskBand.INCONCLUSIVE: (
                 "The available evidence is insufficient for a fraud-risk conclusion."
             ),

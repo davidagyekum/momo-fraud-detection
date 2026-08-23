@@ -14,6 +14,17 @@ def test_partial_high_notification_leads_with_the_conclusive_risk() -> None:
     assert "inconclusive" not in message.casefold()
 
 
+def test_high_notification_includes_reason_aware_summary() -> None:
+    title, message = notifications.analysis_outcome_copy(
+        analysis_status="PARTIAL",
+        risk_band="high_risk",
+        reason_codes=("PIN_OR_OTP_REQUEST",),
+    )
+
+    assert title == "Analysis ready"
+    assert "Strong scam indicators detected" in message
+
+
 def test_partial_inconclusive_notification_names_insufficient_evidence() -> None:
     copy_factory = getattr(notifications, "analysis_outcome_copy", None)
 

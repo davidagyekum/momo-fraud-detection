@@ -795,6 +795,7 @@ def run_analysis(
             analysis_run_id=run.id,
             analysis_status=policy_result.status,
             risk_band=policy_result.band.value,
+            reason_codes=tuple(reason.code for reason in policy_result.reasons),
         )
         audit_event(
             "analysis.completed",

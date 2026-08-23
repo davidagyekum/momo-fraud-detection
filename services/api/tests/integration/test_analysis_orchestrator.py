@@ -338,6 +338,7 @@ def test_obvious_scam_text_drives_categorical_risk_without_exposing_private_matc
             )
         )
         assert notification is not None
+        assert "Strong scam indicators detected" in notification.message
         assert "high fraud-risk result" in notification.message.casefold()
         assert "inconclusive" not in notification.message.casefold()
 

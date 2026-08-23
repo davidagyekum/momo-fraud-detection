@@ -17,6 +17,7 @@ from momo_fdvs.services.ocr_evidence_consensus import (
     aggregate_candidate_evidence,
 )
 from momo_fdvs.services.passive_counterfeit import assess_passive_candidate
+from momo_fdvs.services.risk_presentation import high_risk_summary
 from momo_fdvs.services.sender_context import SenderContext, infer_sender_context
 from momo_fdvs.services.text_fraud import TextFraudContext, assess_ocr_text
 
@@ -168,7 +169,7 @@ class HybridAssessment:
             "reasons": [reason.as_public_dict() for reason in self.reasons],
             "evidence_quality": self.evidence_quality,
             "limitations": list(self.limitations),
-            "summary": _summary(self.risk_class),
+            "summary": _summary(self.risk_class, self.reason_codes),
             "disclaimer": (
                 "This is a screenshot-evidence risk assessment, not live confirmation from a "
                 "mobile-network operator or a legal determination."
@@ -185,9 +186,9 @@ class HybridAssessment:
         }
 
 
-def _summary(risk_class: RiskClass | None) -> str:
+def _summary(risk_class: RiskClass | None, reason_codes: Iterable[str]) -> str:
     if risk_class == "FRAUDULENT":
-        return "The screenshot contains strong fraud indicators and should be treated as high risk."
+        return high_risk_summary(reason_codes)
     if risk_class == "SUSPICIOUS":
         return "The screenshot contains suspicious evidence requiring independent verification."
     return (

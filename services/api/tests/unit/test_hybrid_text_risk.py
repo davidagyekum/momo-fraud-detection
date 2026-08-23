@@ -39,6 +39,10 @@ def test_numeric_sender_plus_template_anomaly_is_fraudulent() -> None:
     assert result.risk_score is not None and result.risk_score >= 90
     assert result.score_is_probability is False
     assert result.ruleset_version == HYBRID_RULESET_VERSION
+    assert (
+        result.as_public_dict()["summary"]
+        == "Likely counterfeit transaction notification"
+    )
 
 
 def test_spelling_alone_is_inconclusive() -> None:
@@ -133,6 +137,7 @@ def test_existing_pin_request_remains_decisive_without_regional_candidates() -> 
 
     assert result.risk_class == "FRAUDULENT"
     assert "PIN_OR_OTP_REQUEST" in result.reason_codes
+    assert result.as_public_dict()["summary"] == "Strong scam indicators detected"
 
 
 def test_controlled_candidate_family_produces_four_reasons_and_high_risk() -> None:

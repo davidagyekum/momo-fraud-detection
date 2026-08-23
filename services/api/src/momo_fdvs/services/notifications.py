@@ -12,9 +12,15 @@ from sqlalchemy.exc import IntegrityError
 from momo_fdvs.extensions import db
 from momo_fdvs.models import Notification
 from momo_fdvs.services.risk_policy import derive_finalization_semantics
+from momo_fdvs.services.risk_presentation import high_risk_summary
 
 
-def analysis_outcome_copy(*, analysis_status: str, risk_band: str) -> tuple[str, str]:
+def analysis_outcome_copy(
+    *,
+    analysis_status: str,
+    risk_band: str,
+    reason_codes: tuple[str, ...] = (),
+) -> tuple[str, str]:
     """Return risk-first owner copy without confusing degraded components with uncertainty."""
 
     semantics = derive_finalization_semantics(
@@ -37,7 +43,8 @@ def analysis_outcome_copy(*, analysis_status: str, risk_band: str) -> tuple[str,
         "medium": "medium",
         "high": "high",
     }.get(risk_band.casefold(), "recorded")
-    message = f"Your analysis found a {label} fraud-risk result."
+    prefix = f"{high_risk_summary(reason_codes)}. " if label == "high" else ""
+    message = f"{prefix}Your analysis found a {label} fraud-risk result."
     if semantics.component_status == "DEGRADED":
         message += " Some optional evidence components were unavailable."
     return "Analysis ready", message
@@ -97,12 +104,14 @@ def notify_analysis_outcome(
     analysis_run_id: uuid.UUID,
     analysis_status: str,
     risk_band: str,
+    reason_codes: tuple[str, ...] = (),
 ) -> list[Notification]:
     """Persist safe, deduplicated outcome notifications before domain commit."""
 
     title, message = analysis_outcome_copy(
         analysis_status=analysis_status,
         risk_band=risk_band,
+        reason_codes=reason_codes,
     )
     notifications = [
         create_notification(
@@ -121,7 +130,7 @@ def notify_analysis_outcome(
                 user_id=user_id,
                 notification_type="HIGH_RISK_DETECTED",
                 title="High-risk result",
-                message="A transaction analysis needs your attention.",
+                message=high_risk_summary(reason_codes),
                 dedupe_key=f"analysis-high-risk:{analysis_run_id}",
                 target_type="TRANSACTION",
                 target_id=transaction_id,

@@ -21,7 +21,7 @@ def test_partial_high_report_separates_conclusion_from_component_availability() 
                 "band": "high_risk",
                 "legacy_risk_class": "FRAUDULENT",
                 "score": None,
-                "summary": "Configured high-risk evidence requires human review.",
+                "summary": "Strong scam indicators detected",
                 "reasons": [
                     {
                         "code": "PIN_OR_OTP_REQUEST",
@@ -50,4 +50,5 @@ def test_partial_high_report_separates_conclusion_from_component_availability() 
     assert "Conclusion</th><td>Conclusive" in html
     assert "Component availability</th><td>Degraded" in html
     assert "Some optional evidence components were unavailable" in html
+    assert "Strong scam indicators detected" in html
     assert "persisted result is inconclusive" not in html.casefold()
