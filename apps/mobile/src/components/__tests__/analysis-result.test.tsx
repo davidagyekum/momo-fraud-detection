@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
 
 import {
   AnalysisDetailsView,
@@ -132,17 +132,77 @@ test("keeps the owner result concise and separates risk from verification", asyn
   ).toBeTruthy();
 });
 
-test("moves technical evidence and limitations into the details view", async () => {
+test("keeps technical evidence collapsed until the user requests it", async () => {
   const view = await render(<AnalysisDetailsView result={partialResult} />);
+  expect(view.getByText("Why this risk result")).toBeTruthy();
+  expect(
+    view.getByText(
+      "Detailed OCR, component, limitation, and version information is available when you need it.",
+    ),
+  ).toBeTruthy();
+  expect(view.queryByText("OCR evidence")).toBeNull();
+  expect(view.queryByText("Evidence versions")).toBeNull();
+
+  const showButton = view.getByRole("button", {
+    name: "Show technical details",
+  });
+  expect(showButton.props.accessibilityState).toEqual(
+    expect.objectContaining({ expanded: false }),
+  );
+
+  await act(async () => {
+    fireEvent.press(showButton);
+  });
+
   expect(view.getByText("OCR evidence")).toBeTruthy();
   expect(view.getByText(/10 confirmed fields.*1 correction/i)).toBeTruthy();
   expect(view.getByText("Image evidence")).toBeTruthy();
   expect(view.getByText("Component availability")).toBeTruthy();
-  expect(view.getAllByText(/Image model unavailable/i).length).toBeGreaterThan(
-    0,
-  );
   expect(view.getByText("Limitations and missing signals")).toBeTruthy();
   expect(view.getByText("Evidence versions")).toBeTruthy();
+  expect(
+    view.getByRole("button", { name: "Hide technical details" }).props
+      .accessibilityState,
+  ).toEqual(expect.objectContaining({ expanded: true }));
+});
+
+test("translates internal limitation codes when technical details are expanded", async () => {
+  const codedResult = {
+    ...partialResult,
+    risk: {
+      ...partialResult.risk,
+      missing_signals: [
+        "IMAGE_MODEL_ARTIFACT_MISSING",
+        "NOT_APPLICABLE_SCREENSHOT_ONLY",
+        "OCR_CONFIDENCE_LOW",
+      ],
+      limitations: ["DETERMINISTIC_IMAGE_SUPPORTING_ONLY"],
+    },
+  } as AnalysisResult;
+  const view = await render(<AnalysisDetailsView result={codedResult} />);
+
+  await act(async () => {
+    fireEvent.press(
+      view.getByRole("button", { name: "Show technical details" }),
+    );
+  });
+
+  expect(
+    view.getByText("• The optional image model is not available."),
+  ).toBeTruthy();
+  expect(
+    view.getByText(
+      "• Structured transaction checks do not apply to screenshot-only analysis.",
+    ),
+  ).toBeTruthy();
+  expect(
+    view.getByText("• Some detected text had low OCR confidence."),
+  ).toBeTruthy();
+  expect(
+    view.getByText("• Image checks provide supporting evidence only."),
+  ).toBeTruthy();
+  expect(view.queryByText(/IMAGE_MODEL_ARTIFACT_MISSING/)).toBeNull();
+  expect(view.queryByText(/OCR_CONFIDENCE_LOW/)).toBeNull();
 });
 
 test("renders a categorical high-risk result without inventing a score", async () => {
@@ -218,5 +278,10 @@ test("keeps a partial high-risk conclusion above degraded component copy", async
   ).toBeTruthy();
   expect(
     view.getByText(/Do not act on this message.*official provider channel/s),
+  ).toBeTruthy();
+  expect(
+    view.getByText(
+      "Do not act on this message. Do not send money or disclose a PIN, OTP or security code. Verify through an official provider channel.",
+    ),
   ).toBeTruthy();
 });

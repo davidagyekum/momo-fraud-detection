@@ -12,6 +12,11 @@ import {
   StatusBadge,
   uiStyles,
 } from "@/components/ui";
+import {
+  analysisRecordLabel,
+  readableAnalysisStatus,
+  readableProviderName,
+} from "@/lib/analysis-presentation";
 import { getTransaction } from "@/lib/history-client";
 import { useAuth } from "@/state/auth-context";
 import { useIsOnline } from "@/state/network-context";
@@ -65,11 +70,14 @@ export default function TransactionDetailScreen() {
           <AppCard>
             <Text style={uiStyles.cardTitle}>
               {detail.data.provider_code
-                ? `${detail.data.provider_code} receipt`
+                ? `${readableProviderName(detail.data.provider_code)} receipt`
                 : "Receipt"}
             </Text>
             <StatusBadge
-              label={`Transaction: ${detail.data.status.toLowerCase().replaceAll("_", " ")}`}
+              label={analysisRecordLabel(
+                detail.data.status,
+                detail.data.confirmed_field_coverage.status,
+              )}
             />
             {detail.data.display_reference_masked ? (
               <Text style={uiStyles.body}>
@@ -95,12 +103,12 @@ export default function TransactionDetailScreen() {
                   {index === 0 ? "Latest analysis" : "Prior analysis"}
                 </Text>
                 <StatusBadge
-                  label={`Risk: ${run.band.toLowerCase().replaceAll("_", " ")}`}
+                  label={`Risk: ${readableAnalysisStatus(run.band)}`}
                   tone="warning"
                 />
                 <Text style={uiStyles.body}>
                   Verification:{" "}
-                  {run.verification_status?.toLowerCase() ?? "unverified"}
+                  {readableAnalysisStatus(run.verification_status)}
                 </Text>
                 <AppButton
                   label={

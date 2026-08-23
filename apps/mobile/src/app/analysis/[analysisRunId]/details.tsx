@@ -38,7 +38,7 @@ export default function AnalysisDetailsScreen() {
   return (
     <ScreenShell
       title="Analysis details"
-      subtitle="Technical evidence and limitations are kept here so the main result stays clear."
+      subtitle="See why this result was reached. Detailed evidence is available below."
     >
       {!validId ? (
         <InlineAlert
