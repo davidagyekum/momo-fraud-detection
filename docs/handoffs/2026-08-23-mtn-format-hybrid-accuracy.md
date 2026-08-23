@@ -100,6 +100,18 @@
 | in-app browser acceptance | PASS | upload, OCR, 92/100 high risk, save, verification not attempted, responsive checks | controlled local run |
 | cache-cold direct dynamic URL | PASS | final bundle; zero console warnings/errors | controlled local run |
 
+Final recovery re-verification used PostgreSQL `5432`, API `18000`, administrator
+`15173` and Expo web `18081` because Windows reserved the range `7997-8096`
+after WSL/Docker recovery. Repository defaults are unchanged. Docker Desktop and
+WSL were fully restarted without deleting volumes. The exact-tree backend,
+mobile, administrator, ML, security, E2E, empty/previous migration, seven-case
+real-Tesseract and four-service release gates all passed. The fresh browser flow
+persisted a 92/100 high-risk screenshot-only result with verification separately
+`NOT_ATTEMPTED`; a cache-cold SPA-shell load had zero console warnings/errors.
+Expo-web authentication intentionally requires a new login after a full reload
+because its non-native refresh-token fallback is volatile; native secure storage
+behaviour is covered by policy and unit tests, not claimed as device acceptance.
+
 Skipped/blocked checks and reason:
 
 - Seven real-Tesseract cases skip only in the host backend gate because the Windows host has no Tesseract executable; the same seven pass in the API container.
