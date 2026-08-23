@@ -18,6 +18,7 @@ import {
   getCase,
   startReview,
 } from "../lib/operations";
+import { riskTone } from "../lib/risk-presentation";
 
 const readable = (value: string) => value.toLowerCase().replaceAll("_", " ");
 
@@ -120,9 +121,13 @@ export function CaseDetailPage(): React.ReactNode {
         </div>
         <div>
           <span>Fraud risk</span>
-          <strong>
+          <StatusBadge
+            tone={riskTone(
+              item.automated_evidence?.risk_band ?? "inconclusive",
+            )}
+          >
             {readable(item.automated_evidence?.risk_band ?? "unavailable")}
-          </strong>
+          </StatusBadge>
         </div>
         <div>
           <span>Automated evidence</span>

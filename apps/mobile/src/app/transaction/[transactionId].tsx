@@ -18,6 +18,7 @@ import {
   readableProviderName,
 } from "@/lib/analysis-presentation";
 import { getTransaction } from "@/lib/history-client";
+import { riskTone } from "@/lib/fraud-risk-presentation";
 import { useAuth } from "@/state/auth-context";
 import { useIsOnline } from "@/state/network-context";
 
@@ -104,7 +105,7 @@ export default function TransactionDetailScreen() {
                 </Text>
                 <StatusBadge
                   label={`Risk: ${readableAnalysisStatus(run.band)}`}
-                  tone="warning"
+                  tone={riskTone(run.band)}
                 />
                 <Text style={uiStyles.body}>
                   Verification:{" "}

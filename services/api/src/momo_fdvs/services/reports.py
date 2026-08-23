@@ -27,6 +27,7 @@ from momo_fdvs.models import (
     VerificationResult,
 )
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.risk_presentation import risk_tone
 from momo_fdvs.services.verification import verification_projection
 from momo_fdvs.storage.base import ObjectStorage, generated_key, sha256_bytes
 
@@ -209,6 +210,7 @@ def render_analysis_report(
         if risk["component_status"] == "DEGRADED" and risk["conclusion_status"] == "CONCLUSIVE"
         else ""
     )
+    report_risk_tone = risk_tone(str(risk["band"]))
     analysis_mode = str(getattr(run, "analysis_mode", "combined"))
     confirmed_field_count: int | str = (
         len(confirmation.confirmed_fields) if confirmation is not None else "Not applicable"
@@ -230,7 +232,12 @@ h1,h2{{color:#173b57}}section{{border:1px solid #d8e0e7;border-radius:10px;
 padding:1rem;margin:1rem 0}}
 table{{border-collapse:collapse;width:100%}}th,td{{text-align:left;padding:.45rem;
 border-bottom:1px solid #e8edf1}}
-.notice{{background:#fff7df}}small{{color:#536471}}</style></head><body>
+.notice{{background:#fff7df}}small{{color:#536471}}
+.risk-tone{{border-left:.35rem solid #2f5f9f}}
+.risk-tone--success{{border-left-color:#2f6f55}}
+.risk-tone--warning{{border-left-color:#9a6700}}
+.risk-tone--error{{border-left-color:#b4232c}}
+.risk-tone--info{{border-left-color:#2f5f9f}}</style></head><body>
 <h1>MoMo-FDVS analysis report</h1>
 <p><small>Generated {_safe(generated_at.isoformat())}. Automated evidence is immutable.</small></p>
 <section><h2>Transaction</h2><table>
@@ -239,7 +246,7 @@ border-bottom:1px solid #e8edf1}}
 <tr><th>Analysis mode</th><td>{_safe(analysis_mode.replace("_", " ").title())}</td></tr>
 <tr><th>Confirmed OCR fields</th><td>{confirmed_field_count}</td></tr>
 </table></section>
-<section><h2>Fraud-risk assessment</h2><table>
+<section class="risk-tone risk-tone--{report_risk_tone}"><h2>Fraud-risk assessment</h2><table>
 <tr><th>Risk band</th><td>{_safe(risk["band"])}</td></tr>
 <tr><th>Conclusion</th><td>{_safe(str(risk["conclusion_status"]).title())}</td></tr>
 <tr><th>Component availability</th><td>{_safe(str(risk["component_status"]).title())}</td></tr>

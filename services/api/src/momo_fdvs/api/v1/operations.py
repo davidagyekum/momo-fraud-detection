@@ -36,6 +36,7 @@ from momo_fdvs.models import (
 from momo_fdvs.policies.auth import require_roles
 from momo_fdvs.readiness import probe_readiness
 from momo_fdvs.services.audit import audit_event
+from momo_fdvs.services.risk_presentation import high_risk_summary
 
 operations_blueprint = Blueprint(
     "operations-v1",
@@ -65,6 +66,32 @@ def _policy_band(run: AnalysisRun | None) -> str:
         return "not_analysed"
     policy = run.component_scores.get("policy")
     return str(policy.get("band", "inconclusive")) if isinstance(policy, dict) else "inconclusive"
+
+
+def _policy_summary(run: AnalysisRun | None) -> str:
+    band = _policy_band(run)
+    policy = run.component_scores.get("policy") if run is not None else None
+    if band in {"high", "high_risk"} and isinstance(policy, dict):
+        reasons = policy.get("reasons")
+        reason_codes = (
+            tuple(
+                str(reason["code"])
+                for reason in reasons
+                if isinstance(reason, dict) and isinstance(reason.get("code"), str)
+            )
+            if isinstance(reasons, list)
+            else ()
+        )
+        return high_risk_summary(reason_codes)
+    return {
+        "low": "Supported model evidence indicates a low configured risk band.",
+        "low_risk": "Supported model evidence indicates a low configured risk band.",
+        "medium": "Configured risk indicators require caution and human review.",
+        "medium_risk": "Configured risk indicators require caution and human review.",
+        "inconclusive": (
+            "The available evidence is insufficient for a fraud-risk conclusion."
+        ),
+    }.get(band, "No fraud-risk analysis is available.")
 
 
 def _verification_status(run_id: uuid.UUID | None) -> str | None:
@@ -99,6 +126,7 @@ def _transaction_projection(transaction: Transaction) -> dict[str, Any]:
                 "id": run.id,
                 "status": run.status,
                 "risk_band": _policy_band(run),
+                "summary": _policy_summary(run),
                 "verification_status": _verification_status(run.id),
                 "completed_at": run.completed_at,
             }

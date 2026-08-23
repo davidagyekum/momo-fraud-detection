@@ -9,6 +9,10 @@ import {
   uiStyles,
 } from "@/components/ui";
 import { verificationTone } from "@/lib/verification-client";
+import {
+  highRiskSummaryFromReasonCodes,
+  riskTone,
+} from "@/lib/fraud-risk-presentation";
 import type { AnalysisResult, RiskBand } from "@/types/analysis";
 
 const riskLabels: Record<RiskBand, string> = {
@@ -20,7 +24,6 @@ const riskLabels: Record<RiskBand, string> = {
 
 const INCONCLUSIVE_COPY =
   "The available evidence did not support a decisive result. This is not a genuine or safe verdict.";
-const COUNTERFEIT_COPY = "Likely counterfeit transaction notification";
 const COUNTERFEIT_GUIDANCE =
   "Do not act on this message. Do not send money or disclose a PIN, OTP or security code. Verify through an official provider channel.";
 
@@ -61,11 +64,12 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
           : "inconclusive";
   const counterfeitTextEvidence =
     result.evidence_summary.text_fraud.class === "FRAUDULENT";
+  const reasonCodes = result.risk.reasons.map((reason) => reason.code);
   const riskSummary =
     result.risk.band === "inconclusive"
       ? INCONCLUSIVE_COPY
-      : counterfeitTextEvidence
-        ? COUNTERFEIT_COPY
+      : result.risk.band === "high_risk"
+        ? highRiskSummaryFromReasonCodes(reasonCodes)
         : result.risk.summary;
   return (
     <View style={uiStyles.stack}>
@@ -73,13 +77,7 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
         <Text style={uiStyles.cardTitle}>Fraud risk assessment</Text>
         <StatusBadge
           label={riskLabels[result.risk.band]}
-          tone={
-            result.risk.band === "low_risk"
-              ? "success"
-              : result.risk.band === "high_risk"
-                ? "error"
-                : "warning"
-          }
+          tone={riskTone(result.risk.band)}
         />
         <Text selectable style={uiStyles.body}>
           {riskSummary}

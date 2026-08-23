@@ -10,6 +10,7 @@ import {
 } from "../components/data-table";
 import { Skeleton, StatePanel, StatusBadge } from "../components/feedback";
 import { getTransactions, type TransactionRow } from "../lib/operations";
+import { riskTone } from "../lib/risk-presentation";
 
 const readable = (value: string) => value.toLowerCase().replaceAll("_", " ");
 const columns: DataColumn<TransactionRow>[] = [
@@ -28,9 +29,12 @@ const columns: DataColumn<TransactionRow>[] = [
     header: "Fraud risk",
     cell: (row) =>
       row.analysis ? (
-        <StatusBadge tone="warning">
-          {readable(row.analysis.risk_band)}
-        </StatusBadge>
+        <div>
+          <StatusBadge tone={riskTone(row.analysis.risk_band)}>
+            {readable(row.analysis.risk_band)}
+          </StatusBadge>
+          <p>{row.analysis.summary}</p>
+        </div>
       ) : (
         "Not analysed"
       ),

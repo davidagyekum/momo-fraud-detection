@@ -229,9 +229,7 @@ test("renders a categorical high-risk result without inventing a score", async (
   } as AnalysisResult;
   const view = await render(<AnalysisResultView result={highRisk} />);
   expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
-  expect(
-    view.getByText("Multiple recorded signals require review."),
-  ).toBeTruthy();
+  expect(view.getByText("Multiple high-risk indicators detected")).toBeTruthy();
   expect(view.queryByText(/Reference mismatch/)).toBeNull();
   expect(view.queryByText(/risk score/i)).toBeNull();
 });
@@ -273,9 +271,7 @@ test("keeps a partial high-risk conclusion above degraded component copy", async
     ),
   ).toBeTruthy();
   expect(view.queryByText(/persisted result is inconclusive/i)).toBeNull();
-  expect(
-    view.getByText("Likely counterfeit transaction notification"),
-  ).toBeTruthy();
+  expect(view.getByText("Strong scam indicators detected")).toBeTruthy();
   expect(
     view.getByText(/Do not act on this message.*official provider channel/s),
   ).toBeTruthy();

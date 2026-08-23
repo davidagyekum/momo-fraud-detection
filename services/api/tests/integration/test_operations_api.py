@@ -88,6 +88,7 @@ def test_staff_dashboard_and_masked_transaction_views(app: Flask) -> None:
     item = next(row for row in listed.json["data"]["items"] if row["id"] == str(transaction_id))
     assert item["id"] == str(transaction_id)
     assert item["analysis"]["risk_band"]
+    assert item["analysis"]["summary"]
     serialized = listed.get_data(as_text=True).lower()
     assert "object_key" not in serialized
     assert "raw_text" not in serialized

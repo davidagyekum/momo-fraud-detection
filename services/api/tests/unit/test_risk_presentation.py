@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from momo_fdvs.contracts.evidence import EvidenceMode, RiskBand
 from momo_fdvs.services.risk_policy import AnalysisPolicyResult, PolicyReason
-from momo_fdvs.services.risk_presentation import high_risk_summary
+from momo_fdvs.services.risk_presentation import high_risk_summary, risk_tone
 
 
 def test_counterfeit_pair_has_specific_high_risk_copy() -> None:
@@ -50,3 +50,10 @@ def test_persisted_high_risk_policy_summary_uses_reason_codes() -> None:
     )
 
     assert result.summary == "Strong scam indicators detected"
+
+
+def test_risk_tone_uses_the_shared_four_band_mapping() -> None:
+    assert risk_tone("low_risk") == "success"
+    assert risk_tone("medium_risk") == "warning"
+    assert risk_tone("high_risk") == "error"
+    assert risk_tone("inconclusive") == "info"

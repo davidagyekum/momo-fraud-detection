@@ -11,15 +11,20 @@ import {
 import type { PropsWithChildren, ReactNode } from "react";
 import { Button } from "./primitives";
 
-type Tone = "info" | "success" | "warning" | "danger" | "neutral";
+type BaseTone = "info" | "success" | "warning" | "danger" | "neutral";
+export type Tone = BaseTone | "error";
 
-const toneIcon: Record<Tone, ReactNode> = {
+const toneIcon: Record<BaseTone, ReactNode> = {
   info: <Info size={20} />,
   success: <CheckCircle2 size={20} />,
   warning: <AlertTriangle size={20} />,
   danger: <ShieldAlert size={20} />,
   neutral: <CircleHelp size={20} />,
 };
+
+function renderedTone(tone: Tone): BaseTone {
+  return tone === "error" ? "danger" : tone;
+}
 
 export function Alert({
   tone = "info",
@@ -31,10 +36,14 @@ export function Alert({
   title?: string;
   live?: boolean;
 }>): React.ReactNode {
+  const visualTone = renderedTone(tone);
   return (
-    <div className={`alert alert--${tone}`} role={live ? "alert" : "status"}>
+    <div
+      className={`alert alert--${visualTone}`}
+      role={live ? "alert" : "status"}
+    >
       <span className="alert__icon" aria-hidden="true">
-        {toneIcon[tone]}
+        {toneIcon[visualTone]}
       </span>
       <div>
         {title ? <strong>{title}</strong> : null}
@@ -48,9 +57,10 @@ export function StatusBadge({
   tone,
   children,
 }: PropsWithChildren<{ tone: Tone }>) {
+  const visualTone = renderedTone(tone);
   return (
-    <span className={`status-badge status-badge--${tone}`}>
-      <span aria-hidden="true">{toneIcon[tone]}</span>
+    <span className={`status-badge status-badge--${visualTone}`}>
+      <span aria-hidden="true">{toneIcon[visualTone]}</span>
       <span>{children}</span>
     </span>
   );

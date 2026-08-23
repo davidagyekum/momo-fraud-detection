@@ -10,6 +10,7 @@ import {
 } from "@/components/ui";
 import type { RiskBand } from "@/types/analysis";
 import type { TransactionSummary } from "@/types/history";
+import { riskTone } from "@/lib/fraud-risk-presentation";
 import { verificationTone } from "@/lib/verification-client";
 
 const riskLabels: Record<RiskBand, string> = {
@@ -70,7 +71,7 @@ export function TransactionHistoryView({
             <View style={uiStyles.stack}>
               <StatusBadge
                 label={`Risk: ${riskLabels[item.latest_analysis.band]}`}
-                tone="warning"
+                tone={riskTone(item.latest_analysis.band)}
               />
               <StatusBadge
                 label={`Verification: ${readableStatus(item.latest_analysis.verification_status ?? "UNVERIFIED")}`}

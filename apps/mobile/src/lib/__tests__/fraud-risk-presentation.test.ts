@@ -1,6 +1,8 @@
 import {
   evidenceRowsForPreview,
+  highRiskSummaryFromReasonCodes,
   riskPresentation,
+  riskTone,
 } from "@/lib/fraud-risk-presentation";
 import type { OCRTextFraudPreview } from "@/lib/ocr-client";
 
@@ -33,7 +35,15 @@ test("presents null success as explicitly inconclusive rather than safe", () => 
 
 test("presents fraudulent evidence with immediate protective guidance", () => {
   expect(
-    riskPresentation({ ...basePreview, class: "FRAUDULENT", score: 95 }),
+    riskPresentation({
+      ...basePreview,
+      class: "FRAUDULENT",
+      score: 95,
+      reason_codes: [
+        "NUMERIC_SENDER_TRANSACTION_CLAIM",
+        "GENUINE_TEMPLATE_ANOMALY",
+      ],
+    }),
   ).toEqual(
     expect.objectContaining({
       title: "High fraud risk",
@@ -42,6 +52,34 @@ test("presents fraudulent evidence with immediate protective guidance", () => {
       saveLabel: "Save screenshot risk result",
     }),
   );
+});
+
+test("uses reason-aware high-risk copy in the OCR preview", () => {
+  expect(highRiskSummaryFromReasonCodes(["PIN_OR_OTP_REQUEST"])).toBe(
+    "Strong scam indicators detected",
+  );
+  expect(highRiskSummaryFromReasonCodes(["STRUCTURED_MODEL_HIGH_RISK"])).toBe(
+    "Multiple high-risk indicators detected",
+  );
+  expect(
+    highRiskSummaryFromReasonCodes([
+      "PIN_OR_OTP_REQUEST",
+      "NUMERIC_SENDER_TRANSACTION_CLAIM",
+      "GENUINE_TEMPLATE_ANOMALY",
+    ]),
+  ).toBe("Likely counterfeit transaction notification");
+});
+
+test.each([
+  ["low", "success"],
+  ["low_risk", "success"],
+  ["medium", "warning"],
+  ["medium_risk", "warning"],
+  ["high", "error"],
+  ["high_risk", "error"],
+  ["inconclusive", "info"],
+] as const)("maps %s to the shared %s risk tone", (risk, tone) => {
+  expect(riskTone(risk)).toBe(tone);
 });
 
 test("maps fixed evidence codes once without exposing matched OCR values", () => {

@@ -17,6 +17,7 @@ const analysisSummarySchema = z.object({
   id: z.string(),
   status: z.string(),
   risk_band: z.string(),
+  summary: z.string(),
   verification_status: z.string().nullable(),
   completed_at: z.string().nullable(),
 });

@@ -34,4 +34,18 @@ def high_risk_summary(reason_codes: Iterable[str]) -> str:
     return "Multiple high-risk indicators detected"
 
 
-__all__ = ["ACTIVE_SCAM_REASON_CODES", "high_risk_summary"]
+def risk_tone(risk: str | None) -> str:
+    """Map normalized risk bands to the shared presentation tone."""
+
+    normalized = (risk or "").casefold()
+    if normalized.endswith("_risk"):
+        normalized = normalized.removesuffix("_risk")
+    return {
+        "low": "success",
+        "medium": "warning",
+        "high": "error",
+        "inconclusive": "info",
+    }.get(normalized, "info")
+
+
+__all__ = ["ACTIVE_SCAM_REASON_CODES", "high_risk_summary", "risk_tone"]

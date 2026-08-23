@@ -9,6 +9,7 @@ import {
 } from "../components/feedback";
 import { Surface } from "../components/primitives";
 import { getTransaction } from "../lib/operations";
+import { riskTone } from "../lib/risk-presentation";
 
 const readable = (value: string) => value.toLowerCase().replaceAll("_", " ");
 
@@ -54,9 +55,11 @@ export function TransactionDetailPage(): React.ReactNode {
         </div>
         <div>
           <span>Fraud risk</span>
-          <strong>
+          <StatusBadge
+            tone={riskTone(item.analysis?.risk_band ?? "inconclusive")}
+          >
             {readable(item.analysis?.risk_band ?? "not analysed")}
-          </strong>
+          </StatusBadge>
         </div>
         <div>
           <span>Verification</span>
@@ -69,6 +72,12 @@ export function TransactionDetailPage(): React.ReactNode {
           <strong>{readable(item.case?.status ?? "none")}</strong>
         </div>
       </section>
+      {item.analysis ? (
+        <Surface>
+          <h2>Fraud-risk summary</h2>
+          <p>{item.analysis.summary}</p>
+        </Surface>
+      ) : null}
       <Surface>
         <h2>Evidence controls</h2>
         <StatusBadge
