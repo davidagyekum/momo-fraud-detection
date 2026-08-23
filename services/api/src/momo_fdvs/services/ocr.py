@@ -110,6 +110,7 @@ class OCRCandidate:
 @dataclass(frozen=True)
 class FraudOcrCandidate:
     candidate_id: str
+    evidence_group_id: str
     region_kind: str
     variant: str
     psm: int
@@ -653,6 +654,9 @@ def _fraud_candidate(
     confidences = [float(token["confidence"]) / 100 for token in tokens]
     return FraudOcrCandidate(
         candidate_id=f"{region.kind}:{region.x}:{region.y}:{variant_name}:{psm}",
+        evidence_group_id=(
+            f"{region.kind}:{region.x}:{region.y}:{region.width}:{region.height}"
+        ),
         region_kind=region.kind,
         variant=variant_name,
         psm=psm,

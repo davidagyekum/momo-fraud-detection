@@ -19,6 +19,7 @@ GENUINE = (
 def test_counterfeit_candidate_emits_four_independent_evidence_codes() -> None:
     result = assess_passive_candidate(
         candidate_id="body-1",
+        evidence_group_id="body-crop",
         region_kind="MESSAGE_BUBBLE",
         variant="GRAY",
         psm=6,
@@ -45,6 +46,7 @@ def test_counterfeit_candidate_emits_four_independent_evidence_codes() -> None:
 def test_genuine_candidate_under_provider_sender_has_no_passive_reason() -> None:
     result = assess_passive_candidate(
         candidate_id="body-1",
+        evidence_group_id="body-crop",
         region_kind="MESSAGE_BUBBLE",
         variant="GRAY",
         psm=6,
@@ -66,6 +68,7 @@ def test_genuine_candidate_under_provider_sender_has_no_passive_reason() -> None
 def test_profile_unavailable_omits_only_template_evidence() -> None:
     result = assess_passive_candidate(
         candidate_id="body-1",
+        evidence_group_id="body-crop",
         region_kind="BODY",
         variant="HIGH_TEXT",
         psm=11,

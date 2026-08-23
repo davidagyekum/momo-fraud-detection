@@ -34,6 +34,7 @@ _ALLOWED_CODES: Final = _PASSIVE_CODES | _ACTIVE_CODES
 @dataclass(frozen=True)
 class CandidateEvidence:
     candidate_id: str
+    evidence_group_id: str
     region_kind: str
     variant: str
     psm: int
@@ -72,10 +73,14 @@ def aggregate_candidate_evidence(
     best_margin: dict[str, float] = {}
     spelling_counts: dict[str, int] = {}
     formatting_counts: dict[str, int] = {}
+    counted_groups: set[tuple[str, str]] = set()
     for candidate in rows:
         confidence = max(0.0, min(1.0, float(candidate.ocr_confidence)))
         for code in set(candidate.reason_codes) & _ALLOWED_CODES:
-            votes[code] += 1
+            vote_key = (code, candidate.evidence_group_id)
+            if vote_key not in counted_groups:
+                votes[code] += 1
+                counted_groups.add(vote_key)
             strongest[code] = max(strongest.get(code, 0.0), confidence)
             if candidate.format_margin is not None:
                 best_margin[code] = max(best_margin.get(code, 0.0), candidate.format_margin)

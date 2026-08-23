@@ -364,6 +364,13 @@ def assess_hybrid_ocr(
         confidence = float(getattr(candidate, "mean_confidence", 0.0))
         passive = assess_passive_candidate(
             candidate_id=str(getattr(candidate, "candidate_id", "candidate")),
+            evidence_group_id=str(
+                getattr(
+                    candidate,
+                    "evidence_group_id",
+                    getattr(candidate, "candidate_id", "candidate"),
+                )
+            ),
             region_kind=str(getattr(candidate, "region_kind", "UNKNOWN")),
             variant=str(getattr(candidate, "variant", "UNKNOWN")),
             psm=int(getattr(candidate, "psm", 0)),
@@ -378,6 +385,7 @@ def assess_hybrid_ocr(
         evidence_rows.append(
             CandidateEvidence(
                 candidate_id=passive.evidence.candidate_id,
+                evidence_group_id=passive.evidence.evidence_group_id,
                 region_kind=passive.evidence.region_kind,
                 variant=passive.evidence.variant,
                 psm=passive.evidence.psm,

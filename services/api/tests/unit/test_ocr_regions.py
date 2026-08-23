@@ -22,6 +22,7 @@ def _fixture_bgr() -> np.ndarray:
 def _candidate(region_kind: str, variant: str, psm: int) -> FraudOcrCandidate:
     return FraudOcrCandidate(
         candidate_id=f"{region_kind}:{variant}:{psm}",
+        evidence_group_id=f"{region_kind}:controlled-crop",
         region_kind=region_kind,
         variant=variant,
         psm=psm,

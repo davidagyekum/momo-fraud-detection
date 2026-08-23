@@ -24,6 +24,7 @@ class PassiveCandidateResult:
 def assess_passive_candidate(
     *,
     candidate_id: str,
+    evidence_group_id: str,
     region_kind: str,
     variant: str,
     psm: int,
@@ -66,6 +67,7 @@ def assess_passive_candidate(
 
     evidence = CandidateEvidence(
         candidate_id=candidate_id,
+        evidence_group_id=evidence_group_id,
         region_kind=region_kind,
         variant=variant,
         psm=psm,
