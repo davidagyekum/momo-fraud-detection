@@ -79,6 +79,11 @@ def main() -> int:
         [sys.executable, "scripts/check_mobile_token_storage.py"],
         REPO_ROOT,
     )
+    success &= run(
+        "mobile web-routing policy",
+        [sys.executable, "scripts/check_mobile_web_routing.py"],
+        REPO_ROOT,
+    )
     for label, command in commands:
         success &= run(label, command)
     print(f"\nMobile verification: {'PASS' if success else 'FAIL'}")
