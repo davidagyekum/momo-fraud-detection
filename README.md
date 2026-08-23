@@ -15,7 +15,7 @@ Logical PR11 adds a fail-closed dataset registry, portable transaction/image/OCR
 
 ## Repository status
 
-The repository is frozen as a **locally verified academic prototype submission candidate**. The final accepted OCR-first journey persists deterministic screenshot risk without fabricated transaction fields, while optional stored/imported-record comparison remains separate. New OCR text assessments use `ghana-momo-obvious-scam-rules-v2` under `analysis-risk-policy-demo-v3`.
+The repository is frozen as a **locally verified academic prototype submission candidate**. The final accepted OCR-first journey persists deterministic screenshot risk without fabricated transaction fields, while optional stored/imported-record comparison remains separate. New OCR text assessments use `ghana-momo-hybrid-text-risk-v3` under `analysis-risk-policy-demo-v4` with a hash-verified privacy-safe MTN genuine-format profile; historical v1/v2 projections remain immutable.
 
 Start with the [academic submission entry point](docs/submission/README.md), [evidence index](docs/submission/CHAPTER4_EVIDENCE_INDEX.md), [limitations and non-claims](docs/submission/LIMITATIONS_AND_NON_CLAIMS.md), and [exact implementation status](IMPLEMENTATION_STATUS.md).
 
@@ -54,7 +54,7 @@ python scripts/verify.py --quick
 python scripts/verify.py --backend
 ```
 
-The registered full gates require the repository's supported runtimes and Docker services. See [the local run guide](docs/LOCAL_RUN_GUIDE.md), [current recorded counts](IMPLEMENTATION_STATUS.md), and [P0.3 acceptance evidence](docs/evidence/P0_3_TEXT_RULE_HARDENING.md). A host toolchain mismatch or unavailable Docker dependency is reported as a failure; it is never converted into a skipped success.
+The registered full gates require the repository's supported runtimes and Docker services. See [the local run guide](docs/LOCAL_RUN_GUIDE.md), [current recorded counts](IMPLEMENTATION_STATUS.md), and [final MTN hybrid acceptance evidence](docs/evidence/MTN_HYBRID_ACCURACY_REPAIR.md). A host toolchain mismatch or unavailable Docker dependency is reported as a failure; it is never converted into a skipped success.
 
 The deterministic final ZIP is built and verified with `scripts/build_submission_package.py`; see the [submission artifact policy](docs/submission/SUBMISSION_ARTIFACT_POLICY.md).
 

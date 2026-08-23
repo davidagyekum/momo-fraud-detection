@@ -25,7 +25,7 @@ The ZIP is generated only after local `HEAD` equals its pushed upstream. It cont
 2. Use the [Chapter Four evidence index](CHAPTER4_EVIDENCE_INDEX.md) to distinguish implemented evidence from plans and wireframes.
 3. Inspect the machine-readable [evidence manifest](../evidence/EVIDENCE_MANIFEST.csv).
 4. Review the exact phase and requirement state in [IMPLEMENTATION_STATUS.md](../../IMPLEMENTATION_STATUS.md).
-5. Review measured local acceptance in [P0.3 evidence](../evidence/P0_3_TEXT_RULE_HARDENING.md) and [PR19 acceptance](../qa/PR19_ACCEPTANCE.md).
+5. Review measured local acceptance in the [MTN format-hybrid evidence](../evidence/MTN_HYBRID_ACCURACY_REPAIR.md), [P0.3 evidence](../evidence/P0_3_TEXT_RULE_HARDENING.md) and [PR19 acceptance](../qa/PR19_ACCEPTANCE.md).
 6. Follow [the local run guide](../LOCAL_RUN_GUIDE.md) for the controlled Docker demonstration.
 7. Follow the [artifact policy](SUBMISSION_ARTIFACT_POLICY.md) to rebuild or independently verify the ZIP.
 
@@ -35,7 +35,7 @@ The strongest accepted product journey is:
 
 ```text
 fictitious account -> private controlled screenshot upload -> OCR
--> v2 deterministic text-risk preview -> screenshot-only persistence
+-> hybrid v3 deterministic text-risk preview -> screenshot-only persistence
 -> separate fraud risk and verification statuses -> History
 ```
 
@@ -44,8 +44,8 @@ The same local product also contains authentication/RBAC, hostile upload validat
 ## Safety and evidence integrity
 
 - No real receipt, credential, token, private reference row, consent record, private dataset or model binary is included.
-- New OCR assessments use `ghana-momo-obvious-scam-rules-v2`; the active deterministic policy is `analysis-risk-policy-demo-v3`.
-- Historical v1 text-risk evidence remains immutable and is not recomputed from stored OCR text.
+- New OCR assessments use `ghana-momo-hybrid-text-risk-v3`; the active deterministic policy is `analysis-risk-policy-demo-v4` and the privacy-safe MTN profile is hash verified.
+- Historical v1/v2 text-risk evidence remains immutable and is not recomputed from stored OCR text.
 - A deterministic policy score is not presented as a probability.
 - Verification is based only on stored/imported reference records and does not authenticate a transaction with an MNO.
 - The failed P12 image-model artifact remains inactive and unavailable.

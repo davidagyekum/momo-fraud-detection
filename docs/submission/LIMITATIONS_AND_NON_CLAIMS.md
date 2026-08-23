@@ -36,7 +36,7 @@ This document is part of the final academic submission record. It prevents local
 - Deterministic recompression, residual, metadata, duplicate and layout signals are supporting evidence, not proof that an image was manipulated.
 - The P11 structured pipeline passed a tiny controlled-synthetic held-out set of three rows. That is pipeline-correctness evidence, not provider-wide accuracy, calibration or production generalisation.
 - The current accepted release reports image and structured classifiers as not activated and `full_analysis_available=false`. Partial/degraded component state is preserved honestly.
-- No model was trained, promoted or activated during P0.1-P0.3, P1 or this submission freeze.
+- No model was trained, promoted or activated during P0.1-P0.3, P1, the MTN hybrid repair or this submission freeze. The optional supervised text model remains untrained/inactive.
 
 ## Data and evaluation
 
@@ -50,6 +50,7 @@ This document is part of the final academic submission record. It prevents local
 ## Performance, recovery and dependency evidence
 
 - Formal p50/p95 load evidence, the 25-concurrent-analysis target and the 100,000-record scalability target remain unproven.
+- The controlled hybrid positive used 24 OCR candidates and the seven-fixture Docker suite took 70.99 seconds total, but formal per-request median, p95 and peak-memory measurements were not collected; the package's p95 target is not claimed.
 - A non-production backup/restore rehearsal was not completed, although backup/rollback procedures are documented.
 - Mobile production audit evidence retains `B-SEC-002`: 9 moderate and 15 high transitive Expo/Metro/React Native toolchain advisories. The repository does not apply npm's breaking forced downgrade.
 - Local security and ownership gates passed at the recorded accepted SHA, but no external penetration test or non-local environment assessment is claimed.

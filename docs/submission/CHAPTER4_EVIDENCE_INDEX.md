@@ -59,6 +59,7 @@ Evidence classes used here:
 | [P07 OCR evidence](../evidence/P07_OCR_EVIDENCE.md) | Historical controlled implementation | 20/20 declared fields across five synthetic fixtures; not provider-wide accuracy. |
 | [OCR text-risk repair](../evidence/OCR_TEXT_FRAUD_REPAIR.md) | Historical implementation | Introduced the privacy-safe obvious-scam assessment and categorical policy integration. |
 | [P0.3 text-rule hardening](../evidence/P0_3_TEXT_RULE_HARDENING.md) | Final accepted implementation | V2 Unicode/clause locality and thresholds, frozen v1 validation, complete local gates and a controlled browser persistence journey. |
+| [MTN format-hybrid accuracy repair](../evidence/MTN_HYBRID_ACCURACY_REPAIR.md) | Final accepted implementation | Hybrid v3 adds hash-bound genuine-format, categorical sender and cross-candidate evidence; the generated passive counterfeit and six real-OCR negative boundaries pass without exposing raw source data. |
 
 ## 4.8 Image analysis and machine learning
 
@@ -81,7 +82,7 @@ Evidence classes used here:
 
 | Evidence | Classification | Submission interpretation |
 |---|---|---|
-| [P0.3 text-rule hardening](../evidence/P0_3_TEXT_RULE_HARDENING.md) | Final accepted implementation | Active ruleset v2 and deterministic policy v3; score is not a probability. |
+| [MTN format-hybrid accuracy repair](../evidence/MTN_HYBRID_ACCURACY_REPAIR.md) | Final accepted implementation | Active hybrid ruleset v3 and deterministic policy v4; screenshot-only high risk remains separate from verification Not attempted and the score is not a probability. |
 | [P1 mobile evidence](../evidence/P1_OCR_FIRST_MOBILE.md) | Final accepted UI | High fraud risk and verification Not attempted persist as separate statuses in result/detail/history. |
 | [PR19 acceptance](../qa/PR19_ACCEPTANCE.md) | Accepted/local | Controlled private report, fraud report, assignment, review, note, decision, notification and staff journey. |
 | Complete history filters and automatic high-risk case creation | Outstanding | Remain explicit P14/P15 review items. |
@@ -98,7 +99,7 @@ Evidence classes used here:
 
 | Evidence | Classification | Submission interpretation |
 |---|---|---|
-| [P0.3 complete verification](../evidence/P0_3_TEXT_RULE_HARDENING.md) | Final accepted local regression | Backend 233, mobile 73, admin 40 plus 3 Playwright, ML 714, security 31 zero-skip, E2E, two migration paths and release verifier passed at the recorded SHA. |
+| [MTN hybrid complete verification](../evidence/MTN_HYBRID_ACCURACY_REPAIR.md) | Final accepted local regression | Real Tesseract 7, backend 275 plus 7 Docker-routed host skips, mobile 83, admin 40 plus 3 Playwright, ML 714, security 31 zero-skip, E2E, two migration paths, release verifier and browser acceptance passed at the recorded SHA. |
 | [PR19 QA](../qa/PR19_ACCEPTANCE.md), [local release](../deployment/PR19_LOCAL_RELEASE.md), [rollback](../deployment/PR19_ROLLBACK.md) | Historical accepted/local | Four-service local release evidence; not staging/production evidence. |
 | Hosted CI, native devices, performance/load, restore rehearsal | Outstanding | See [limitations](LIMITATIONS_AND_NON_CLAIMS.md). |
 
