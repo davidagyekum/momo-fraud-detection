@@ -194,6 +194,80 @@ def test_controlled_candidate_family_produces_four_reasons_and_high_risk() -> No
     }
 
 
+@pytest.mark.parametrize("provider_code", ["TELECEL_CASH", "AIRTELTIGO_MONEY"])
+def test_explicit_non_mtn_provider_never_uses_mtn_format_profile(
+    provider_code: str,
+) -> None:
+    candidate = SimpleNamespace(
+        candidate_id="BODY:HIGH_TEXT:6",
+        region_kind="BODY",
+        variant="HIGH_TEXT",
+        psm=6,
+        raw_text=(
+            "Cash In for Gh 700.00 from EXAMPLE TRADERS carent bulance.700.04 "
+            "avelabil bulance.700.04 ID: 90000000000001 FEE: 00.000"
+        ),
+        tokens=(
+            {"text": "carent", "confidence": 94, "y": 650, "height": 30},
+            {"text": "bulance", "confidence": 95, "y": 650, "height": 30},
+            {"text": "avelabil", "confidence": 93, "y": 700, "height": 30},
+        ),
+        mean_confidence=0.9,
+    )
+
+    result = assess_hybrid_ocr(
+        selected_raw_text="+2335500...",
+        selected_tokens=(
+            {
+                "text": "+2335500...",
+                "confidence": 95,
+                "x": 100,
+                "y": 55,
+                "width": 240,
+                "height": 40,
+                "line_id": "header",
+            },
+        ),
+        provider_code=provider_code,
+        fraud_candidates=(candidate,),
+        image_height=1280,
+    )
+
+    assert "GENUINE_TEMPLATE_ANOMALY" not in result.reason_codes
+    assert result.profile_status == "NOT_APPLICABLE"
+    projection = stored_hybrid_assessment_projection(result.as_public_dict())
+    assert projection["evidence"]["format_profile"]["status"] == "NOT_APPLICABLE"
+
+
+@pytest.mark.parametrize("provider_label", ["Telecel Cash", "AirtelTigo Money"])
+def test_generic_provider_with_conflicting_label_never_uses_mtn_profile(
+    provider_label: str,
+) -> None:
+    candidate = SimpleNamespace(
+        candidate_id="BODY:HIGH_TEXT:6",
+        region_kind="BODY",
+        variant="HIGH_TEXT",
+        psm=6,
+        raw_text=(
+            f"{provider_label} Cash In for Gh 700.00 from EXAMPLE TRADERS "
+            "carent bulance.700.04 avelabil bulance.700.04 ID: 90000000000001"
+        ),
+        tokens=({"text": provider_label, "confidence": 94, "y": 650, "height": 30},),
+        mean_confidence=0.9,
+    )
+
+    result = assess_hybrid_ocr(
+        selected_raw_text="+2335500...",
+        selected_tokens=(),
+        provider_code="GENERIC_MOMO",
+        fraud_candidates=(candidate,),
+        image_height=1280,
+    )
+
+    assert "GENUINE_TEMPLATE_ANOMALY" not in result.reason_codes
+    assert result.profile_status == "NOT_APPLICABLE"
+
+
 def test_v3_persisted_projection_is_validated_and_rebuilds_fixed_copy() -> None:
     persisted = finalize_hybrid_assessment(
         _consensus("NUMERIC_SENDER_TRANSACTION_CLAIM", "GENUINE_TEMPLATE_ANOMALY"),

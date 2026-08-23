@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from typing import Any, Final, Literal, cast
@@ -121,6 +122,10 @@ _QUALITY_ORDER: Final[dict[EvidenceQuality, int]] = {
     "MEDIUM": 2,
     "HIGH": 3,
 }
+_CONFLICTING_PROVIDER_LABEL: Final = re.compile(
+    r"\b(?:telecel(?:\s+cash)?|airtel\s*tigo(?:\s+money)?|airteltigo(?:\s+money)?)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -296,6 +301,15 @@ def _profile() -> tuple[LoadedMtnFormatProfile | None, str, str | None, str | No
     )
 
 
+def _mtn_profile_eligible(provider_code: str, texts: Iterable[str]) -> bool:
+    normalized_provider = provider_code.strip().upper()
+    if normalized_provider == "MTN_MOMO":
+        return True
+    if normalized_provider != "GENERIC_MOMO":
+        return False
+    return not any(_CONFLICTING_PROVIDER_LABEL.search(text) for text in texts)
+
+
 def _quality_max(values: Iterable[str]) -> EvidenceQuality:
     typed = [cast(EvidenceQuality, value) for value in values if value in _QUALITY_ORDER]
     return max(typed, key=lambda value: _QUALITY_ORDER[value], default="UNAVAILABLE")
@@ -321,7 +335,18 @@ def assess_hybrid_ocr(
         image_height=image_height,
         raw_text=selected_raw_text,
     )
-    profile, profile_status, profile_version, profile_sha256, limitations = _profile()
+    profile_texts = [
+        selected_raw_text,
+        *(str(getattr(candidate, "raw_text", "")) for candidate in candidates),
+    ]
+    if _mtn_profile_eligible(provider_code, profile_texts):
+        profile, profile_status, profile_version, profile_sha256, limitations = _profile()
+    else:
+        profile = None
+        profile_status = "NOT_APPLICABLE"
+        profile_version = None
+        profile_sha256 = None
+        limitations = []
     context = TextFraudContext(
         sender_kind=sender.sender_kind,
         claimed_provider=provider_code,
@@ -462,7 +487,7 @@ def stored_hybrid_assessment_projection(value: object) -> dict[str, object]:
         or not 0 <= candidate_count <= 32
         or not isinstance(consensus_limitations, list)
         or any(item not in _ALLOWED_LIMITATIONS for item in consensus_limitations)
-        or profile_value["status"] not in {"AVAILABLE", "UNAVAILABLE"}
+        or profile_value["status"] not in {"AVAILABLE", "UNAVAILABLE", "NOT_APPLICABLE"}
         or (profile_value["version"] is not None and not isinstance(profile_value["version"], str))
         or (profile_value["sha256"] is not None and not isinstance(profile_value["sha256"], str))
     ):
