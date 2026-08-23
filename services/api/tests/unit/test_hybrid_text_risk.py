@@ -140,6 +140,33 @@ def test_existing_pin_request_remains_decisive_without_regional_candidates() -> 
     assert result.as_public_dict()["summary"] == "Strong scam indicators detected"
 
 
+def test_raw_text_sender_fallback_cannot_become_numeric_header_evidence() -> None:
+    candidate = SimpleNamespace(
+        candidate_id="BODY:GRAY:6",
+        region_kind="BODY",
+        variant="GRAY",
+        psm=6,
+        raw_text="Cash In received for GHS 10.00 from SAMPLE SHOP.",
+        tokens=({"text": "Cash", "confidence": 95, "y": 700, "height": 30},),
+        mean_confidence=0.9,
+    )
+
+    result = assess_hybrid_ocr(
+        selected_raw_text="+2335500...\nCash In received for GHS 10.00",
+        selected_tokens=(),
+        provider_code="TELECEL_CASH",
+        fraud_candidates=(candidate,),
+        image_height=1280,
+    )
+
+    assert result.sender.source == "raw_text_fallback"
+    assert result.sender.sender_confidence == 0.55
+    assert result.sender.header_phone_present is False
+    assert "NUMERIC_SENDER_TRANSACTION_CLAIM" not in result.reason_codes
+    projection = stored_hybrid_assessment_projection(result.as_public_dict())
+    assert projection["evidence"]["sender"]["source"] == "raw_text_fallback"
+
+
 def test_controlled_candidate_family_produces_four_reasons_and_high_risk() -> None:
     raw = (
         "Cash In for Gh 700.00 from EXAMPLE TRADERS carent bulance.700.04 "

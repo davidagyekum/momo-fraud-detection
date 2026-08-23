@@ -62,6 +62,10 @@ def test_header_fallback_uses_first_raw_lines_without_exposing_value() -> None:
     public = result.as_public_dict()
 
     assert result.sender_kind == "phone_number"
+    assert result.sender_confidence == 0.55
+    assert result.source == "raw_text_fallback"
+    assert result.header_phone_present is False
+    assert result.header_provider_label_present is False
     assert "+233" not in str(public)
     assert "5500" not in str(public)
 

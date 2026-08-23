@@ -130,8 +130,10 @@ def infer_sender_context(
     """Infer a sender category from only the top 30 percent of OCR geometry."""
 
     candidates = _candidate_strings(_header_tokens(tokens, image_height))
+    raw_text_fallback = False
     if not candidates and raw_text:
         candidates = _raw_header_candidates(raw_text)
+        raw_text_fallback = True
     numeric_scores: list[float] = []
     provider_scores: list[float] = []
     for raw_value, confidence in candidates:
@@ -147,26 +149,30 @@ def infer_sender_context(
     if numeric_scores and provider_scores:
         return SenderContext(
             "mixed",
-            max(0.75, max(numeric_scores + provider_scores)),
-            True,
-            True,
-            "ocr_header",
+            (
+                max(numeric_scores + provider_scores)
+                if raw_text_fallback
+                else max(0.75, max(numeric_scores + provider_scores))
+            ),
+            not raw_text_fallback,
+            not raw_text_fallback,
+            "raw_text_fallback" if raw_text_fallback else "ocr_header",
         )
     if numeric_scores:
         return SenderContext(
             "phone_number",
-            max(0.80, max(numeric_scores)),
-            True,
+            max(numeric_scores) if raw_text_fallback else max(0.80, max(numeric_scores)),
+            not raw_text_fallback,
             False,
-            "ocr_header",
+            "raw_text_fallback" if raw_text_fallback else "ocr_header",
         )
     if provider_scores:
         return SenderContext(
             "alphanumeric_provider",
-            max(0.75, max(provider_scores)),
+            max(provider_scores) if raw_text_fallback else max(0.75, max(provider_scores)),
             False,
-            True,
-            "ocr_header",
+            not raw_text_fallback,
+            "raw_text_fallback" if raw_text_fallback else "ocr_header",
         )
     return SenderContext("unknown", 0.0, False, False, "none")
 

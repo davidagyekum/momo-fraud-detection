@@ -467,7 +467,7 @@ def stored_hybrid_assessment_projection(value: object) -> dict[str, object]:
         or not 0 <= float(sender_value["sender_confidence"]) <= 1
         or not isinstance(sender_value["header_phone_present"], bool)
         or not isinstance(sender_value["header_provider_label_present"], bool)
-        or sender_value["source"] not in {"ocr_header", "none"}
+        or sender_value["source"] not in {"ocr_header", "raw_text_fallback", "none"}
         or not isinstance(consensus_value, dict)
         or set(consensus_value)
         != {"accepted_reason_codes", "vote_counts", "candidate_count", "limitations"}
