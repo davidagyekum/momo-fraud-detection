@@ -20,6 +20,14 @@ from tests.fixtures.generated_hybrid_negatives import (
 from tests.fixtures.generated_passive_counterfeit import (
     generated_passive_counterfeit_png,
 )
+from tests.fixtures.generated_realistic_sender_headers import (
+    generated_body_only_spaced_phone_png,
+    generated_header_datetime_count_png,
+    generated_header_transaction_id_png,
+    generated_realistic_genuine_mobilemoney_png,
+    generated_spaced_numeric_ordinary_chat_png,
+    generated_spaced_phone_counterfeit_png,
+)
 
 from momo_fdvs.extensions import db
 from momo_fdvs.models import Role
@@ -110,6 +118,57 @@ def test_real_ocr_passive_counterfeit_becomes_high_risk(app: Flask) -> None:
     assert "bbox" not in str(preview["evidence"])
 
 
+def test_real_ocr_spaced_numeric_header_counterfeit_becomes_high_risk(
+    app: Flask,
+) -> None:
+    assert shutil.which(app.config["TESSERACT_CMD"]) is not None
+    client = app.test_client()
+    owner = _register(client)
+    uploaded = client.post(
+        "/api/v1/transactions",
+        data={
+            "receipt": (
+                io.BytesIO(generated_spaced_phone_counterfeit_png()),
+                "generated-spaced-phone-counterfeit.png",
+                "image/png",
+            ),
+            "source": "GALLERY",
+        },
+        headers=_headers(owner, f"upload-{uuid.uuid4()}"),
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    transaction_id = uploaded.json["data"]["transaction"]["id"]
+
+    response = client.post(
+        f"/api/v1/transactions/{transaction_id}/ocr",
+        headers=_headers(owner, f"ocr-{uuid.uuid4()}"),
+    )
+
+    assert response.status_code == 200, response.get_data(as_text=True)
+    preview = response.json["data"]["fraud_preview"]
+    assert preview["class"] == "FRAUDULENT", preview
+    assert preview["score_is_probability"] is False
+    assert {
+        "NUMERIC_SENDER_TRANSACTION_CLAIM",
+        "GENUINE_TEMPLATE_ANOMALY",
+    } <= set(preview["reason_codes"])
+    sender = preview["evidence"]["sender"]
+    assert set(sender) == {
+        "sender_kind",
+        "sender_confidence",
+        "header_phone_present",
+        "header_provider_label_present",
+        "source",
+    }
+    assert sender["sender_kind"] == "phone_number"
+    assert sender["header_phone_present"] is True
+    assert sender["header_provider_label_present"] is False
+    assert sender["source"] == "ocr_header"
+    assert sender["sender_confidence"] >= 0.72
+    assert "+233" not in str(preview)
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "fixture_factory", "expected_sender_kind"),
     (
@@ -131,6 +190,31 @@ def test_real_ocr_passive_counterfeit_becomes_high_risk(app: Flask) -> None:
             "phone_number",
         ),
         ("body-phone-unknown-sender", generated_body_phone_unknown_sender_png, "unknown"),
+        (
+            "realistic-genuine-mobilemoney",
+            generated_realistic_genuine_mobilemoney_png,
+            "alphanumeric_provider",
+        ),
+        (
+            "spaced-numeric-ordinary-chat",
+            generated_spaced_numeric_ordinary_chat_png,
+            "phone_number",
+        ),
+        (
+            "body-only-spaced-phone",
+            generated_body_only_spaced_phone_png,
+            "unknown",
+        ),
+        (
+            "header-transaction-id",
+            generated_header_transaction_id_png,
+            "unknown",
+        ),
+        (
+            "header-datetime-count",
+            generated_header_datetime_count_png,
+            "unknown",
+        ),
     ),
 )
 def test_real_ocr_safe_boundaries_are_not_fraudulent(

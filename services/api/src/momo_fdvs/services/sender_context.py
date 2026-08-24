@@ -10,11 +10,9 @@ from typing import Any, Literal
 
 SenderKind = Literal["phone_number", "alphanumeric_provider", "mixed", "unknown"]
 
-_GHANA_HEADER_PHONE = re.compile(
-    r"^(?:\+?233|0)(?:[\s().-]*\d){4,9}(?:\.{2,}|…)?$",
-    re.IGNORECASE,
-)
-_TRUNCATED_PHONE = re.compile(r"^(?:\+?233|0)[\d\s().-]{4,}(?:\.{2,}|…)$")
+_GHANA_HEADER_PHONE = re.compile(r"^(?:\+?233[25]\d{8}|0[25]\d{8})$")
+_TRUNCATED_PHONE = re.compile(r"^\+233[25]\d{2,7}(?:\.{2,}|…)$")
+_PHONE_TOKEN = re.compile(r"^[\d+()\s.\-\u2013\u2014…,:;|'`]+$")
 _PROVIDER_LABEL = re.compile(
     r"(?i)^(?:mobile\s*money|mobilemoney|mtn\s*momo|momo|telecel(?:\s+cash)?|"
     r"t[- ]?cash|airteltigo(?:\s+money)?|at\s+money)$"
@@ -30,6 +28,7 @@ _UI_WORDS = {
     "details",
     "search",
 }
+_IDENTIFIER_LABELS = {"id", "ref", "reference", "transaction id", "transaction reference"}
 
 
 @dataclass(frozen=True)
@@ -96,24 +95,92 @@ def _header_tokens(
     )
 
 
-def _candidate_strings(header: list[dict[str, Any]]) -> list[tuple[str, float]]:
-    candidates: list[tuple[str, float]] = []
+def _header_lines(header: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     by_line: dict[str, list[dict[str, Any]]] = {}
     for token in header:
         text = _token_text(token)
-        if text:
-            candidates.append((text, _confidence(token.get("confidence"))))
+        if not text:
+            continue
         line_id = str(token.get("line_id", ""))
         if not line_id:
             line_id = f"y:{round(_safe_int(token.get('y')) / 24)}"
         by_line.setdefault(line_id, []).append(token)
-    for line in by_line.values():
-        ordered = sorted(line, key=lambda item: _safe_int(item.get("x")))
-        combined = " ".join(filter(None, (_token_text(item) for item in ordered))).strip()
-        if combined:
-            values = [_confidence(item.get("confidence")) for item in ordered]
-            candidates.append((combined, sum(values) / len(values) if values else 0.0))
-    return candidates
+    return [sorted(line, key=lambda item: _safe_int(item.get("x"))) for line in by_line.values()]
+
+
+def _phone_candidate(value: str) -> bool:
+    normalized = value.replace("\u2013", "-").replace("\u2014", "-")
+    truncated = bool(re.search(r"(?:\.{2,}|…)$", normalized))
+    if truncated:
+        suffix = "…" if normalized.endswith("…") else "..."
+        normalized = re.sub(r"(?:\.{2,}|…)$", "", normalized)
+    else:
+        suffix = ""
+    compact = re.sub(r"[\s().\-,:;|'`]", "", normalized) + suffix
+    return bool(_GHANA_HEADER_PHONE.fullmatch(compact) or _TRUNCATED_PHONE.fullmatch(compact))
+
+
+def _number_confidence(window: list[dict[str, Any]]) -> float:
+    contributing = [
+        _confidence(token.get("confidence"))
+        for token in window
+        if any(character.isdigit() for character in _token_text(token))
+    ]
+    return sum(contributing) / len(contributing) if contributing else 0.0
+
+
+def _numeric_header_scores(lines: list[list[dict[str, Any]]]) -> list[float]:
+    scores: list[float] = []
+    for line in lines:
+        for start in range(len(line)):
+            prefix_parts = [
+                _token_text(item).casefold().strip(" .:|-_")
+                for item in line[max(0, start - 2) : start]
+            ]
+            prefix = " ".join(filter(None, prefix_parts))
+            if prefix in _IDENTIFIER_LABELS or (
+                prefix_parts and prefix_parts[-1] in _IDENTIFIER_LABELS
+            ):
+                continue
+            window: list[dict[str, Any]] = []
+            for token in line[start : start + 6]:
+                text = _token_text(token)
+                if not text or not _PHONE_TOKEN.fullmatch(text):
+                    break
+                if window:
+                    previous = window[-1]
+                    previous_end = _safe_int(previous.get("x")) + max(
+                        1, _safe_int(previous.get("width"), 1)
+                    )
+                    gap = _safe_int(token.get("x")) - previous_end
+                    height = max(
+                        1,
+                        _safe_int(previous.get("height"), 1),
+                        _safe_int(token.get("height"), 1),
+                    )
+                    if gap > max(48, height * 3):
+                        break
+                window.append(token)
+                combined = " ".join(_token_text(item) for item in window)
+                if _phone_candidate(combined):
+                    scores.append(_number_confidence(window))
+    return scores
+
+
+def _provider_scores(lines: list[list[dict[str, Any]]]) -> list[float]:
+    scores: list[float] = []
+    for line in lines:
+        for start in range(len(line)):
+            for size in range(1, min(3, len(line) - start) + 1):
+                window = line[start : start + size]
+                combined = " ".join(_token_text(item) for item in window)
+                normalized = " ".join(combined.casefold().strip(" .:|-_").split())
+                if normalized in _UI_WORDS:
+                    continue
+                if _PROVIDER_LABEL.fullmatch(normalized):
+                    values = [_confidence(item.get("confidence")) for item in window]
+                    scores.append(sum(values) / len(values) if values else 0.0)
+    return scores
 
 
 def _raw_header_candidates(raw_text: str) -> list[tuple[str, float]]:
@@ -129,23 +196,22 @@ def infer_sender_context(
 ) -> SenderContext:
     """Infer a sender category from only the top 30 percent of OCR geometry."""
 
-    candidates = _candidate_strings(_header_tokens(tokens, image_height))
+    lines = _header_lines(_header_tokens(tokens, image_height))
     raw_text_fallback = False
-    if not candidates and raw_text:
+    numeric_scores = _numeric_header_scores(lines)
+    provider_scores = _provider_scores(lines)
+    if not lines and raw_text:
         candidates = _raw_header_candidates(raw_text)
         raw_text_fallback = True
-    numeric_scores: list[float] = []
-    provider_scores: list[float] = []
-    for raw_value, confidence in candidates:
-        compact = re.sub(r"\s+", "", raw_value)
-        if _GHANA_HEADER_PHONE.fullmatch(compact) or _TRUNCATED_PHONE.fullmatch(compact):
-            numeric_scores.append(confidence)
-            continue
-        normalized = " ".join(raw_value.casefold().strip(" .:|-_").split())
-        if normalized in _UI_WORDS:
-            continue
-        if _PROVIDER_LABEL.fullmatch(normalized):
-            provider_scores.append(confidence)
+        for raw_value, confidence in candidates:
+            if _phone_candidate(raw_value):
+                numeric_scores.append(confidence)
+                continue
+            normalized = " ".join(raw_value.casefold().strip(" .:|-_").split())
+            if normalized in _UI_WORDS:
+                continue
+            if _PROVIDER_LABEL.fullmatch(normalized):
+                provider_scores.append(confidence)
     if numeric_scores and provider_scores:
         return SenderContext(
             "mixed",
@@ -161,7 +227,7 @@ def infer_sender_context(
     if numeric_scores:
         return SenderContext(
             "phone_number",
-            max(numeric_scores) if raw_text_fallback else max(0.80, max(numeric_scores)),
+            max(numeric_scores),
             not raw_text_fallback,
             False,
             "raw_text_fallback" if raw_text_fallback else "ocr_header",
