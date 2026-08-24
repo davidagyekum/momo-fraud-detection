@@ -256,7 +256,7 @@ border-bottom:1px solid #e8edf1}}
 <h3>Limitations</h3><ul>{_list(risk["limitations"])}</ul>
 <p>{_safe(risk["disclaimer"])}</p></section>
 <section><h2>Transaction verification</h2>
-<p><strong>{_safe(verification_data["label"])}</strong> — {_safe(verification_data["summary"])}</p>
+<p><strong>{_safe(verification_data["label"])}</strong>: {_safe(verification_data["summary"])}</p>
 <p>{_safe(verification_data["disclaimer"])}</p></section>
 <section><h2>Component availability</h2><table>{component_table}</table></section>
 <section><h2>Evidence versions</h2><table>{version_table}</table></section>

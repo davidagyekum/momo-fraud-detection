@@ -25,7 +25,7 @@ const basePreview: OCRTextFraudPreview = {
 test("presents null success as explicitly inconclusive rather than safe", () => {
   expect(riskPresentation(basePreview)).toEqual(
     expect.objectContaining({
-      title: "Inconclusive — no reliable fraud classification",
+      title: "Inconclusive. No reliable fraud classification",
       subtitle:
         "The available evidence did not support a decisive result. This is not a genuine or safe verdict.",
       saveLabel: "Save inconclusive assessment",

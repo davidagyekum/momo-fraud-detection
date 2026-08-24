@@ -19,7 +19,7 @@ const riskLabels: Record<RiskBand, string> = {
   low_risk: "Low risk",
   medium_risk: "Medium risk",
   high_risk: "High fraud risk",
-  inconclusive: "Inconclusive — no reliable fraud classification",
+  inconclusive: "Inconclusive. No reliable fraud classification",
 };
 
 const INCONCLUSIVE_COPY =
@@ -54,14 +54,6 @@ function friendlyEvidenceLabel(value: string): string {
 export function AnalysisResultView({ result }: { result: AnalysisResult }) {
   const degraded = result.risk.component_status === "DEGRADED";
   const conclusive = result.risk.conclusion_status === "CONCLUSIVE";
-  const bandLabel =
-    result.risk.band === "high_risk"
-      ? "high"
-      : result.risk.band === "medium_risk"
-        ? "medium"
-        : result.risk.band === "low_risk"
-          ? "low"
-          : "inconclusive";
   const counterfeitTextEvidence =
     result.evidence_summary.text_fraud.class === "FRAUDULENT";
   const reasonCodes = result.risk.reasons.map((reason) => reason.code);
@@ -95,11 +87,13 @@ export function AnalysisResultView({ result }: { result: AnalysisResult }) {
         <InlineAlert
           tone="warning"
           title={
-            conclusive ? "Some components unavailable" : "Evidence incomplete"
+            conclusive
+              ? "Some optional checks were not used"
+              : "Evidence incomplete"
           }
           message={
             conclusive
-              ? `The ${bandLabel} fraud-risk conclusion remains valid. Review unavailable components below.`
+              ? "The displayed fraud-risk result is still valid based on the available evidence."
               : "The available evidence was insufficient for a fraud-risk conclusion. Review unavailable components below."
           }
         />
@@ -184,7 +178,7 @@ export function AnalysisDetailsView({ result }: { result: AnalysisResult }) {
             )}
             {result.risk.score !== null ? (
               <Text style={uiStyles.body} selectable>
-                Policy score {result.risk.score} — not a probability
+                Policy score {result.risk.score}: not a probability
               </Text>
             ) : null}
             <Text style={uiStyles.muted} selectable>

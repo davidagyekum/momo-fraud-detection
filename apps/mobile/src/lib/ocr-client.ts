@@ -268,8 +268,7 @@ export async function confirmOCR(
 }
 
 export function confidenceLabel(field: OCRField | undefined): string {
-  if (!field?.value || !field.valid)
-    return "Not detected — enter this manually";
+  if (!field?.value || !field.valid) return "Not detected. Enter this manually";
   if (field.requires_review) return "Needs checking against the receipt";
-  return "Looks clear — still check before confirming";
+  return "Looks clear. Still check before confirming";
 }

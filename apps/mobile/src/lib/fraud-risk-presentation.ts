@@ -104,7 +104,7 @@ export function riskPresentation(
     };
   }
   return {
-    title: "Inconclusive — no reliable fraud classification",
+    title: "Inconclusive. No reliable fraud classification",
     subtitle:
       "The available evidence did not support a decisive result. This is not a genuine or safe verdict.",
     guidance: null,

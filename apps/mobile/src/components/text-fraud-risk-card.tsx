@@ -80,7 +80,7 @@ export function TextFraudRiskCard({
         <View style={styles.reasons}>
           {preview.score !== null ? (
             <Text selectable style={styles.score}>
-              Policy score {Math.round(preview.score)}/100 — not a probability
+              Policy score {Math.round(preview.score)}/100: not a probability
             </Text>
           ) : null}
           {preview.reasons.length > 0 ? (

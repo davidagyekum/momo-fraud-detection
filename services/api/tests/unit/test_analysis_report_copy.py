@@ -53,3 +53,4 @@ def test_partial_high_report_separates_conclusion_from_component_availability() 
     assert "Strong scam indicators detected" in html
     assert 'class="risk-tone risk-tone--error"' in html
     assert "persisted result is inconclusive" not in html.casefold()
+    assert " — " not in html

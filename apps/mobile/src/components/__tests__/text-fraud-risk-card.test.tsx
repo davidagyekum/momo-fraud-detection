@@ -38,9 +38,7 @@ test("keeps compact evidence visible and collapses technical rule detail", async
     view.getByLabelText(/Preliminary message-risk preview.*High fraud risk/),
   ).toBeTruthy();
   expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
-  expect(
-    view.queryByText("Policy score 95/100 — not a probability"),
-  ).toBeNull();
+  expect(view.queryByText("Policy score 95/100: not a probability")).toBeNull();
   expect(view.queryByText(/CRITICAL · Secret code requested/)).toBeNull();
   expect(
     view.getByText(/Do not act on this message.*Do not send money/s),
@@ -59,9 +57,7 @@ test("keeps compact evidence visible and collapses technical rule detail", async
   );
   await act(async () => fireEvent.press(whyButton));
 
-  expect(
-    view.getByText("Policy score 95/100 — not a probability"),
-  ).toBeTruthy();
+  expect(view.getByText("Policy score 95/100: not a probability")).toBeTruthy();
   expect(view.getByText(/CRITICAL · Secret code requested/)).toBeTruthy();
   expect(
     view.getByText(
@@ -106,7 +102,7 @@ test("labels a null successful assessment as inconclusive and explicitly not saf
 
   expect(
     view.getByLabelText(
-      "Status: Inconclusive — no reliable fraud classification",
+      "Status: Inconclusive. No reliable fraud classification",
     ),
   ).toBeTruthy();
   expect(

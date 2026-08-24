@@ -278,8 +278,8 @@ export default function OCRReviewScreen() {
     const hint = source?.value
       ? confidenceLabel(source)
       : required
-        ? "Not detected — enter only the value shown in the image"
-        : "Optional — leave blank when it is not shown";
+        ? "Not detected. Enter only the value shown in the image"
+        : "Optional. Leave blank when it is not shown";
     return (
       <View key={name} style={styles.fieldGroup}>
         <LabeledInput

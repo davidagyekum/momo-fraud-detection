@@ -30,8 +30,8 @@ export default function HomeScreen() {
           <View>
             <StatusBadge label="Transaction verification" tone="info" />
             <Text style={uiStyles.muted}>
-              A separate comparison against imported reference transactions—not
-              a live MNO connection.
+              A separate comparison against imported reference transactions. It
+              is not a live MNO connection.
             </Text>
           </View>
         </View>

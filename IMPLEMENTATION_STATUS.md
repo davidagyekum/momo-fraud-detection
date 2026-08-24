@@ -6,8 +6,8 @@
 
 - Repository: `davidagyekum/momo-fraud-detection`
 - Default branch: `main`
-- Current work branch: `codex/final-mtn-format-hybrid-accuracy`
-- Base SHA: `eab389e2a8dff5d1a29dcce289bd036994757cd7`
+- Current work branch: `codex/plain-language-copy-cleanup`
+- Base SHA: `ed02841e38684a45be90541856185675febe7819`
 - Split Ghana sender-header correction SHA: `18f2765e05f56eebe0ae02307fa2791ff13362c7`
 - Final hybrid accuracy/presentation implementation SHA: `4f9a30ad588e3edb9c053e210e799e20ad6d4357`
 - Mobile analysis progressive-disclosure implementation SHA: `8f5b33f85b0f73b64474a517d66f629392fb5df3`
@@ -31,6 +31,7 @@
 - PR14 transaction ETL/frozen-split implementation SHA: `af8cce11d4e3f5644f24019498826899d356b503`
 - P12 training code SHA: `02d8967136853c5c46eaa0babe44a7327c843a32`
 - Last updated: `2026-08-24`
+- Latest wording-only verification: `Conclusive degraded results now say “Some optional checks were not used” and explain that the displayed fraud-risk result remains valid based on the available evidence. Owner-facing em dashes were replaced with plain sentences or colons in mobile screens and private reports. Focused red/green verification passes 30 mobile tests and the report-copy test; the complete mobile gate passes 118 tests, Prettier, ESLint, strict TypeScript and static export. The database-free Windows backend run passes 236 tests but skips 72 PostgreSQL/Tesseract cases and therefore does not replace the accepted 295-test Docker-backed gate recorded below.`
 - Latest scoped mobile verification: `The final owner-facing screenshot/check flow passes the registered Node 24 mobile gate: token-storage and single-shell routing policies, Prettier, ESLint, strict TypeScript, 22 Jest suites / 118 tests at 83.78% statement and 71.04% branch coverage, and the Expo static web export. Compact evidence remains visible while detailed reasons, policy score, disclaimer, limitations and versions are disclosed through Why this result?. The Impeccable detector returned no findings.`
 - Latest local access/distribution review: `The documented active development administrator exists in the current Docker database, retains its required first-password-change flag and authenticates through the live API with HTTP 200; the administrator portal also returns HTTP 200 on localhost:15173. docs/deployment/SHARING_AND_HOSTING_OPTIONS.md now distinguishes local source transfer, LAN access, VPS Compose deployment, Railway/Render translation and native build distribution. This is guidance and local evidence only; no hosted or native deployment was performed.`
 - CI status: `The split Ghana sender-header correction is locally accepted. The backend gate passes 295 tests with exactly 13 real-Tesseract cases routed from the Tesseract-free Windows host to Docker, at 85.97% branch-aware coverage plus Ruff, strict mypy over 78 source files, OpenAPI and ER drift. All 13 cases pass in Docker in 195.48 seconds. Mobile passes 22 suites / 118 tests at 83.78% statements and 71.04% branches plus static export. Security passes 31 PostgreSQL scenarios with zero skips. Controlled API/mobile/administrator E2E and the real-OCR responsive/cache-cold LAN journey pass. Administrator, no-training ML, migration and four-service release acceptance at the exact starting SHA remain recorded below and were not recharacterised as newly executed correction gates. Hosted CI remains unverified because B-CI-001 prevents runner allocation; no hosted-green claim is made.`

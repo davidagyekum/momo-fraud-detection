@@ -110,7 +110,7 @@ test("keeps the owner result concise and separates risk from verification", asyn
   const view = await render(<AnalysisResultView result={partialResult} />);
   expect(
     view.getByLabelText(
-      "Status: Inconclusive — no reliable fraud classification",
+      "Status: Inconclusive. No reliable fraud classification",
     ),
   ).toBeTruthy();
   expect(view.getByText("Transaction verification")).toBeTruthy();
@@ -258,12 +258,13 @@ test("keeps a partial high-risk conclusion above degraded component copy", async
 
   const view = await render(<AnalysisResultView result={highRisk} />);
   expect(view.getByLabelText("Status: High fraud risk")).toBeTruthy();
-  expect(view.getByText("Some components unavailable")).toBeTruthy();
+  expect(view.getByText("Some optional checks were not used")).toBeTruthy();
   expect(
     view.getByText(
-      "The high fraud-risk conclusion remains valid. Review unavailable components below.",
+      "The displayed fraud-risk result is still valid based on the available evidence.",
     ),
   ).toBeTruthy();
+  expect(view.queryByText("Some components unavailable")).toBeNull();
   expect(view.queryByText(/persisted result is inconclusive/i)).toBeNull();
   expect(view.getByText("Strong scam indicators detected")).toBeTruthy();
   expect(

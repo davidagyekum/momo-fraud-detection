@@ -211,12 +211,14 @@ test("submits only documented correction reasons", async () => {
 });
 
 test("turns numeric confidence into understandable guidance", () => {
-  expect(confidenceLabel(review().fields.amount)).toContain("Looks clear");
+  expect(confidenceLabel(review().fields.amount)).toBe(
+    "Looks clear. Still check before confirming",
+  );
   expect(
     confidenceLabel({
       ...review().fields.amount!,
       requires_review: true,
     }),
   ).toContain("Needs checking");
-  expect(confidenceLabel(undefined)).toContain("Not detected");
+  expect(confidenceLabel(undefined)).toBe("Not detected. Enter this manually");
 });
