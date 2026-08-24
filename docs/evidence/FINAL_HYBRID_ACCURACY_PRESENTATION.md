@@ -31,13 +31,13 @@ This record describes executed local and controlled evidence. It does not restar
 | Gate | Executed result |
 |---|---|
 | Focused red/green tests | New backend, mobile and administrator behavior was introduced with focused failing tests, then made green. |
-| Focused sender/hybrid | 35 focused sender-context, hybrid-risk, passive-counterfeit and OCR-consensus tests passed after the new geometry test was first observed failing. |
+| Focused correction selection | 35 sender-context, hybrid-risk, passive-counterfeit and OCR-consensus tests plus one public-projection privacy test passed, 36 total. The new geometry test was first observed failing. |
 | Full backend | `scripts/verify_backend.py`: 295 passed; exactly 13 host skips reserved for real Tesseract; 85.97% branch-aware coverage; Ruff format/lint; strict mypy over 78 source files; OpenAPI and ER drift checks passed. |
 | Real Tesseract | All 13 generated Docker cases passed in 195.48 seconds: the existing seven plus one realistic spaced-header counterfeit positive and five new header/body look-alike negatives. |
 | Mobile | `scripts/verify_mobile.py`: 22 suites, 118 tests; 83.78% statement and 71.04% branch coverage; formatting, linting, typing, token/routing policy and static export passed. |
 | Administrator baseline | At starting remote-equal SHA `1b863e69285d15b43af672dc8682dc8cc65834ff`, `scripts/verify_admin.py` passed 12 files / 47 tests, three Playwright flows and production build. The correction-specific controlled E2E reran all three administrator Playwright flows. |
 | ML baseline | At starting remote-equal SHA `1b863e69285d15b43af672dc8682dc8cc65834ff`, `scripts/verify_ml.py` passed 714 tests at 90.15% coverage with `training_executed=false`. This correction changed no ML path and did not execute training. |
-| Security | `scripts/verify_security.py`: 31 PostgreSQL scenarios passed with zero skips; admin/mobile policy checks and a 722-file secret/prohibited-artifact scan passed. |
+| Security | `scripts/verify_security.py`: 31 PostgreSQL scenarios passed with zero skips; admin/mobile policy checks passed. The final secret/prohibited-artifact scan covered 726 candidate files; the earlier 722-file result remains an intermediate run. |
 | Migrations | Empty and previous-revision upgrade acceptance was established at starting SHA `1b863e69285d15b43af672dc8682dc8cc65834ff`. For this schema-neutral correction, a new isolated empty database upgraded through `20260817_0006`; no migration was added. |
 | Controlled E2E | API journey, eight mobile tests/export and three administrator Playwright flows passed. |
 | Four-service release baseline | Full release verification passed at starting SHA `1b863e69285d15b43af672dc8682dc8cc65834ff`. During correction acceptance, the API alone was recreated from the verified corrected image while the healthy database, administrator and mobile services remained running. |

@@ -68,11 +68,11 @@
 
 | Command/gate | Result | Counts/summary |
 |---|---|---|
-| Focused sender/hybrid selection | PASS | 35 passed; the new geometry case was observed RED before implementation |
+| Focused correction selection | PASS | 35 sender/hybrid/consensus tests plus one public-projection privacy test; 36 total; the new geometry case was observed RED before implementation |
 | Real-Tesseract Docker selection | PASS | 13 passed in 195.48 s |
 | `scripts/verify_backend.py` | PASS | 295 passed; 13 Docker-routed host skips; 85.97% coverage; Ruff, mypy, OpenAPI and ER drift green |
 | `scripts/verify_mobile.py` | PASS | 22 suites / 118 tests; static export green |
-| `scripts/verify_security.py` | PASS | 31 passed; zero skips |
+| `scripts/verify_security.py` | PASS | 31 passed; zero skips; final secret/prohibited-artifact scan covered 726 candidate files |
 | `scripts/verify_e2e.py` | PASS | API journey, eight mobile tests/export and three administrator Playwright flows |
 | Controlled real-OCR browser journey | PASS | reason-aware high risk persisted; four widths; fresh LAN context |
 
